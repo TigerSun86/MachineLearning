@@ -25,7 +25,7 @@ public class Layer {
         }
     }
 
-    public Layer(Layer l) {
+    public Layer(final Layer l) {
         this.units = new ArrayList<Unit>();
         for (Unit u: l.units){
             this.units.add(new Unit(u));

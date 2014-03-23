@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import common.Hypothesis;
 import common.RawAttrList;
+
 import debug.Dbg;
 
 /**
@@ -27,7 +28,7 @@ public class NeuralNetwork implements Hypothesis {
     private double momentumRate;
 
     public NeuralNetwork(final RawAttrList rawAttr, final int nIn,
-            final int[] nHidden, final boolean hiddenHasThres, final int nOut,
+            final ArrayList<Integer> nHidden, final boolean hiddenHasThres, final int nOut,
             final boolean outHasThres, final double learnRate,
             final double momentumRate) {
         this.rawAttr = rawAttr;

@@ -1,24 +1,27 @@
 package artificialNeuralNetworks.Demo;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 import util.DisplayChart;
 import util.MyMath;
+import artificialNeuralNetworks.ANN.AnnProblem;
 import artificialNeuralNetworks.ANN.NeuralNetwork;
+
 import common.Evaluator;
+
 import debug.Dbg;
 
 /**
- * FileName: TestAll.java
+ * FileName: Test.java
  * @Description:
  * 
  * @author Xunhu(Tiger) Sun
  *         email: TigerSun86@gmail.com
  * @date Mar 19, 2014 2:00:42 AM
  */
-public class TestAll {
+public class Test {
     private static final String TEST_INFO =
             "Please choose the data you want to test:\n" + "\t0 Identity.\n"
                     + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\tOther_number quit\n";
@@ -44,33 +47,31 @@ public class TestAll {
                     + "\t0 number of hidden units.\n" + "\t1 learning rate.\n"
                     + "\t2 momentum.\n" + "\tOther_number back\n";
 
-    @SuppressWarnings("resource")
     public static void main (final String[] args) {
         final Scanner s = new Scanner(System.in);
+
+        final AnnProblem t;
         System.out.println(TEST_INFO);
-        AnnTest t = null;
-        int command = s.nextInt();
+        int command = getCommandNumber(s);
         switch (command) {
             case 0:
-                t = new TestIdentity();
+                t = new Identity();
                 break;
             case 1:
-                t = new TestTennis();
+                t = new Tennis();
                 break;
             case 2:
-                t = new TestIris();
+                t = new Iris();
                 break;
             default:
+                t = null;
                 break;
         }
-        if (t == null) {
-            return;
-        }
-        System.out.println(DISPLAY_INFO);
 
         boolean quit = false;
-        while (!quit) {
-            command = s.nextInt();
+        while (!quit && t != null) {
+            System.out.println(DISPLAY_INFO);
+            command = getCommandNumber(s);
             int n;
             double r;
             switch (command) {
@@ -79,38 +80,38 @@ public class TestAll {
                     break;
                 case 1:
                     System.out.println("Please input number of iterations:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testIter(t, n);
                     break;
                 case 2:
                     System.out
                             .println("Please input the train set ratio (0 to 0.99):");
-                    r = s.nextDouble();
+                    r = getDouble(s);
                     testCV(t, r);
                     break;
                 case 3:
                     System.out.println("Please input the number of folds:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testKF(t, n);
                     break;
                 case 4:
                     System.out.println("Please input number of iterations:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testErrorVsIteration(t, n);
                     break;
                 case 5:
                     System.out.println("Please input number of iterations:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testErrOfOut(t, n);
                     break;
                 case 6:
                     System.out.println("Please input number of iterations:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testOutOfHidden(t, n);
                     break;
                 case 7:
                     System.out.println("Please input number of iterations:");
-                    n = s.nextInt();
+                    n = getInt(s);
                     testweightsForOneHidden(t, n);
                     break;
                 case 8:
@@ -125,53 +126,105 @@ public class TestAll {
                 case 11:
                     System.out
                             .println("Please input the step size (recommand 0.02):");
-                    r = s.nextDouble();
+                    r = getDouble(s);
                     testCorrupt(t, r);
                     break;
                 default:
                     quit = true;
             }
-
-            System.out.println(DISPLAY_INFO);
         }
         s.close();
     }
 
-    private static void setting (AnnTest t, final Scanner s) {
+    private static void setting (AnnProblem t, final Scanner s) {
         boolean quit = false;
-        System.out.println(SETTING_INFO);
+
         while (!quit) {
-            final int command = s.nextInt();
+            System.out.println(SETTING_INFO);
+            final int command = getCommandNumber(s);
             int n;
             double r;
             switch (command) {
                 case 0:
+                    final ArrayList<Integer> nH = new ArrayList<Integer>();
                     System.out
-                            .println("Please input number of hidden units (default "+Arrays.toString(t.DEF_NHIDDEN)+"):");
-                    n = s.nextInt();
-                    t.learner.nHidden = new int[] { n };
+                            .println("Please input number of hidden layers (default "
+                                    + t.defNHidden.size() + "):");
+                    n = getInt(s);
+                    for (int i = 0; i < n; i++) {
+                        System.out
+                                .println("Please input number of hidden units for layer "
+                                        + (i + 1) + ":");
+                        nH.add(getInt(s));
+                    }
+                    t.learner.nHidden = nH;
                     break;
                 case 1:
-                    System.out
-                            .println("Please input learning rate (default "+t.DEF_LEARN_RATE+"):");
-                    r = s.nextDouble();
+                    System.out.println("Please input learning rate (default "
+                            + t.defLearnRate + "):");
+                    r = getDouble(s);
                     t.learner.learnRate = r;
                     break;
                 case 2:
-                    System.out
-                            .println("Please input momentum rate (default "+t.DEF_MOMENTUM+"):");
-                    r = s.nextDouble();
+                    System.out.println("Please input momentum rate (default "
+                            + t.defMomentum + "):");
+                    r = getDouble(s);
                     t.learner.momentumRate = r;
                     break;
                 default:
                     quit = true;
             }
-
-            System.out.println(SETTING_INFO);
         }
     }
 
-    public static double testIter (final AnnTest t, int maxIter) {
+    private static int getCommandNumber (final Scanner s) {
+        final String next = s.nextLine();
+        int ret = -1;
+        try {
+            ret = Integer.parseInt(next);
+        } catch (NumberFormatException e) {
+            ret = -1;
+        }
+        return ret;
+
+    }
+
+    private static int getInt (final Scanner s) {
+        int ret = -1;
+        while (ret < 0) {
+            final String next = s.nextLine();
+            try {
+                ret = Integer.parseInt(next);
+            } catch (NumberFormatException e) {
+                ret = -1;
+            }
+
+            if (ret < 0) {
+                System.out.println("Please reinput:");
+            }
+        }
+        return ret;
+    }
+
+    private static double getDouble (final Scanner s) {
+        double ret = Double.NaN;
+        while (Double.isNaN(ret)) {
+            final String next = s.nextLine();
+            try {
+                ret = Double.parseDouble(next);
+            } catch (NumberFormatException e) {
+                ret = Double.NaN;
+            }
+            // Only accept 0 <= ret <= 1.
+            if (Double.compare(ret, 0) < 0 || Double.compare(ret, 1) > 0) {
+                System.out.println("Please reinput:");
+                ret = Double.NaN;
+            }
+        }
+        return ret;
+    }
+
+    public static double testIter (final AnnProblem t, int maxIter) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         Evaluator.DBG = true;
@@ -189,7 +242,7 @@ public class TestAll {
 
     }
 
-    public static double testCV (final AnnTest t, double r) {
+    public static double testCV (final AnnProblem t, double r) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         Evaluator.DBG = true;
@@ -206,11 +259,14 @@ public class TestAll {
         return accur;
     }
 
-    public static double testKF (final AnnTest t, int k) {
+    public static double testKF (final AnnProblem t, int k) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         Evaluator.DBG = true;
         final NeuralNetwork net = t.learner.kFoldLearning(k);
+        if (net == null) {
+            return 0;
+        }
         double accur = t.learner.evalTrain(net);
         System.out.println("Train accuracy: " + accur);
         accur = t.learner.evalTest(net);
@@ -221,19 +277,19 @@ public class TestAll {
         return accur;
     }
 
-    private static void testErrorVsIteration (final AnnTest t, int maxIter) {
+    private static void testErrorVsIteration (final AnnProblem t, int maxIter) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 t.learner.errorVersusWeightsLearning(maxIter);
         DisplayChart.display(dataSet, "Artificial Neural Network Learning "
                 + t.name, "Error versus iterations", "Number of iteration",
-                "Error");
+                "Average error on each example");
         Dbg.dbgSwitch = false;
         Dbg.defaultSwitch = false;
     }
 
-    private static void testErrOfOut (final AnnTest t, int maxIter) {
+    private static void testErrOfOut (final AnnProblem t, int maxIter) {
         LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 t.learner.errForEachOutput(maxIter);
         DisplayChart.display(dataSet, "Artificial Neural Network Learning "
@@ -242,7 +298,7 @@ public class TestAll {
                 "Number of iteration", "Error");
     }
 
-    private static void testOutOfHidden (final AnnTest t, int maxIter) {
+    private static void testOutOfHidden (final AnnProblem t, int maxIter) {
         LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 t.learner.outputForHidden(maxIter);
         DisplayChart.display(dataSet, "Artificial Neural Network Learning "
@@ -250,7 +306,8 @@ public class TestAll {
                 "Number of iteration", "Value");
     }
 
-    private static void testweightsForOneHidden (final AnnTest t, int maxIter) {
+    private static void
+            testweightsForOneHidden (final AnnProblem t, int maxIter) {
         LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 t.learner.weightsForOneHidden(maxIter);
         DisplayChart.display(dataSet, "Artificial Neural Network Learning "
@@ -261,14 +318,16 @@ public class TestAll {
     private static final double STEP = 0.1;
     private static final double TEMINAL = 1.0;
 
-    private static void testNHidden (final AnnTest t) {
-        int[] h = t.learner.nHidden; // Backup
+    private static void testNHidden (final AnnProblem t) {
+        final ArrayList<Integer> h = t.learner.nHidden; // Backup
 
         final LinkedHashMap<Double, Double> numMap =
                 new LinkedHashMap<Double, Double>();
 
         for (int nH = 1; nH <= 10; nH++) {
-            t.learner.nHidden = new int[] { nH };
+            final ArrayList<Integer> newH = new ArrayList<Integer>();
+            newH.add(nH);
+            t.learner.nHidden = newH;
             final NeuralNetwork net = t.learner.iterLearning(1000);
             final double accur = t.learner.evalTest(net);
             System.out
@@ -288,7 +347,7 @@ public class TestAll {
         t.learner.nHidden = h; // Recover.
     }
 
-    private static void testLearnRate (final AnnTest t) {
+    private static void testLearnRate (final AnnProblem t) {
         double lr = t.learner.learnRate; // Backup
 
         final LinkedHashMap<Double, Double> numMap =
@@ -317,7 +376,8 @@ public class TestAll {
         t.learner.learnRate = lr; // Recover.
     }
 
-    private static LinkedHashMap<Double, Double> testMomentum (final AnnTest t) {
+    private static LinkedHashMap<Double, Double> testMomentum (
+            final AnnProblem t) {
         final LinkedHashMap<Double, Double> moMap =
                 new LinkedHashMap<Double, Double>();
         double mo = 0;
@@ -334,11 +394,11 @@ public class TestAll {
             t.learner.momentumRate = mo;
         }
 
-        t.learner.momentumRate = t.DEF_MOMENTUM; // Recover it.
+        t.learner.momentumRate = t.defMomentum; // Recover it.
         return moMap;
     }
 
-    private static void testMo2 (final AnnTest t) {
+    private static void testMo2 (final AnnProblem t) {
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         double mo = t.learner.momentumRate;
@@ -365,7 +425,7 @@ public class TestAll {
         t.learner.momentumRate = mo;
     }
 
-    private static double singleTest (final AnnTest t, final String way) {
+    private static double singleTest (final AnnProblem t, final String way) {
         double sum = 0;
         for (int i = 0; i < REPEAT_TIMES; i++) {
             final NeuralNetwork net;
@@ -388,12 +448,12 @@ public class TestAll {
 
     private static final String ITER = "Normal";
     private static final String VAL = "Validation";
-    private static final String KFOLD = "K-Fold";
+    private static final String KFOLD = "3-Fold";
     // private static final double COR_STEP = 0.02;
     private static final double COR_TEMINAL = 0.3;
     private static final double REPEAT_TIMES = 1;
 
-    private static void testCorrupt (final AnnTest t, double r) {
+    private static void testCorrupt (final AnnProblem t, double r) {
         final LinkedHashMap<Double, Double> iterMap =
                 new LinkedHashMap<Double, Double>();
         final LinkedHashMap<Double, Double> valMap =

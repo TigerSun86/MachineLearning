@@ -21,10 +21,6 @@ public class AnnLearner {
     public static final String MODULE = "ALN";
     public static final boolean DBG = true;
 
-    public static final int[] DEF_NHIDDEN = new int[] { 3 };
-    public static final double DEF_LEARN_RATE = 0.1;
-    public static final double DEF_MOMENTUM = 0.2;
-
     private static final int MAX_ITER = 20000;
 
     public final RawAttrList rawAttr;
@@ -34,10 +30,9 @@ public class AnnLearner {
 
     public RawExampleList rawTrainWithNoise;
 
-    public int[] nHidden;
+    public ArrayList<Integer> nHidden;
     public boolean hiddenHasThres;
     public boolean outHasThres;
-
     public double learnRate;
     public double momentumRate;
 
@@ -56,12 +51,11 @@ public class AnnLearner {
 
         rawTrainWithNoise = rawTrain;
 
-        nHidden = DEF_NHIDDEN;
+        nHidden = new ArrayList<Integer>();
         hiddenHasThres = true;
         outHasThres = true;
-
-        learnRate = DEF_LEARN_RATE;
-        momentumRate = DEF_MOMENTUM;
+        learnRate = 0;
+        momentumRate = 0;
     }
 
     public double evalTrain (final NeuralNetwork net) {
@@ -110,6 +104,9 @@ public class AnnLearner {
     public NeuralNetwork kFoldLearning (final int k) {
         final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
         final AnnExList[] exArray = annSet.splitIntoMultiSets(k);
+        if (exArray == null) {
+            return null;
+        }
         int sumIter = 0;
         for (int val = 0; val < exArray.length; val++) {
             final AnnExList valSet = exArray[val];
@@ -228,8 +225,8 @@ public class AnnLearner {
         double minError = Double.POSITIVE_INFINITY;
         int iter = 0;
         int bestIter = 0;
-        boolean converged = false;
-        while (!converged && iter < maxIter) {
+
+        while (iter < maxIter) { // Even converge don't quit.
             iter(net, trainSet, BASIC_ITER);
             iter += BASIC_ITER;
 
@@ -242,12 +239,10 @@ public class AnnLearner {
                 bestIter = iter;
             }
 
-            if (!converged && net.hasConverged(lastNet)) {
+            if (net.hasConverged(lastNet)) {
                 Dbg.print(DBG, MODULE, "Network converged at iter: " + iter);
-                converged = true;
-            } else {
-                lastNet = new NeuralNetwork(net);
             }
+            lastNet = new NeuralNetwork(net);
         }
 
         Dbg.print(DBG, MODULE, "Best iter: " + bestIter);
@@ -321,10 +316,10 @@ public class AnnLearner {
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
 
         final Layer outlayer = net.getLayerOut();
-        for (int outIndex = 0; outIndex < outlayer.size(); outIndex++) {
+        for (int i = 0; i < outlayer.size(); i++) {
             final LinkedHashMap<Double, Double> unitMap =
                     new LinkedHashMap<Double, Double>();
-            dataSet.put(String.valueOf(outIndex), unitMap);
+            dataSet.put("Out " + String.valueOf(i), unitMap);
         }
         int iter = 0;
         while (iter < maxIter) {
@@ -334,7 +329,7 @@ public class AnnLearner {
             for (AnnExample ex : train) {
                 final ArrayList<Double> predictOut = net.getV(ex.xList);
                 for (int i = 0; i < predictOut.size(); i++) {
-                    final String outUnitName = String.valueOf(i);
+                    final String outUnitName = "Out " + String.valueOf(i);
                     final LinkedHashMap<Double, Double> unitMap =
                             dataSet.get(outUnitName);
                     Double error = unitMap.get((double) iter);
@@ -349,7 +344,7 @@ public class AnnLearner {
             }
             // Make average.
             for (int i = 0; i < outlayer.units.size(); i++) {
-                final String outUnitName = String.valueOf(i);
+                final String outUnitName = "Out " + String.valueOf(i);
                 final LinkedHashMap<Double, Double> unitMap =
                         dataSet.get(outUnitName);
                 Double error = unitMap.get((double) iter);
@@ -380,18 +375,18 @@ public class AnnLearner {
         for (int i = 0; i < hLayer.size(); i++) {
             final LinkedHashMap<Double, Double> unitMap =
                     new LinkedHashMap<Double, Double>();
-            dataSet.put(String.valueOf(i), unitMap);
+            dataSet.put("Unit " + String.valueOf(i), unitMap);
         }
         int iter = 0;
         while (iter < maxIter) {
             iter(net, exSet, BASIC_ITER);
             iter += BASIC_ITER;
-            // 01000000
+            // The 2nd example
             final AnnExample ex = exSet.get(1);
             net.getV(ex.xList);
             for (int i = 0; i < hLayer.size(); i++) {
                 final Unit hUnit = hLayer.units.get(i);
-                final String outUnitName = String.valueOf(i);
+                final String outUnitName = "Unit " + String.valueOf(i);
                 final LinkedHashMap<Double, Double> unitMap =
                         dataSet.get(outUnitName);
                 unitMap.put((double) iter, hUnit.value);
@@ -418,7 +413,7 @@ public class AnnLearner {
         for (int i = 0; i < u0.weights.size(); i++) {
             final LinkedHashMap<Double, Double> unitMap =
                     new LinkedHashMap<Double, Double>();
-            dataSet.put(String.valueOf(i), unitMap);
+            dataSet.put("W" + String.valueOf(i), unitMap);
         }
         int iter = 0;
         while (iter < maxIter) {
@@ -427,7 +422,7 @@ public class AnnLearner {
 
             for (int i = 0; i < u0.weights.size(); i++) {
                 final double weight = u0.weights.get(i);
-                final String outUnitName = String.valueOf(i);
+                final String outUnitName = "W" + String.valueOf(i);
                 final LinkedHashMap<Double, Double> unitMap =
                         dataSet.get(outUnitName);
                 unitMap.put((double) iter, weight);
