@@ -1,7 +1,6 @@
 package genetic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Random;
 
@@ -9,6 +8,7 @@ import util.MyMath;
 import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
+import common.RawExample;
 import common.RawExampleList;
 
 /**
@@ -20,9 +20,9 @@ import common.RawExampleList;
  * @date Mar 31, 2014 10:15:19 PM
  */
 public class GA {
-    public static Hypothesis gaLearning (final RawExampleList exs,final RawAttrList attr,
-            final double fitness_threshold, final int numP, final double r,
-            final double m) {
+    public static Hypothesis gaLearning (final RawExampleList exs,
+            final RawAttrList attr, final double fitness_threshold,
+            final int numP, final double r, final double m) {
         int numOffspring = (int) Math.round(numP * r);
         if (numOffspring % 2 != 0) {
             numOffspring--; // numOffspring has to be even.
@@ -31,6 +31,9 @@ public class GA {
 
         // Init population.
         Population p = initPopulation(exs, attr, numP);
+        for (Individual indi: p){
+            System.out.println(indi);
+        }
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
             // Select (1-r)* numP members to survive.
@@ -47,8 +50,32 @@ public class GA {
 
     private static Population initPopulation (RawExampleList exs,
             RawAttrList attr, int numP) {
-        
-        return null;
+        Population p = new Population();
+        for (int i = 0; i < exs.size(); i++) {
+            final Individual indi = new Individual(attr);
+            RawExample ex = exs.get(i);
+            BitSet rule = indi.geneRuleByEx(ex); // Convert example to rule.
+            indi.addRule(rule);
+            i++;
+            if (i < exs.size()) { // Convert 2nd example to rule.
+                ex = exs.get(i);
+                rule = indi.geneRuleByEx(ex);
+                indi.addRule(rule);
+            }
+            p.add(indi); // Add individual to population.
+            if (p.size() == numP) {
+                break; // Reached the number of population.
+            }
+        }
+        while (p.size() != numP) { // Need more individuals.
+            final Individual indi = new Individual(attr);
+            BitSet rule = indi.geneRuleByRan(); // Generate random rule.
+            indi.addRule(rule);
+            rule = indi.geneRuleByRan();
+            indi.addRule(rule);
+            p.add(indi); // Add individual to population.
+        }
+        return p;
     }
 
     private static void evaluate (final Population p, final RawExampleList exs) {
