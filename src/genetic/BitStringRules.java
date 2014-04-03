@@ -452,4 +452,57 @@ public class BitStringRules implements Hypothesis {
         bitSetCopy(cond, xB, fromIndex, 64);
     }
 
+    public static class GeneBlock {
+        public BitSet block;
+        public int d1;
+        public int d2;
+        public int size;
+
+        public GeneBlock(BitSet block, int d1, int d2, int size) {
+            super();
+            this.block = block;
+            this.d1 = d1;
+            this.d2 = d2;
+            this.size = size;
+        }
+    }
+
+    public GeneBlock getGeneBlock () {
+        // Select d1 position.
+        // Randomly select a precond.
+        final Random ran = new Random();
+        final int indexOfCond = ran.nextInt(attrList.xList.size());
+        final RawAttr cond = attrList.xList.get(indexOfCond);
+        int d1 = condStart.get(indexOfCond);
+        if (cond.isContinuous) {
+            d1 += d1FromCont();
+        } else {
+            d1 += d1FromDis(cond);
+        }
+
+        return null;
+    }
+
+    private int d1FromCont () {
+        final int d1;
+        // Continuous attribute has 3 parts: 2 bits op, 64 bits low, 64 bits high.
+        final Random ran = new Random();
+        final int part = ran.nextInt(3);
+        if (part == 0){// op, d1 could be 3 possible position 
+            d1 = ran.nextInt(3);
+        } else if(part == 1){ // low, d1 could be 
+            
+        }
+        return 0;
+    }
+
+    private int d1FromDis (RawAttr cond) {
+        // d1 cannot be the position after last bit of cond, because there's a
+        // situation that if d1 is at the end of all preconditions, d2 has to be
+        // in the area of target bits, that's illegal.
+        final int bitSize = cond.valueList.size();
+        final int d1 = new Random().nextInt(bitSize - 1);
+        return d1;
+    }
+
 }

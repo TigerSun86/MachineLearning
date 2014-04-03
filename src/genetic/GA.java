@@ -35,8 +35,8 @@ public class GA {
 
         // Init population.
         Population p = initPopulation(exs, attr, numP);
-        Dbg.print(DBG, MODULE, "Initial population:");
-        dbgPrintPopulation(p);// Print out dbg info.
+        Dbg.print(DBG, MODULE,
+                "Initial population:" + Dbg.NEW_LINE + p.toString());
 
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
@@ -88,8 +88,8 @@ public class GA {
             ind.accur = accur;
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
-        Dbg.print(DBG, MODULE, "Population after evaluating:");
-        dbgPrintPopulation(p);// Print out dbg info.
+        Dbg.print(DBG, MODULE,
+                "Population evaluated:" + Dbg.NEW_LINE + p.toString());
     }
 
     private static Population select (Population p, int num) {
@@ -110,18 +110,10 @@ public class GA {
                 selected.add(index); // Record the selected one.
             }
         }
-        Dbg.print(DBG, MODULE, "Population selected:");
-        dbgPrintPopulation(ps);// Print out dbg info.
+        Dbg.print(DBG, MODULE,
+                "Population selected:" + Dbg.NEW_LINE + ps.toString());
 
         return ps;
-    }
-
-    private static void dbgPrintPopulation (final Population p) {
-        for (int i = 0; i < p.size(); i++) { // Print out dbg info.
-            final Individual indi = p.get(i);
-            Dbg.print(DBG, MODULE, "Individual " + i + ":" + Dbg.NEW_LINE
-                    + indi.toString());
-        }
     }
 
     private static double[] getProbDistribute (final Population p) {
@@ -137,25 +129,6 @@ public class GA {
         }
 
         return probDistribute;
-    }
-
-    private static void mutate (final Population ps, final double m) {
-        int numMu = (int) Math.round(ps.size() * m);
-        if (numMu == 0) {
-            numMu = 1; // At least 1 mutation.
-        }
-        // Get a list with the indexes of individuals.
-        final int[] iList = MyMath.mOutofN(numMu, ps.size());
-        for (int i : iList) {
-            final Individual ind = ps.get(i);
-            final Individual mutatedInd = mutateInd(ind);
-            ps.set(i, mutatedInd);
-        }
-    }
-
-    private static Individual mutateInd (Individual ind) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     private static Population crossOver (Population p, int numOffspring) {
@@ -178,6 +151,28 @@ public class GA {
 
     private static Individual[] produce (Individual p1, Individual p2) {
         // TODO Auto-generated method stub
-        return null;
+        return new Individual[] { p1, p2 };
     }
+
+    private static void mutate (final Population ps, final double m) {
+        int numMu = (int) Math.round(ps.size() * m);
+        if (numMu == 0) {
+            numMu = 1; // At least 1 mutation.
+        }
+        // Get a list with the indexes of individuals.
+        final int[] iList = MyMath.mOutofN(numMu, ps.size());
+        for (int i : iList) {
+            final Individual ind = ps.get(i);
+            Dbg.print(DBG, MODULE,
+                    "Population mutated:" + i + Dbg.NEW_LINE + ind.toString());
+            final Individual mutatedInd = mutateInd(ind);
+            ps.set(i, mutatedInd);
+        }
+    }
+
+    private static Individual mutateInd (Individual ind) {
+        // TODO Auto-generated method stub
+        return ind;
+    }
+
 }
