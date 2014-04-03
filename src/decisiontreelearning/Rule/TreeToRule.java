@@ -10,7 +10,7 @@ package decisiontreelearning.Rule;
  */
 import java.util.ArrayDeque;
 
-import debug.Dbg;
+import util.Dbg;
 import decisiontreelearning.DecisionTree.DecisionTree;
 
 public class TreeToRule {

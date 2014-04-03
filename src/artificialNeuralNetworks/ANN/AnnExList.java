@@ -2,11 +2,11 @@ package artificialNeuralNetworks.ANN;
 
 import java.util.ArrayList;
 
+import util.Dbg;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
-import debug.Dbg;
 
 /**
  * FileName: AnnExList.java

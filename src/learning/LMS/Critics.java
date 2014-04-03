@@ -2,11 +2,11 @@ package learning.LMS;
 
 import java.util.ArrayList;
 
+import util.Dbg;
 import learning.Game.GameAnalyser;
 import learning.Game.GameProblem;
 import learning.Game.GameRecorder;
 import learning.Game.Record;
-import debug.Dbg;
 
 public class Critics {
     private static final String MODULE = "Critics";

@@ -11,7 +11,7 @@ package decisiontreelearning.DecisionTree;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import debug.Dbg;
+import util.Dbg;
 
 public class ID3 {
     public static final String MODULE = "ID3";

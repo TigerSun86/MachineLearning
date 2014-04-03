@@ -2,10 +2,9 @@ package artificialNeuralNetworks.ANN;
 
 import java.util.ArrayList;
 
+import util.Dbg;
 import common.Hypothesis;
 import common.RawAttrList;
-
-import debug.Dbg;
 
 /**
  * FileName: NeuralNetwork.java

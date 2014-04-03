@@ -10,7 +10,7 @@ package decisiontreelearning.DecisionTree;
  */
 import java.util.ArrayList;
 
-import debug.Dbg;
+import util.Dbg;
 
 public class Discretizor {
     public static final String MODULE = "DCT";

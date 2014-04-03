@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import debug.Dbg;
+import util.Dbg;
 
 public class DecisionTree {
     // Root is an attribute or a class.
