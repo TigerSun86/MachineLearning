@@ -47,25 +47,6 @@ public class MyMath {
         return ret;
     }
 
-    public static int[] mOutofNWithPriority (final int m, final int n) {
-        // Descending.
-        final PriorityQueue<NumAndValue> que =
-                new PriorityQueue<NumAndValue>(n, Collections.reverseOrder());
-        // Every number in n rolls a value.
-        final Random ran = new Random();
-        for (int i = 0; i < n; i++) {
-            // Lower i has probability of higher value.
-            final int value = ran.nextInt(n - i + 1);
-            que.add(new NumAndValue(i, value));
-        }
-
-        final int[] ret = new int[m];
-        for (int i = 0; i < m; i++) {
-            ret[i] = que.remove().num;
-        }
-        return ret;
-    }
-
     private static class NumAndValue implements Comparable<NumAndValue> {
         final int num;
         final int value;

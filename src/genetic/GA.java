@@ -41,9 +41,9 @@ public class GA {
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
             // Select (1-r)* numP members to survive.
-            Population ps = select(p, surviveNum);
+            final Population ps = select(p, surviveNum);
             // Produce offspring.
-            Population offspring = crossOver(p, numOffspring);
+            final Population offspring = crossOver(p, numOffspring);
             ps.addAll(offspring);
             // Mutate.
             mutate(ps, m);
