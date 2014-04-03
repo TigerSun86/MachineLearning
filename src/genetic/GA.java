@@ -1,15 +1,15 @@
 package genetic;
 
-import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Random;
 
 import util.Dbg;
 import util.MyMath;
+
 import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
-import common.RawExample;
 import common.RawExampleList;
 
 /**
@@ -36,18 +36,15 @@ public class GA {
         // Init population.
         Population p = initPopulation(exs, attr, numP);
         Dbg.print(DBG, MODULE, "Initial population:");
-        for (int i = 0; i < p.size(); i++) { // Print out dbg info.
-            final Individual indi = p.get(i);
-            Dbg.print(DBG, MODULE, "Individual " + i + ":" + Dbg.NEW_LINE
-                    + indi.toString());
-        }
+        dbgPrintPopulation(p);// Print out dbg info.
 
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
             // Select (1-r)* numP members to survive.
             Population ps = select(p, surviveNum);
             // Produce offspring.
-            ps.addAll(crossOver(p, numOffspring));
+            Population offspring = crossOver(p, numOffspring);
+            ps.addAll(offspring);
             // Mutate.
             mutate(ps, m);
             p = ps;
@@ -92,6 +89,34 @@ public class GA {
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
         Dbg.print(DBG, MODULE, "Population after evaluating:");
+        dbgPrintPopulation(p);// Print out dbg info.
+    }
+
+    private static Population select (Population p, int num) {
+        // Generate the probability distribution.
+        final double[] probDistribute = getProbDistribute(p);
+
+        // Record the individual already been selected.
+        final HashSet<Integer> selected = new HashSet<Integer>();
+        final Population ps = new Population();
+        // Always keep the best one.
+        ps.add(p.get(0));
+        selected.add(0);
+        while (ps.size() < num) {
+            // Select one individual by probability.
+            final int index = MyMath.selectByProb(probDistribute);
+            if (!selected.contains(index)) {
+                ps.add(p.get(index)); // Add individual.
+                selected.add(index); // Record the selected one.
+            }
+        }
+        Dbg.print(DBG, MODULE, "Population selected:");
+        dbgPrintPopulation(ps);// Print out dbg info.
+
+        return ps;
+    }
+
+    private static void dbgPrintPopulation (final Population p) {
         for (int i = 0; i < p.size(); i++) { // Print out dbg info.
             final Individual indi = p.get(i);
             Dbg.print(DBG, MODULE, "Individual " + i + ":" + Dbg.NEW_LINE
@@ -99,19 +124,19 @@ public class GA {
         }
     }
 
-    private static Population select (Population p, int surviveNum) {
-        final Population ps = new Population();
-        // Always keep the best one.
-        ps.add(p.get(0));
-        // Get a list with the indexes of survivors.
-        final int[] iList =
-                MyMath.mOutofNWithPriority(surviveNum, p.size() - 1);
-        // Add survivors.
-        for (int i = 0; i < iList.length; i++) {
-            final int indexOfIndiv = iList[i] + 1; // 0 already added.
-            ps.add(p.get(indexOfIndiv));
+    private static double[] getProbDistribute (final Population p) {
+        // Generate the probability distribution.
+        final double[] probDistribute = new double[p.size()];
+        double sum = 0;
+        for (int i = 0; i < probDistribute.length; i++) {
+            probDistribute[i] = p.get(i).accur;
+            sum += p.get(i).accur;
         }
-        return ps;
+        for (int i = 0; i < probDistribute.length; i++) {
+            probDistribute[i] /= sum;
+        }
+
+        return probDistribute;
     }
 
     private static void mutate (final Population ps, final double m) {
@@ -136,7 +161,7 @@ public class GA {
     private static Population crossOver (Population p, int numOffspring) {
         final Population offspring = new Population();
         // Choose numOffspring parents to crossover.
-        final Population parents = selectM(p, numOffspring);
+        final Population parents = select(p, numOffspring);
         final Random ran = new Random();
         while (!parents.isEmpty()) {
             // Randomly choose two parents.
@@ -155,17 +180,4 @@ public class GA {
         // TODO Auto-generated method stub
         return null;
     }
-
-    private static Population selectM (final Population p, final int m) {
-        // Get a list with the indexes of individuals.
-        final int[] iList = MyMath.mOutofNWithPriority(m, p.size());
-        final Population ret = new Population();
-        // Add individuals.
-        for (int i = 0; i < iList.length; i++) {
-            final int indexOfIndiv = iList[i];
-            ret.add(p.get(indexOfIndiv));
-        }
-        return ret;
-    }
-
 }

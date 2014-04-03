@@ -1,5 +1,6 @@
 package util;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -79,5 +80,31 @@ public class MyMath {
             // TODO Auto-generated method stub
             return this.value - o.value;
         }
+    }
+
+    public static int selectByProb (final double[] probDistribute) {
+        final double[] prob = new double[probDistribute.length + 1];
+        prob[0] = 0;
+        for (int i = 0; i < probDistribute.length; i++) {
+            prob[i + 1] = prob[i] + probDistribute[i];
+        }
+
+        final double ran = new Random().nextDouble();
+
+        int index = Arrays.binarySearch(prob, ran);
+        if (index < 0) { // Didn't find the value equals with ran.
+            // Make index back to 'insertion point'.
+            index = -index;
+            index -= 1;
+            if (index == prob.length) { // Ran greater than all elements in prob
+                index -= 1; // Back 'insertion point' to last element.
+            }
+            // The selected index is 'insertion point' - 1;
+            index -= 1;
+        } else if (index == prob.length - 1) {
+            // Ran just equals with the last value.
+            index -= 1;
+        }
+        return index;
     }
 }
