@@ -5,10 +5,12 @@ import java.util.BitSet;
 import java.util.Random;
 
 import util.Dbg;
+
 import common.Hypothesis;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
+import common.RawExampleList;
 
 /**
  * FileName: BitStringRules.java
@@ -20,24 +22,54 @@ import common.RawExample;
  */
 public class BitStringRules implements Hypothesis {
     private final RawAttrList attrList;
-    private final String defaultPredict;
     private ArrayList<Integer> condStart;
     private ArrayList<Integer> condLength;
-    private final int ruleSize;
-
+    private final int ruleLength;
     private int size;
 
-    public BitSet rules = new BitSet();
+    public BitSet rules;
+    public String defaultPredict;
 
-    public BitStringRules(final RawAttrList attrList2) {
+    /**
+     * Initialize with rules converted by examplse.
+     * */
+    public BitStringRules(final RawAttrList attrList2, final RawExampleList exs) {
         attrList = attrList2;
-        defaultPredict = attrList.t.valueList.get(0);
         initCondOffset(attrList2);
         final int tarStart = condStart.get(condStart.size() - 1);
         final int tarOffset = condLength.get(condLength.size() - 1);
-        ruleSize = tarStart + tarOffset;
+        ruleLength = tarStart + tarOffset;
+
         size = 0;
-        rules = new BitSet(0); // No rule.
+        rules = new BitSet(); // No rule.
+
+        for (RawExample ex : exs) {
+            final BitSet rule = geneRuleByEx(ex); // Convert example to rule.
+            addRule(rule);
+        }
+
+        defaultPredict = attrList.t.valueList.get(0);
+    }
+
+    /**
+     * Initialize with 2 random rules
+     * */
+    public BitStringRules(final RawAttrList attrList2) {
+        attrList = attrList2;
+        initCondOffset(attrList2);
+        final int tarStart = condStart.get(condStart.size() - 1);
+        final int tarOffset = condLength.get(condLength.size() - 1);
+        ruleLength = tarStart + tarOffset;
+
+        size = 0;
+        rules = new BitSet(); // No rule.
+
+        BitSet rule = geneRuleByRan(); // Generate 2 random rules.
+        addRule(rule);
+        rule = geneRuleByRan();
+        addRule(rule);
+
+        defaultPredict = attrList.t.valueList.get(0);
     }
 
     private void initCondOffset (final RawAttrList attrList2) {
@@ -117,7 +149,7 @@ public class BitStringRules implements Hypothesis {
 
     public void addRule (final BitSet rule) {
         // Append the rule to the end of the rules.
-        bitSetCopy(rules, rule, size * ruleSize, ruleSize);
+        bitSetCopy(rules, rule, size * ruleLength, ruleLength);
         size++;
     }
 
@@ -284,7 +316,7 @@ public class BitStringRules implements Hypothesis {
     }
 
     private BitSet getRule (final int index) {
-        return rules.get(index * ruleSize, (index + 1) * ruleSize);
+        return rules.get(index * ruleLength, (index + 1) * ruleLength);
     }
 
     private BitSet getCond (final BitSet rule, final int index) {

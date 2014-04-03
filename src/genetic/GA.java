@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.Random;
 
+import util.Dbg;
 import util.MyMath;
 import common.Evaluator;
 import common.Hypothesis;
@@ -20,6 +21,9 @@ import common.RawExampleList;
  * @date Mar 31, 2014 10:15:19 PM
  */
 public class GA {
+    public static final String MODULE = "GAL";
+    public static final boolean DBG = true;
+
     public static Hypothesis gaLearning (final RawExampleList exs,
             final RawAttrList attr, final double fitness_threshold,
             final int numP, final double r, final double m) {
@@ -31,9 +35,13 @@ public class GA {
 
         // Init population.
         Population p = initPopulation(exs, attr, numP);
-        for (Individual indi: p){
-            System.out.println(indi);
+        Dbg.print(DBG, MODULE, "Initial population:");
+        for (int i = 0; i < p.size(); i++) { // Print out dbg info.
+            final Individual indi = p.get(i);
+            Dbg.print(DBG, MODULE, "Individual " + i + ":" + Dbg.NEW_LINE
+                    + indi.toString());
         }
+
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
             // Select (1-r)* numP members to survive.
@@ -45,34 +53,33 @@ public class GA {
             p = ps;
             evaluate(p, exs); // Evaluate and sort.
         }
-        return p.get(0);
+        return p.get(0).rules;
     }
 
     private static Population initPopulation (RawExampleList exs,
             RawAttrList attr, int numP) {
         Population p = new Population();
         for (int i = 0; i < exs.size(); i++) {
-            final Individual indi = new Individual(attr);
-            RawExample ex = exs.get(i);
-            BitSet rule = indi.geneRuleByEx(ex); // Convert example to rule.
-            indi.addRule(rule);
+            // Pick up 2 examples, convert them to individual, add to population
+            final RawExampleList exs2 = new RawExampleList();
+            exs2.add(exs.get(i));
             i++;
-            if (i < exs.size()) { // Convert 2nd example to rule.
-                ex = exs.get(i);
-                rule = indi.geneRuleByEx(ex);
-                indi.addRule(rule);
+            if (i < exs.size()) {
+                exs2.add(exs.get(i));
             }
+            // Convert 2 examples to rule.
+            final BitStringRules rules = new BitStringRules(attr, exs2);
+            final Individual indi = new Individual();
+            indi.rules = rules;
             p.add(indi); // Add individual to population.
             if (p.size() == numP) {
                 break; // Reached the number of population.
             }
         }
         while (p.size() != numP) { // Need more individuals.
-            final Individual indi = new Individual(attr);
-            BitSet rule = indi.geneRuleByRan(); // Generate random rule.
-            indi.addRule(rule);
-            rule = indi.geneRuleByRan();
-            indi.addRule(rule);
+            final BitStringRules rules = new BitStringRules(attr);
+            final Individual indi = new Individual();
+            indi.rules = rules;
             p.add(indi); // Add individual to population.
         }
         return p;
@@ -80,10 +87,31 @@ public class GA {
 
     private static void evaluate (final Population p, final RawExampleList exs) {
         for (Individual ind : p) {
-            final double accur = Evaluator.evaluate(ind, exs);
+            final double accur = Evaluator.evaluate(ind.rules, exs);
             ind.accur = accur;
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
+        Dbg.print(DBG, MODULE, "Population after evaluating:");
+        for (int i = 0; i < p.size(); i++) { // Print out dbg info.
+            final Individual indi = p.get(i);
+            Dbg.print(DBG, MODULE, "Individual " + i + ":" + Dbg.NEW_LINE
+                    + indi.toString());
+        }
+    }
+
+    private static Population select (Population p, int surviveNum) {
+        final Population ps = new Population();
+        // Always keep the best one.
+        ps.add(p.get(0));
+        // Get a list with the indexes of survivors.
+        final int[] iList =
+                MyMath.mOutofNWithPriority(surviveNum, p.size() - 1);
+        // Add survivors.
+        for (int i = 0; i < iList.length; i++) {
+            final int indexOfIndiv = iList[i] + 1; // 0 already added.
+            ps.add(p.get(indexOfIndiv));
+        }
+        return ps;
     }
 
     private static void mutate (final Population ps, final double m) {
@@ -140,18 +168,4 @@ public class GA {
         return ret;
     }
 
-    private static Population select (Population p, int surviveNum) {
-        final Population ps = new Population();
-        // Always keep the best one.
-        ps.add(p.get(0));
-        // Get a list with the indexes of survivors.
-        final int[] iList =
-                MyMath.mOutofNWithPriority(surviveNum, p.size() - 1);
-        // Add survivors.
-        for (int i = 0; i < iList.length; i++) {
-            final int indexOfIndiv = iList[i] + 1; // 0 already added.
-            ps.add(p.get(indexOfIndiv));
-        }
-        return ps;
-    }
 }
