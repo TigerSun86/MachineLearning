@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import debug.Dbg;
+import util.Dbg;
 import decisiontreelearning.DecisionTree.AttributeList;
 import decisiontreelearning.DecisionTree.Example;
 import decisiontreelearning.DecisionTree.ExampleSet;

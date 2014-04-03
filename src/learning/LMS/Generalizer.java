@@ -2,7 +2,7 @@ package learning.LMS;
 
 import java.util.ArrayList;
 
-import debug.Dbg;
+import util.Dbg;
 
 public class Generalizer {
     private static final String MODULE = "Generalizer";

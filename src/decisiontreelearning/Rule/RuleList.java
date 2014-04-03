@@ -10,7 +10,7 @@ package decisiontreelearning.Rule;
  */
 import java.util.ArrayList;
 
-import debug.Dbg;
+import util.Dbg;
 
 public class RuleList {
     public final ArrayList<Rule> list;

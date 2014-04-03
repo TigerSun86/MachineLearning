@@ -2,7 +2,7 @@ package artificialNeuralNetworks.ANN;
 
 import java.util.ArrayList;
 
-import debug.Dbg;
+import util.Dbg;
 
 /**
  * FileName: Layer.java

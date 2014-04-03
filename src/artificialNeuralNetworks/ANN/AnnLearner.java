@@ -3,11 +3,11 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import util.Dbg;
 import common.DataCorrupter;
 import common.Evaluator;
 import common.RawAttrList;
 import common.RawExampleList;
-import debug.Dbg;
 
 /**
  * FileName: AnnLearner.java

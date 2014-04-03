@@ -9,7 +9,7 @@ package decisiontreelearning.Rule;
  *         email: TigerSun86@gmail.com
  * @date Feb 25, 2014
  */
-import debug.Dbg;
+import util.Dbg;
 import decisiontreelearning.DecisionTree.AttributeList;
 import decisiontreelearning.DecisionTree.ExampleSet;
 

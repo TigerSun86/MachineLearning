@@ -8,7 +8,7 @@ package decisiontreelearning.DecisionTree;
  *         email: TigerSun86@gmail.com
  * @date Feb 25, 2014
  */
-import debug.Dbg;
+import util.Dbg;
 import decisiontreelearning.Rule.CombinedRulePostPruning;
 import decisiontreelearning.Rule.RuleList;
 import decisiontreelearning.Rule.RulePostPruning;

@@ -1,11 +1,11 @@
 package learning.LMS;
 
+import util.Dbg;
 import learning.Game.GameProblem;
 import learning.Game.GameRecorder;
 import learning.Game.PlayerManager;
 import learning.Game.Record;
 import learning.MoveMaker.MoveMaker;
-import debug.Dbg;
 
 public class PerformanceSystem {
     private static final String MODULE = "PerformanceSystem";

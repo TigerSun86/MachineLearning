@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
+import util.Dbg;
 import util.DisplayChart;
 import util.MyMath;
 import artificialNeuralNetworks.ANN.AnnProblem;
 import artificialNeuralNetworks.ANN.NeuralNetwork;
-
 import common.Evaluator;
-
-import debug.Dbg;
 
 /**
  * FileName: Test.java

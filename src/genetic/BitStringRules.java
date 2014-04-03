@@ -4,12 +4,11 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Random;
 
+import util.Dbg;
 import common.Hypothesis;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
-
-import debug.Dbg;
 
 /**
  * FileName: BitStringRules.java

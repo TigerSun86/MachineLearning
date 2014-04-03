@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import util.Dbg;
 import learning.Game.GameRecorder;
 import learning.Game.PlayerManager;
 import learning.Game.Record;
@@ -16,7 +17,6 @@ import learning.MoveMaker.AlphaBetaPlayer;
 import learning.MoveMaker.HumanPlayer;
 import learning.MoveMaker.MoveMaker;
 import learning.MoveMaker.RepeatedPlayer;
-import debug.Dbg;
 
 public class TttDemo {
     private static final String MODULE = "TttDemo";
