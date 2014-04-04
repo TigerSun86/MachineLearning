@@ -88,4 +88,9 @@ public class MyMath {
         }
         return index;
     }
+
+    public static double
+            randomDoubleBetween (final double min, final double max) {
+        return (Math.random() * (max - min)) + min;
+    }
 }

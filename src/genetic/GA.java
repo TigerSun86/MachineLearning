@@ -54,7 +54,8 @@ public class GA {
     }
 
     private static Population initPopulation (RawExampleList exs,
-            RawAttrList attr, int numP) {
+            RawAttrList attrs, int numP) {
+        final BSAttrs bsAttrs = new BSAttrs(exs, attrs);
         Population p = new Population();
         for (int i = 0; i < exs.size(); i++) {
             // Pick up 2 examples, convert them to individual, add to population
@@ -65,7 +66,7 @@ public class GA {
                 exs2.add(exs.get(i));
             }
             // Convert 2 examples to rule.
-            final BitStringRules rules = new BitStringRules(attr, exs2);
+            final BitStringRules rules = new BitStringRules(bsAttrs, exs2);
             final Individual indi = new Individual();
             indi.rules = rules;
             p.add(indi); // Add individual to population.
@@ -74,7 +75,7 @@ public class GA {
             }
         }
         while (p.size() != numP) { // Need more individuals.
-            final BitStringRules rules = new BitStringRules(attr);
+            final BitStringRules rules = new BitStringRules(bsAttrs);
             final Individual indi = new Individual();
             indi.rules = rules;
             p.add(indi); // Add individual to population.

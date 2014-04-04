@@ -5,10 +5,10 @@ import java.util.BitSet;
 import java.util.Random;
 
 import util.Dbg;
+import util.MyMath;
 
 import common.Hypothesis;
 import common.RawAttr;
-import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 
@@ -21,117 +21,127 @@ import common.RawExampleList;
  * @date Mar 31, 2014 10:25:58 PM
  */
 public class BitStringRules implements Hypothesis {
-    private final RawAttrList attrList;
-    private ArrayList<Integer> condStart;
-    private ArrayList<Integer> condLength;
-    private final int ruleLength;
+    private final BSAttrs attrs;
     private int size;
 
-    public BitSet rules;
+    public BitSet ruleSet;
     public String defaultPredict;
 
     /**
-     * Initialize with rules converted by examplse.
+     * Initialize with ruleSet converted by examplse.
      * */
-    public BitStringRules(final RawAttrList attrList2, final RawExampleList exs) {
-        attrList = attrList2;
-        initCondOffset(attrList2);
-        final int tarStart = condStart.get(condStart.size() - 1);
-        final int tarOffset = condLength.get(condLength.size() - 1);
-        ruleLength = tarStart + tarOffset;
-
+    public BitStringRules(final BSAttrs attrs2, final RawExampleList exs) {
+        this.attrs = attrs2;
         size = 0;
-        rules = new BitSet(); // No rule.
+        ruleSet = new BitSet(); // No rule.
 
         for (RawExample ex : exs) {
-            final BitSet rule = geneRuleByEx(ex); // Convert example to rule.
+            // Convert example to rule.
+            final BitSet rule = generateRuleByEx(ex);
             addRule(rule);
         }
 
-        defaultPredict = attrList.t.valueList.get(0);
+        defaultPredict = attrs.rawAttrs.t.valueList.get(0);
     }
 
     /**
-     * Initialize with 2 random rules
+     * Initialize with 2 random ruleSet
      * */
-    public BitStringRules(final RawAttrList attrList2) {
-        attrList = attrList2;
-        initCondOffset(attrList2);
-        final int tarStart = condStart.get(condStart.size() - 1);
-        final int tarOffset = condLength.get(condLength.size() - 1);
-        ruleLength = tarStart + tarOffset;
-
+    public BitStringRules(final BSAttrs attrs2) {
+        this.attrs = attrs2;
         size = 0;
-        rules = new BitSet(); // No rule.
-
-        BitSet rule = geneRuleByRan(); // Generate 2 random rules.
+        ruleSet = new BitSet(); // No rule.
+        // Generate 2 random rules.
+        BitSet rule = generateRuleByRan();
         addRule(rule);
-        rule = geneRuleByRan();
+        rule = generateRuleByRan();
         addRule(rule);
 
-        defaultPredict = attrList.t.valueList.get(0);
+        defaultPredict = attrs.rawAttrs.t.valueList.get(0);
     }
 
-    private void initCondOffset (final RawAttrList attrList2) {
-        condStart = new ArrayList<Integer>();
-        condLength = new ArrayList<Integer>();
-        int offset = 0;
-        for (int i = 0; i < attrList2.xList.size(); i++) {
-            final RawAttr attr = attrList2.xList.get(i);
-            condStart.add(offset);
-            final int sizeOfCond;
-            if (attr.isContinuous) {// It's a continuous value.
-                sizeOfCond = 2 + 64 + 64;
-            } else {// Discrete value.
-                sizeOfCond = attr.valueList.size();
-            }
-            condLength.add(sizeOfCond);
-            offset += sizeOfCond;
+    public int size () {
+        return size;
+    }
+
+    @Override
+    public String toString () {
+        final StringBuffer sb = new StringBuffer();
+        // Traverse all ruleSet.
+        final int numRules = this.size();
+        for (int i = 0; i < numRules; i++) {
+            // Get the rule.
+            final BitSet rule = getRule(i);
+            sb.append("Rule " + i + " [");
+            sb.append(ruleToString(rule));
+            sb.append("]" + Dbg.NEW_LINE);
         }
-        // The target attrbute.
-        condStart.add(offset);
-        condLength.add(attrList2.t.valueList.size());
+        return sb.toString();
     }
 
-    public BitSet geneRuleByEx (RawExample ex) {
+    @Override
+    public String predict (ArrayList<String> in) {
+        String predict = null;
+        // Traverse all ruleSet.
+        final int numRules = this.size();
+        for (int i = 0; i < numRules; i++) {
+            // Get the rule.
+            final BitSet rule = getRule(i);
+            // Use rule to predict
+            final String answer = rulePredict(rule, in);
+            if (answer != null) { // The example is matched by the rule.
+                predict = answer;
+                break;
+            }
+        }
+        if (predict != null) {
+            return predict;
+        } else {
+            return defaultPredict;
+        }
+    }
+
+    /* generate rule by example begin ************************** */
+    private BitSet generateRuleByEx (RawExample ex) {
         final BitSet rule = new BitSet();
-        for (int i = 0; i < attrList.xList.size(); i++) {
-            final RawAttr attr = attrList.xList.get(i);
+        for (int i = 0; i < attrs.rawAttrs.xList.size(); i++) {
+            final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final String x = ex.xList.get(i);
             final BitSet cond;
             if (attr.isContinuous) {
-                cond = convertCon(x, attr);
+                cond = geConByEx(x, attr, attrs.exp.get(i));
             } else {
-                cond = convertDis(x, attr);
+                cond = geDisByEx(x, attr);
             }
-            final int start = condStart.get(i);
-            final int length = condLength.get(i);
+            final int start = attrs.condStart.get(i);
+            final int length = attrs.condLength.get(i);
             bitSetCopy(rule, cond, start, length);
         }
         // Target.
-        final RawAttr attr = attrList.t;
+        final RawAttr attr = attrs.rawAttrs.t;
         final String x = ex.t;
-        final BitSet cond = convertDis(x, attr);
-        final int start = condStart.get(condStart.size() - 1);
-        final int length = condLength.get(condLength.size() - 1);
+        final BitSet cond = geDisByEx(x, attr);
+        final int start = attrs.condStart.get(attrs.condStart.size() - 1);
+        final int length = attrs.condLength.get(attrs.condLength.size() - 1);
         bitSetCopy(rule, cond, start, length);
         return rule;
     }
 
-    private static BitSet convertCon (String x, RawAttr attr) {
+    private static BitSet geConByEx (String x, RawAttr attr, final int exp) {
         final BitSet cond = new BitSet();
-        // op = 10 : low < x < high
+        // op = 10 : low <= x <= high.
+        // In this case, low == high, means x == low.
         cond.set(0, false);
         cond.set(1, true);
         final double xD = Double.valueOf(x);
-        final double low = xD - 1;
-        final double high = xD + 1;
-        setDoubleValue(cond, 2, low); // Set value low.
-        setDoubleValue(cond, 2 + 64, high); // Set value high.
+        final double low = xD;
+        final double high = xD;
+        setDoubleValue(cond, 2, low, exp); // Set value low.
+        setDoubleValue(cond, 2 + 64, high, exp); // Set value high.
         return cond;
     }
 
-    private static BitSet convertDis (String x, RawAttr attr) {
+    private static BitSet geDisByEx (String x, RawAttr attr) {
         final BitSet cond = new BitSet();
         final int index = attr.valueList.indexOf(x); // Find the index of x.
         assert index != -1;
@@ -139,61 +149,59 @@ public class BitStringRules implements Hypothesis {
         return cond;
     }
 
-    private static void bitSetCopy (final BitSet des, final BitSet src,
-            final int fromIndexOfDes, final int lengthOfSrc) {
-        for (int i = 0; i < lengthOfSrc; i++) {
-            final boolean v = src.get(i);
-            des.set(fromIndexOfDes + i, v);
-        }
-    }
+    /* generate rule by example end ************************** */
 
-    public void addRule (final BitSet rule) {
-        // Append the rule to the end of the rules.
-        bitSetCopy(rules, rule, size * ruleLength, ruleLength);
-        size++;
-    }
-
-    public BitSet geneRuleByRan () {
+    /* generate rule by random begin ************************** */
+    private BitSet generateRuleByRan () {
         final BitSet rule = new BitSet();
-        for (int i = 0; i < attrList.xList.size(); i++) {
-            final RawAttr attr = attrList.xList.get(i);
+        for (int i = 0; i < attrs.rawAttrs.xList.size(); i++) {
+            final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final BitSet cond;
             if (attr.isContinuous) {
-                cond = geneCon(attr);
+                cond =
+                        geConByRan(attr, attrs.exp.get(i),
+                                attrs.minValue.get(i), attrs.maxValue.get(i));
             } else {
-                cond = geneDis(attr);
+                cond = geDisByRan(attr);
             }
-            final int start = condStart.get(i);
-            final int length = condLength.get(i);
+            final int start = attrs.condStart.get(i);
+            final int length = attrs.condLength.get(i);
             bitSetCopy(rule, cond, start, length);
         }
         // Target.
-        final RawAttr attr = attrList.t;
+        final RawAttr attr = attrs.rawAttrs.t;
         final BitSet cond = geneTar(attr);
-        final int start = condStart.get(condStart.size() - 1);
-        final int length = condLength.get(condLength.size() - 1);
+        final int start = attrs.condStart.get(attrs.condStart.size() - 1);
+        final int length = attrs.condLength.get(attrs.condLength.size() - 1);
         bitSetCopy(rule, cond, start, length);
         return rule;
     }
 
-    private static BitSet geneCon (RawAttr attr) {
+    private static BitSet geConByRan (final RawAttr attr, final int exp,
+            final double min, final double max) {
         final BitSet cond = new BitSet();
-        final Random ran = new Random();
         // op
-        final int opN = ran.nextInt(4);
-        final boolean op1 = ((opN & 1) == 1) ? true : false;
-        final boolean op2 = (((opN >> 1) & 1) == 1) ? true : false;
-        cond.set(0, op1);
-        cond.set(1, op2);
-
-        final double low = ran.nextDouble();
-        final double high = ran.nextDouble();
-        setDoubleValue(cond, 2, low); // Set value low.
-        setDoubleValue(cond, 2 + 64, high); // Set value high.
+        final int opN = new Random().nextInt(4);
+        final boolean op0 = ((opN & 1) == 1) ? true : false;
+        final boolean op1 = (((opN >> 1) & 1) == 1) ? true : false;
+        cond.set(0, op0);
+        cond.set(1, op1);
+        // Generate low and high value.
+        double low;
+        double high;
+        while (true) {
+            low = MyMath.randomDoubleBetween(min, max);
+            high = MyMath.randomDoubleBetween(min, max);
+            if (Double.compare(low, high) <= 0) {
+                break; // Only legal when low <= high.
+            }
+        }
+        setDoubleValue(cond, 2, low, exp); // Set value low.
+        setDoubleValue(cond, 2 + 64, high, exp); // Set value high.
         return cond;
     }
 
-    private static BitSet geneDis (RawAttr attr) {
+    private static BitSet geDisByRan (RawAttr attr) {
         final int length = attr.valueList.size();
         final int max = (int) Math.pow(2, length);
         final Random ran = new Random();
@@ -222,53 +230,42 @@ public class BitStringRules implements Hypothesis {
         return cond;
     }
 
-    @Override
-    public String toString () {
-        final StringBuffer sb = new StringBuffer();
-        // Traverse all rules.
-        final int numRules = this.size();
-        for (int i = 0; i < numRules; i++) {
-            // Get the rule.
-            final BitSet rule = getRule(i);
-            sb.append("Rule " + i + " [");
-            sb.append(ruleToString(rule));
-            sb.append("]" + Dbg.NEW_LINE);
-        }
-        return sb.toString();
-    }
+    /* generate rule by random end ************************** */
 
+    /* toString begain ******************************************** */
     private String ruleToString (BitSet rule) {
         final StringBuffer sb = new StringBuffer();
         sb.append("IF ");
-        for (int i = 0; i < attrList.xList.size(); i++) {
-            final RawAttr attr = attrList.xList.get(i);
+        for (int i = 0; i < attrs.rawAttrs.xList.size(); i++) {
+            final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final BitSet cond = getCond(rule, i); // Get precond.
             sb.append("(");
-            sb.append(condToString(cond, attr));
+            sb.append(condToString(cond, attr, attrs.exp.get(i)));
             sb.append(")");
-            if (i != attrList.xList.size() - 1) {
+            if (i != attrs.rawAttrs.xList.size() - 1) {
                 sb.append(" && ");
             }
         }
-        final RawAttr attr = attrList.t;
+        final RawAttr attr = attrs.rawAttrs.t;
         final BitSet cond = getPostcond(rule); // Get postcond.
         sb.append(" THEN ");
-        sb.append(condToString(cond, attr));
+        sb.append(condToString(cond, attr, 0)); // Target
         return sb.toString();
     }
 
-    private String condToString (final BitSet cond, final RawAttr attr) {
+    private String
+            condToString (final BitSet cond, final RawAttr attr, int exp) {
         final StringBuffer sb = new StringBuffer();
         if (attr.isContinuous) {
             // It's a continuous value.
-            sb.append(continueToString(cond, attr));
+            sb.append(continueToString(cond, attr, exp));
         } else {
             sb.append(discreteToString(cond, attr));
         }
         return sb.toString();
     }
 
-    private String continueToString (BitSet cond, final RawAttr attr) {
+    private String continueToString (BitSet cond, final RawAttr attr, int exp) {
         final BitSet op = cond.get(0, 2);
         final long opL;
         final long[] opA = op.toLongArray();
@@ -277,21 +274,24 @@ public class BitStringRules implements Hypothesis {
         } else {
             opL = 0;
         }
-        if (opL == 0) { // 00: x > low
-            final double low = getDoubleValue(cond, 2);
-            final String ret = String.format("%s > %.2f", attr.name, low);
+        // To make double don't display redundant zero in the tail.
+        final String fmt = String.format("%%.%df", exp);
+        if (opL == 0) { // 00: x >= low
+            final double low = getDoubleValue(cond, 2, exp);
+            final String ret = String.format("%s >= " + fmt, attr.name, low);
             return ret;
-        } else if (opL == 1) { // 01: x < low
-            final double low = getDoubleValue(cond, 2);
-            final String ret = String.format("%s < %.2f", attr.name, low);
+        } else if (opL == 1) { // 01: x <= low
+            final double low = getDoubleValue(cond, 2, exp);
+            final String ret = String.format("%s <= " + fmt, attr.name, low);
             return ret;
-        } else if (opL == 2) { // 10: low < x < high
-            final double low = getDoubleValue(cond, 2);
-            final double high = getDoubleValue(cond, 2 + 64);
+        } else if (opL == 2) { // 10: low <= x <= high
+            final double low = getDoubleValue(cond, 2, exp);
+            final double high = getDoubleValue(cond, 2 + 64, exp);
             final String ret =
-                    String.format("%.2f < %s < %.2f", low, attr.name, high);
+                    String.format(fmt + " <= %s <= " + fmt, low, attr.name,
+                            high);
             return ret;
-        } else { // 11: don't matter.
+        } else { // 11: doesn't matter.
             final String ret = String.format("%s doesn't matter", attr.name);
             return ret;
         }
@@ -305,7 +305,7 @@ public class BitStringRules implements Hypothesis {
             if (cond.get(i)) { // The condition's been set.
                 final String v = attr.valueList.get(i);
                 sb.append(v);
-                if ((i != attrList.xList.size() - 1)
+                if ((i != attrs.rawAttrs.xList.size() - 1)
                         && (cond.nextSetBit(i + 1) != -1)) {
                     // There's still bit 1 later.
                     sb.append(" || ");
@@ -315,45 +315,66 @@ public class BitStringRules implements Hypothesis {
         return sb.toString();
     }
 
+    /* toString end ******************************************** */
+
+    /* basic methods begin ********************* */
+
     private BitSet getRule (final int index) {
-        return rules.get(index * ruleLength, (index + 1) * ruleLength);
+        return ruleSet.get(index * attrs.ruleLength, (index + 1)
+                * attrs.ruleLength);
     }
 
     private BitSet getCond (final BitSet rule, final int index) {
-        final int start = condStart.get(index);
-        final int offset = condLength.get(index);
+        final int start = attrs.condStart.get(index);
+        final int offset = attrs.condLength.get(index);
         return rule.get(start, start + offset);
     }
 
     private BitSet getPostcond (final BitSet rule) {
-        return getCond(rule, condStart.size() - 1);
+        return getCond(rule, attrs.condStart.size() - 1); // Target is last cond
     }
 
-    public int size () {
-        return size;
+    private static double getDoubleValue (final BitSet cond,
+            final int fromIndex, final int exp) {
+        final BitSet low = cond.get(fromIndex, fromIndex + 64);
+        final long[] lowL = low.toLongArray();
+        final double lowD;
+        if (lowL.length != 0) { // Convert value of rule to (x / 10^exp).
+            lowD = (Math.round((double) lowL[0])) / (Math.pow(10, exp));
+        } else { // All 64 bits are zeros.
+            lowD = 0;
+        }
+        return lowD;
     }
 
-    @Override
-    public String predict (ArrayList<String> in) {
-        String predict = null;
-        // Traverse all rules.
-        final int numRules = this.size();
-        for (int i = 0; i < numRules; i++) {
-            // Get the rule.
-            final BitSet rule = getRule(i);
-            // Use rule to predict
-            final String answer = rulePredict(rule, in);
-            if (answer != null) { // The example is matched by the rule.
-                predict = answer;
-                break;
-            }
-        }
-        if (predict != null) {
-            return predict;
-        } else {
-            return defaultPredict;
+    private static void setDoubleValue (final BitSet cond, final int fromIndex,
+            final double x, final int exp) {
+        assert !Double.isNaN(x); // x should be a meaningful double value.
+        // Convert double x to long (x * 10^exp) and store in rule.
+        final long xL = Math.round(x * (Math.pow(10, exp)));
+        final long[] xA = { xL };
+        final BitSet xB = BitSet.valueOf(xA); // Convert double to BitSet.
+        // Copy the BitSet to specified position in cond.
+        bitSetCopy(cond, xB, fromIndex, 64);
+    }
+
+    private static void bitSetCopy (final BitSet des, final BitSet src,
+            final int fromIndexOfDes, final int lengthOfSrc) {
+        for (int i = 0; i < lengthOfSrc; i++) {
+            final boolean v = src.get(i);
+            des.set(fromIndexOfDes + i, v);
         }
     }
+
+    private void addRule (final BitSet rule) {
+        // Append the rule to the end of the ruleSet.
+        bitSetCopy(ruleSet, rule, size * attrs.ruleLength, attrs.ruleLength);
+        size++;
+    }
+
+    /* basic methods end ********************* */
+
+    /* predict begin ******************************************* */
 
     private String rulePredict (BitSet rule, ArrayList<String> in) {
         boolean isMatched = true;
@@ -364,13 +385,13 @@ public class BitStringRules implements Hypothesis {
 
             // Check the x with corresponding precond in rule.
             final BitSet cond = getCond(rule, i);
-            final RawAttr attr = attrList.xList.get(i);
+            final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final boolean correct;
             if (attr.isContinuous) {// It's a continuous value.
                 // Convert x to double.
                 final double xD = Double.valueOf(x);
                 // Check if the continuous value matches the condition.
-                correct = contPredict(cond, xD);
+                correct = contPredict(cond, xD, attrs.exp.get(i));
             } else {// Discrete value.
                 // The index of x in value list of attribute.
                 final int index = attr.valueList.indexOf(x);
@@ -387,13 +408,13 @@ public class BitStringRules implements Hypothesis {
             final BitSet postcond = getPostcond(rule);
             final int index = postcond.nextSetBit(0);
             assert index != -1;
-            return attrList.t.valueList.get(index);
+            return attrs.rawAttrs.t.valueList.get(index);
         } else { // The rule is not matched.
             return null;
         }
     }
 
-    private boolean contPredict (BitSet cond, double x) {
+    private static boolean contPredict (BitSet cond, double x, int exp) {
         final BitSet op = cond.get(0, 2);
         final long opL;
         final long[] opA = op.toLongArray();
@@ -402,55 +423,34 @@ public class BitStringRules implements Hypothesis {
         } else {
             opL = 0;
         }
-        if (opL == 0) { // 00: x > low
-            final double low = getDoubleValue(cond, 2);
-            if (Double.compare(x, low) > 0) {
+        if (opL == 0) { // 00: x >= low
+            final double low = getDoubleValue(cond, 2, exp);
+            if (Double.compare(x, low) >= 0) {
                 return true;
             } else {
                 return false;
             }
-        } else if (opL == 1) { // 01: x < low
-            final double low = getDoubleValue(cond, 2);
-            if (Double.compare(x, low) < 0) {
+        } else if (opL == 1) { // 01: x <= low
+            final double low = getDoubleValue(cond, 2, exp);
+            if (Double.compare(x, low) <= 0) {
                 return true;
             } else {
                 return false;
             }
-        } else if (opL == 2) { // 10: low < x < high
-            final double low = getDoubleValue(cond, 2);
-            final double high = getDoubleValue(cond, 2 + 64);
-            if ((Double.compare(x, low) > 0) && (Double.compare(x, high) < 0)) {
+        } else if (opL == 2) { // 10: low <= x <= high
+            final double low = getDoubleValue(cond, 2, exp);
+            final double high = getDoubleValue(cond, 2 + 64, exp);
+            if ((Double.compare(x, low) >= 0) && (Double.compare(x, high) <= 0)) {
                 return true;
             } else {
                 return false;
             }
-        } else { // 11: don't matter.
+        } else { // 11: doesn't matter.
             return true;
         }
     }
 
-    private static double
-            getDoubleValue (final BitSet cond, final int fromIndex) {
-        final BitSet low = cond.get(fromIndex, fromIndex + 64);
-        final long[] lowL = low.toLongArray();
-        final double lowD;
-        if (lowL.length != 0) {
-            lowD = Double.longBitsToDouble(lowL[0]);
-        } else { // All 64 bits are zeros.
-            lowD = 0;
-        }
-        return lowD;
-    }
-
-    private static void setDoubleValue (final BitSet cond, final int fromIndex,
-            final double x) {
-        assert !Double.isNaN(x); // x should be a meaningful double value.
-        final long xL = Double.doubleToRawLongBits(x);
-        final long[] xA = { xL };
-        final BitSet xB = BitSet.valueOf(xA); // Convert double to BitSet.
-        // Copy the BitSet to specified position in cond.
-        bitSetCopy(cond, xB, fromIndex, 64);
-    }
+    /* predict end ******************************************* */
 
     public static class GeneBlock {
         public BitSet block;
@@ -466,18 +466,20 @@ public class BitStringRules implements Hypothesis {
             this.size = size;
         }
     }
-
+/*
     public GeneBlock getGeneBlock () {
         // Select d1 position.
         // Randomly select a precond.
         final Random ran = new Random();
-        final int indexOfCond = ran.nextInt(attrList.xList.size());
-        final RawAttr cond = attrList.xList.get(indexOfCond);
-        int d1 = condStart.get(indexOfCond);
+        final int indexOfCond = ran.nextInt(attrs.rawAttrs.xList.size());
+        final boolean isLast =
+                (indexOfCond == (attrs.rawAttrs.xList.size() - 1));
+        final RawAttr cond = attrs.rawAttrs.xList.get(indexOfCond);
+        int d1 = attrs.condStart.get(indexOfCond);
         if (cond.isContinuous) {
-            d1 += d1FromCont();
+            d1 += d1FromCont(isLast);
         } else {
-            d1 += d1FromDis(cond);
+            d1 += d1FromDis(cond, isLast);
         }
 
         return null;
@@ -485,24 +487,30 @@ public class BitStringRules implements Hypothesis {
 
     private int d1FromCont () {
         final int d1;
-        // Continuous attribute has 3 parts: 2 bits op, 64 bits low, 64 bits high.
+        // Continuous attribute has 3 parts: 2 bits op, 64 bits low, 64 bits
+        // high.
         final Random ran = new Random();
         final int part = ran.nextInt(3);
-        if (part == 0){// op, d1 could be 3 possible position 
+        if (part == 0) {// op, d1 could be 3 possible position
             d1 = ran.nextInt(3);
-        } else if(part == 1){ // low, d1 could be 
-            
+        } else if (part == 1) { // low, d1 could be
+
         }
         return 0;
     }
 
-    private int d1FromDis (RawAttr cond) {
+    private int d1FromDis (RawAttr cond, final boolean isLast) {
         // d1 cannot be the position after last bit of cond, because there's a
         // situation that if d1 is at the end of all preconditions, d2 has to be
         // in the area of target bits, that's illegal.
         final int bitSize = cond.valueList.size();
-        final int d1 = new Random().nextInt(bitSize - 1);
-        return d1;
-    }
+        final int d1;
+        if (isLast) {
+            d1 = new Random().nextInt(bitSize);
+        } else {
+            d1 = new Random().nextInt(bitSize + 1);
+        }
 
+        return d1;
+    }*/
 }
