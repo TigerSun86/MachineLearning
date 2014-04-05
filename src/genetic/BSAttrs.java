@@ -97,5 +97,38 @@ public class BSAttrs {
                 }
             }
         }
+        // Make max and min value a little extended, because value in test
+        // set maybe different with train set.
+        for (int i = 0; i < maxValue.size(); i++) {
+            final double extra = (maxValue.get(i) - minValue.get(i)) * 0.2;
+            maxValue.set(i, maxValue.get(i) + extra);
+            minValue.set(i, minValue.get(i) - extra);
+        }
+    }
+
+    public long actualToMappedValue (final long x, final int index) {
+        // Map actual long value (already has no exponent part) which is range
+        // from lowest to highest of attribute, to the range from Long.MIN_VALUE
+        // to Long.MAX_VALUE.
+        final double xD = (double) x;
+        final double low = minValue.get(index) * Math.pow(10, exp.get(index));
+        final double high = maxValue.get(index) * Math.pow(10, exp.get(index));
+        final double min = (double) Long.MIN_VALUE;
+        final double max = (double) Long.MAX_VALUE;
+        final double y = ((max - min) / (high - low)) * (xD - low) + min;
+        return Math.round(y);
+    }
+
+    public long mappedToActualValue (final long y, final int index) {
+        // Map back mapped long value (stored in the rule by the form 64 bits)
+        // which is range from Long.MIN_VALUE to Long.MAX_VALUE, to the range
+        // from lowest to highest of attribute.
+        final double yD = (double) y;
+        final double low = minValue.get(index) * Math.pow(10, exp.get(index));
+        final double high = maxValue.get(index) * Math.pow(10, exp.get(index));
+        final double min = (double) Long.MIN_VALUE;
+        final double max = (double) Long.MAX_VALUE;
+        final double x = ((high - low) / (max - min)) * (yD - min) + low;
+        return Math.round(x);
     }
 }

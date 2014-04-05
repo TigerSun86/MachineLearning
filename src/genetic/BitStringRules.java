@@ -123,7 +123,7 @@ public class BitStringRules implements Hypothesis {
                 final RawAttr attr = attrs.rawAttrs.xList.get(j);
                 final boolean isValid;
                 if (attr.isContinuous) {
-                    isValid = checkCon(cond, attrs.exp.get(j));
+                    isValid = checkCon(cond, j);
                 } else {
                     isValid = checkDis(cond);
                 }
@@ -164,25 +164,31 @@ public class BitStringRules implements Hypothesis {
         return getCond(rule, attrs.condStart.size() - 1); // Target is last cond
     }
 
-    private static double getDoubleValue (final BitSet cond,
-            final int fromIndex, final int exp) {
-        final BitSet low = cond.get(fromIndex, fromIndex + 64);
-        final long[] lowL = low.toLongArray();
-        final double lowD;
-        if (lowL.length != 0) { // Convert value of rule to (x / 10^exp).
-            lowD = (Math.round((double) lowL[0])) / (Math.pow(10, exp));
-        } else { // All 64 bits are zeros.
-            lowD = 0;
+    private double getDoubleValue (final BitSet cond, final int fromIndex,
+            final int attrIndex) {
+        final BitSet x = cond.get(fromIndex, fromIndex + 64);
+        final long[] xL = x.toLongArray();
+        final long xMapped;
+        if (xL.length != 0) {// All 64 bits are zeros.
+            xMapped = xL[0];
+        } else {
+            xMapped = 0;
         }
-        return lowD;
+        // Convert mapped value back to actual value.
+        final long xActual = attrs.mappedToActualValue(xMapped, attrIndex);
+        // Convert value of rule to (x / 10^exp).
+        return (Math.round(xActual)) / (Math.pow(10, attrs.exp.get(attrIndex)));
     }
 
-    private static void setDoubleValue (final BitSet cond, final int fromIndex,
-            final double x, final int exp) {
+    private void setDoubleValue (final BitSet cond, final int fromIndex,
+            final double x, final int attrIndex) {
         assert !Double.isNaN(x); // x should be a meaningful double value.
-        // Convert double x to long (x * 10^exp) and store in rule.
-        final long xL = Math.round(x * (Math.pow(10, exp)));
-        final long[] xA = { xL };
+        // Convert double x to long (x * 10^exp).
+        final long xActual =
+                Math.round(x * (Math.pow(10, attrs.exp.get(attrIndex))));
+        // Convert x to a reasonable mapped range in long.
+        final long xMapped = attrs.actualToMappedValue(xActual, attrIndex);
+        final long[] xA = { xMapped };
         final BitSet xB = BitSet.valueOf(xA); // Convert double to BitSet.
         // Copy the BitSet to specified position in cond.
         bitSetCopy(cond, xB, fromIndex, 64);
@@ -205,7 +211,7 @@ public class BitStringRules implements Hypothesis {
             final String x = ex.xList.get(i);
             final BitSet cond;
             if (attr.isContinuous) {
-                cond = geConByEx(x, attr, attrs.exp.get(i));
+                cond = geConByEx(x, attr, i);
             } else {
                 cond = geDisByEx(x, attr);
             }
@@ -223,7 +229,7 @@ public class BitStringRules implements Hypothesis {
         return rule;
     }
 
-    private static BitSet geConByEx (String x, RawAttr attr, final int exp) {
+    private BitSet geConByEx (String x, RawAttr attr, final int attrIndex) {
         final BitSet cond = new BitSet();
         // op = 10 : low <= x <= high.
         // In this case, low == high, means x == low.
@@ -232,8 +238,8 @@ public class BitStringRules implements Hypothesis {
         final double xD = Double.valueOf(x);
         final double low = xD;
         final double high = xD;
-        setDoubleValue(cond, 2, low, exp); // Set value low.
-        setDoubleValue(cond, 2 + 64, high, exp); // Set value high.
+        setDoubleValue(cond, 2, low, attrIndex); // Set value low.
+        setDoubleValue(cond, 2 + 64, high, attrIndex); // Set value high.
         return cond;
     }
 
@@ -254,9 +260,7 @@ public class BitStringRules implements Hypothesis {
             final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final BitSet cond;
             if (attr.isContinuous) {
-                cond =
-                        geConByRan(attr, attrs.exp.get(i),
-                                attrs.minValue.get(i), attrs.maxValue.get(i));
+                cond = geConByRan(attr, i);
             } else {
                 cond = geDisByRan(attr);
             }
@@ -273,8 +277,7 @@ public class BitStringRules implements Hypothesis {
         return rule;
     }
 
-    private static BitSet geConByRan (final RawAttr attr, final int exp,
-            final double min, final double max) {
+    private BitSet geConByRan (final RawAttr attr, final int attrIndex) {
         final BitSet cond = new BitSet();
         // op
         final int opN = new Random().nextInt(4);
@@ -285,6 +288,8 @@ public class BitStringRules implements Hypothesis {
         // Generate low and high value.
         double low;
         double high;
+        final double min = attrs.minValue.get(attrIndex);
+        final double max = attrs.maxValue.get(attrIndex);
         while (true) {
             low = MyMath.randomDoubleBetween(min, max);
             high = MyMath.randomDoubleBetween(min, max);
@@ -292,8 +297,10 @@ public class BitStringRules implements Hypothesis {
                 break; // Only legal when low <= high.
             }
         }
-        setDoubleValue(cond, 2, low, exp); // Set value low.
-        setDoubleValue(cond, 2 + 64, high, exp); // Set value high.
+        // Set value low.
+        setDoubleValue(cond, 2, low, attrIndex);
+        // Set value high.
+        setDoubleValue(cond, 2 + 64, high, attrIndex);
         return cond;
     }
 
@@ -333,35 +340,39 @@ public class BitStringRules implements Hypothesis {
         final StringBuffer sb = new StringBuffer();
         sb.append("IF ");
         for (int i = 0; i < attrs.rawAttrs.xList.size(); i++) {
-            final RawAttr attr = attrs.rawAttrs.xList.get(i);
             final BitSet cond = getCond(rule, i); // Get precond.
             sb.append("(");
-            sb.append(condToString(cond, attr, attrs.exp.get(i)));
+            sb.append(condToString(cond, i));
             sb.append(")");
             if (i != attrs.rawAttrs.xList.size() - 1) {
                 sb.append(" && ");
             }
         }
-        final RawAttr attr = attrs.rawAttrs.t;
         final BitSet cond = getPostcond(rule); // Get postcond.
         sb.append(" THEN ");
-        sb.append(condToString(cond, attr, 0)); // Target
+        sb.append(condToString(cond, -1)); // Target
         return sb.toString();
     }
 
-    private String
-            condToString (final BitSet cond, final RawAttr attr, int exp) {
+    private String condToString (final BitSet cond, final int attrIndex) {
         final StringBuffer sb = new StringBuffer();
+        final RawAttr attr;
+        if (attrIndex == -1) {// Target attribute.
+            attr = attrs.rawAttrs.t;
+        } else { // Precondition attribute.
+            attr = attrs.rawAttrs.xList.get(attrIndex);
+        }
         if (attr.isContinuous) {
             // It's a continuous value.
-            sb.append(continueToString(cond, attr, exp));
+            sb.append(continueToString(cond, attr, attrIndex));
         } else {
             sb.append(discreteToString(cond, attr));
         }
         return sb.toString();
     }
 
-    private String continueToString (BitSet cond, final RawAttr attr, int exp) {
+    private String continueToString (BitSet cond, final RawAttr attr,
+            int attrIndex) {
         final BitSet op = cond.get(0, 2);
         final long opL;
         final long[] opA = op.toLongArray();
@@ -371,18 +382,18 @@ public class BitStringRules implements Hypothesis {
             opL = 0;
         }
         // To make double don't display redundant zero in the tail.
-        final String fmt = String.format("%%.%df", exp);
+        final String fmt = String.format("%%.%df", attrs.exp.get(attrIndex));
         if (opL == 0) { // 00: x >= low
-            final double low = getDoubleValue(cond, 2, exp);
+            final double low = getDoubleValue(cond, 2, attrIndex);
             final String ret = String.format("%s >= " + fmt, attr.name, low);
             return ret;
-        } else if (opL == 1) { // 01: x <= low
-            final double low = getDoubleValue(cond, 2, exp);
-            final String ret = String.format("%s <= " + fmt, attr.name, low);
+        } else if (opL == 1) { // 01: x <= high
+            final double high = getDoubleValue(cond, 2 + 64, attrIndex);
+            final String ret = String.format("%s <= " + fmt, attr.name, high);
             return ret;
         } else if (opL == 2) { // 10: low <= x <= high
-            final double low = getDoubleValue(cond, 2, exp);
-            final double high = getDoubleValue(cond, 2 + 64, exp);
+            final double low = getDoubleValue(cond, 2, attrIndex);
+            final double high = getDoubleValue(cond, 2 + 64, attrIndex);
             final String ret =
                     String.format(fmt + " <= %s <= " + fmt, low, attr.name,
                             high);
@@ -430,7 +441,7 @@ public class BitStringRules implements Hypothesis {
                 // Convert x to double.
                 final double xD = Double.valueOf(x);
                 // Check if the continuous value matches the condition.
-                correct = contPredict(cond, xD, attrs.exp.get(i));
+                correct = contPredict(cond, xD, i);
             } else {// Discrete value.
                 // The index of x in value list of attribute.
                 final int index = attr.valueList.indexOf(x);
@@ -453,7 +464,7 @@ public class BitStringRules implements Hypothesis {
         }
     }
 
-    private static boolean contPredict (BitSet cond, double x, int exp) {
+    private boolean contPredict (BitSet cond, double x, int attrIndex) {
         final BitSet op = cond.get(0, 2);
         final long opL;
         final long[] opA = op.toLongArray();
@@ -463,22 +474,22 @@ public class BitStringRules implements Hypothesis {
             opL = 0;
         }
         if (opL == 0) { // 00: x >= low
-            final double low = getDoubleValue(cond, 2, exp);
+            final double low = getDoubleValue(cond, 2, attrIndex);
             if (Double.compare(x, low) >= 0) {
                 return true;
             } else {
                 return false;
             }
-        } else if (opL == 1) { // 01: x <= low
-            final double low = getDoubleValue(cond, 2, exp);
-            if (Double.compare(x, low) <= 0) {
+        } else if (opL == 1) { // 01: x <= high
+            final double high = getDoubleValue(cond, 2 + 64, attrIndex);
+            if (Double.compare(x, high) <= 0) {
                 return true;
             } else {
                 return false;
             }
         } else if (opL == 2) { // 10: low <= x <= high
-            final double low = getDoubleValue(cond, 2, exp);
-            final double high = getDoubleValue(cond, 2 + 64, exp);
+            final double low = getDoubleValue(cond, 2, attrIndex);
+            final double high = getDoubleValue(cond, 2 + 64, attrIndex);
             if ((Double.compare(x, low) >= 0) && (Double.compare(x, high) <= 0)) {
                 return true;
             } else {
@@ -492,11 +503,11 @@ public class BitStringRules implements Hypothesis {
     /* predict end ******************************************* */
 
     /* isValid begin ******************************************* */
-    private static boolean checkCon (final BitSet cond, final int exp) {
+    private boolean checkCon (final BitSet cond, final int attrIndex) {
         // Check whether low <= high, only when op == 10, low <= x<= high.
         if (cond.get(0) == false && cond.get(1) == true) {
-            final double low = getDoubleValue(cond, 2, 1);
-            final double high = getDoubleValue(cond, 2 + 64, 1);
+            final double low = getDoubleValue(cond, 2, attrIndex);
+            final double high = getDoubleValue(cond, 2 + 64, attrIndex);
             if (Double.compare(low, high) > 0) {
                 return false;
             }

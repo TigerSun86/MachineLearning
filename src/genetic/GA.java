@@ -22,7 +22,7 @@ import common.RawExampleList;
  */
 public class GA {
     public static final String MODULE = "GAL";
-    public static final boolean DBG = true;
+    public static final boolean DBG = false;
 
     public static Hypothesis gaLearning (final RawExampleList exs,
             final RawAttrList attr, final double fitness_threshold,
@@ -49,6 +49,10 @@ public class GA {
             mutate(ps, m);
             p = ps;
             evaluate(p, exs); // Evaluate and sort.
+            /*Dbg.print(DBG, MODULE, "Best individual:" + Dbg.NEW_LINE
+                    + p.get(0).toString());*/
+            System.out.println("Best individual:" + Dbg.NEW_LINE
+                    + p.get(0).toString());
         }
         return p.get(0).rules;
     }
@@ -159,16 +163,10 @@ public class GA {
         final int[] iList = MyMath.mOutofN(numMu, ps.size());
         for (int i : iList) {
             final Individual ind = ps.get(i);
-            Dbg.print(DBG, MODULE,
-                    "Individual mutated:" + i + Dbg.NEW_LINE + ind.toString());
-            final Individual mutatedInd = mutateInd(ind);
+            Dbg.print(DBG, MODULE, "Individual mutated:" + i + Dbg.NEW_LINE
+                    + ind.toString());
+            final Individual mutatedInd = Mutator.mutate(ind);
             ps.set(i, mutatedInd);
         }
     }
-
-    private static Individual mutateInd (Individual ind) {
-        // TODO Auto-generated method stub
-        return ind;
-    }
-
 }
