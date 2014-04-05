@@ -142,17 +142,12 @@ public class GA {
             final Individual p1 = parents.remove(ran.nextInt(parents.size()));
             final Individual p2 = parents.remove(ran.nextInt(parents.size()));
             // Produce two offspring.
-            final Individual[] children = produce(p1, p2);
+            final Individual[] children = OffspringProducer.produce(p1, p2);
             for (Individual i : children) {
                 offspring.add(i); // Add offspring.
             }
         }
         return offspring;
-    }
-
-    private static Individual[] produce (Individual p1, Individual p2) {
-        // TODO Auto-generated method stub
-        return new Individual[] { p1, p2 };
     }
 
     private static void mutate (final Population ps, final double m) {

@@ -23,6 +23,7 @@ public class BSAttrs {
     public ArrayList<Double> maxValue;
     public ArrayList<Double> minValue;
     public ArrayList<Integer> exp; // 10 based exponent.
+    public int precondsLength;
     public int ruleLength;
 
     public BSAttrs(final RawExampleList exs, final RawAttrList attrs) {
@@ -31,6 +32,7 @@ public class BSAttrs {
         initMaxMinExp(exs, attrs);
         final int tarStart = condStart.get(condStart.size() - 1);
         final int tarOffset = condLength.get(condLength.size() - 1);
+        precondsLength = tarStart;
         ruleLength = tarStart + tarOffset;
     }
 

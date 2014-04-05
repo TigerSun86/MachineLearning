@@ -21,8 +21,8 @@ import common.RawExampleList;
  * @date Mar 31, 2014 10:25:58 PM
  */
 public class BitStringRules implements Hypothesis {
-    private final BSAttrs attrs;
-    private int size;
+    public final BSAttrs attrs;
+    public int numOfRules;
 
     public BitSet ruleSet;
     public String defaultPredict;
@@ -32,7 +32,7 @@ public class BitStringRules implements Hypothesis {
      * */
     public BitStringRules(final BSAttrs attrs2, final RawExampleList exs) {
         this.attrs = attrs2;
-        size = 0;
+        numOfRules = 0;
         ruleSet = new BitSet(); // No rule.
 
         for (RawExample ex : exs) {
@@ -49,7 +49,7 @@ public class BitStringRules implements Hypothesis {
      * */
     public BitStringRules(final BSAttrs attrs2) {
         this.attrs = attrs2;
-        size = 0;
+        numOfRules = 0;
         ruleSet = new BitSet(); // No rule.
         // Generate 2 random rules.
         BitSet rule = generateRuleByRan();
@@ -60,15 +60,27 @@ public class BitStringRules implements Hypothesis {
         defaultPredict = attrs.rawAttrs.t.valueList.get(0);
     }
 
-    public int size () {
-        return size;
+    /**
+     * Initialize with a clone of other BitStringRules.
+     * */
+    public BitStringRules(final BitStringRules other) {
+        this.attrs = other.attrs;
+        numOfRules = other.numOfRules;
+        ruleSet = new BitSet();
+        bitSetCopy(ruleSet, other.ruleSet, 0, other.numOfRules
+                * attrs.ruleLength);
+        defaultPredict = other.defaultPredict;
+    }
+
+    public int numOfRules () {
+        return numOfRules;
     }
 
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
         // Traverse all ruleSet.
-        final int numRules = this.size();
+        final int numRules = this.numOfRules();
         for (int i = 0; i < numRules; i++) {
             // Get the rule.
             final BitSet rule = getRule(i);
@@ -83,7 +95,7 @@ public class BitStringRules implements Hypothesis {
     public String predict (ArrayList<String> in) {
         String predict = null;
         // Traverse all ruleSet.
-        final int numRules = this.size();
+        final int numRules = this.numOfRules();
         for (int i = 0; i < numRules; i++) {
             // Get the rule.
             final BitSet rule = getRule(i);
@@ -100,6 +112,64 @@ public class BitStringRules implements Hypothesis {
             return defaultPredict;
         }
     }
+
+    public static void bitSetCopy (final BitSet des, final BitSet src,
+            final int fromIndexOfDes, final int lengthOfSrc) {
+        for (int i = 0; i < lengthOfSrc; i++) {
+            final boolean v = src.get(i);
+            des.set(fromIndexOfDes + i, v);
+        }
+    }
+
+    /* basic methods begin ********************* */
+
+    private BitSet getRule (final int index) {
+        return ruleSet.get(index * attrs.ruleLength, (index + 1)
+                * attrs.ruleLength);
+    }
+
+    private BitSet getCond (final BitSet rule, final int index) {
+        final int start = attrs.condStart.get(index);
+        final int offset = attrs.condLength.get(index);
+        return rule.get(start, start + offset);
+    }
+
+    private BitSet getPostcond (final BitSet rule) {
+        return getCond(rule, attrs.condStart.size() - 1); // Target is last cond
+    }
+
+    private static double getDoubleValue (final BitSet cond,
+            final int fromIndex, final int exp) {
+        final BitSet low = cond.get(fromIndex, fromIndex + 64);
+        final long[] lowL = low.toLongArray();
+        final double lowD;
+        if (lowL.length != 0) { // Convert value of rule to (x / 10^exp).
+            lowD = (Math.round((double) lowL[0])) / (Math.pow(10, exp));
+        } else { // All 64 bits are zeros.
+            lowD = 0;
+        }
+        return lowD;
+    }
+
+    private static void setDoubleValue (final BitSet cond, final int fromIndex,
+            final double x, final int exp) {
+        assert !Double.isNaN(x); // x should be a meaningful double value.
+        // Convert double x to long (x * 10^exp) and store in rule.
+        final long xL = Math.round(x * (Math.pow(10, exp)));
+        final long[] xA = { xL };
+        final BitSet xB = BitSet.valueOf(xA); // Convert double to BitSet.
+        // Copy the BitSet to specified position in cond.
+        bitSetCopy(cond, xB, fromIndex, 64);
+    }
+
+    private void addRule (final BitSet rule) {
+        // Append the rule to the end of the ruleSet.
+        bitSetCopy(ruleSet, rule, numOfRules * attrs.ruleLength,
+                attrs.ruleLength);
+        numOfRules++;
+    }
+
+    /* basic methods end ********************* */
 
     /* generate rule by example begin ************************** */
     private BitSet generateRuleByEx (RawExample ex) {
@@ -317,63 +387,6 @@ public class BitStringRules implements Hypothesis {
 
     /* toString end ******************************************** */
 
-    /* basic methods begin ********************* */
-
-    private BitSet getRule (final int index) {
-        return ruleSet.get(index * attrs.ruleLength, (index + 1)
-                * attrs.ruleLength);
-    }
-
-    private BitSet getCond (final BitSet rule, final int index) {
-        final int start = attrs.condStart.get(index);
-        final int offset = attrs.condLength.get(index);
-        return rule.get(start, start + offset);
-    }
-
-    private BitSet getPostcond (final BitSet rule) {
-        return getCond(rule, attrs.condStart.size() - 1); // Target is last cond
-    }
-
-    private static double getDoubleValue (final BitSet cond,
-            final int fromIndex, final int exp) {
-        final BitSet low = cond.get(fromIndex, fromIndex + 64);
-        final long[] lowL = low.toLongArray();
-        final double lowD;
-        if (lowL.length != 0) { // Convert value of rule to (x / 10^exp).
-            lowD = (Math.round((double) lowL[0])) / (Math.pow(10, exp));
-        } else { // All 64 bits are zeros.
-            lowD = 0;
-        }
-        return lowD;
-    }
-
-    private static void setDoubleValue (final BitSet cond, final int fromIndex,
-            final double x, final int exp) {
-        assert !Double.isNaN(x); // x should be a meaningful double value.
-        // Convert double x to long (x * 10^exp) and store in rule.
-        final long xL = Math.round(x * (Math.pow(10, exp)));
-        final long[] xA = { xL };
-        final BitSet xB = BitSet.valueOf(xA); // Convert double to BitSet.
-        // Copy the BitSet to specified position in cond.
-        bitSetCopy(cond, xB, fromIndex, 64);
-    }
-
-    private static void bitSetCopy (final BitSet des, final BitSet src,
-            final int fromIndexOfDes, final int lengthOfSrc) {
-        for (int i = 0; i < lengthOfSrc; i++) {
-            final boolean v = src.get(i);
-            des.set(fromIndexOfDes + i, v);
-        }
-    }
-
-    private void addRule (final BitSet rule) {
-        // Append the rule to the end of the ruleSet.
-        bitSetCopy(ruleSet, rule, size * attrs.ruleLength, attrs.ruleLength);
-        size++;
-    }
-
-    /* basic methods end ********************* */
-
     /* predict begin ******************************************* */
 
     private String rulePredict (BitSet rule, ArrayList<String> in) {
@@ -454,63 +467,86 @@ public class BitStringRules implements Hypothesis {
 
     public static class GeneBlock {
         public BitSet block;
+        public int size;
         public int d1;
         public int d2;
-        public int size;
 
         public GeneBlock(BitSet block, int d1, int d2, int size) {
-            super();
             this.block = block;
+            this.size = size;
             this.d1 = d1;
             this.d2 = d2;
-            this.size = size;
         }
     }
-/*
+
     public GeneBlock getGeneBlock () {
-        // Select d1 position.
-        // Randomly select a precond.
+        // Select cross cover positions.
+        // Positions are legal only when d1+d2 <= precondsLength -1;
         final Random ran = new Random();
-        final int indexOfCond = ran.nextInt(attrs.rawAttrs.xList.size());
-        final boolean isLast =
-                (indexOfCond == (attrs.rawAttrs.xList.size() - 1));
-        final RawAttr cond = attrs.rawAttrs.xList.get(indexOfCond);
-        int d1 = attrs.condStart.get(indexOfCond);
-        if (cond.isContinuous) {
-            d1 += d1FromCont(isLast);
-        } else {
-            d1 += d1FromDis(cond, isLast);
-        }
-
-        return null;
-    }
-
-    private int d1FromCont () {
-        final int d1;
-        // Continuous attribute has 3 parts: 2 bits op, 64 bits low, 64 bits
-        // high.
-        final Random ran = new Random();
-        final int part = ran.nextInt(3);
-        if (part == 0) {// op, d1 could be 3 possible position
-            d1 = ran.nextInt(3);
-        } else if (part == 1) { // low, d1 could be
-
-        }
-        return 0;
-    }
-
-    private int d1FromDis (RawAttr cond, final boolean isLast) {
         // d1 cannot be the position after last bit of cond, because there's a
         // situation that if d1 is at the end of all preconditions, d2 has to be
         // in the area of target bits, that's illegal.
-        final int bitSize = cond.valueList.size();
-        final int d1;
-        if (isLast) {
-            d1 = new Random().nextInt(bitSize);
-        } else {
-            d1 = new Random().nextInt(bitSize + 1);
-        }
+        final int d1 = ran.nextInt(attrs.precondsLength);
+        int d2 = ran.nextInt(attrs.precondsLength - d1);
+        // d2 changes to distance from the end of the rule (include target) to a
+        // random position in preconds.
+        d2 += attrs.condLength.get(attrs.condLength.size() - 1);
+        assert (d1 + d2) <= attrs.ruleLength - 1;
 
-        return d1;
-    }*/
+        final int blockSize = (numOfRules * attrs.ruleLength) - d2 - d1;
+        final BitSet block = ruleSet.get(d1, d1 + blockSize);
+        final GeneBlock gb = new GeneBlock(block, d1, d2, blockSize);
+        return gb;
+    }
+
+    public GeneBlock getGeneBlock (final int d1, final int d2) {
+        // If numOfRules is 3 (index 0,1,2), if d1p picked up index 1, d2p could
+        // pick up index 1 or 2.
+        final Random ran = new Random();
+        final int ruleIndexForD1p = ran.nextInt(numOfRules);
+        final int reversedRuleIndexForD2p =
+                ran.nextInt(numOfRules - ruleIndexForD1p);
+
+        final int d1p = d1 + (ruleIndexForD1p * attrs.ruleLength);
+        final int d2p = d2 + (reversedRuleIndexForD2p * attrs.ruleLength);
+
+        final int blockSize = (numOfRules * attrs.ruleLength) - d2p - d1p;
+        final BitSet block = ruleSet.get(d1p, d1p + blockSize);
+        final GeneBlock gb = new GeneBlock(block, d1p, d2p, blockSize);
+        return gb;
+    }
+
+    public static void exchangeGeneBlock (final GeneBlock gb1,
+            final GeneBlock gb2) {
+        final BitSet blockT = gb1.block;
+        final int sizeT = gb1.size;
+        gb1.block = gb2.block;
+        gb1.size = gb2.size;
+        gb2.block = blockT;
+        gb2.size = sizeT;
+    }
+
+    public void setGeneBlock (final GeneBlock gb) {
+        // The info in the rule set after the position of d2 need to be backed
+        // up first.
+        final int ruleSetLength = numOfRules * attrs.ruleLength;
+        final BitSet backup = ruleSet.get(ruleSetLength - gb.d2, ruleSetLength);
+        // Replace gene block in rule set with gb.
+        bitSetCopy(ruleSet, gb.block, gb.d1, gb.size);
+        // Recovery the tail of the rule set.
+        bitSetCopy(ruleSet, backup, gb.d1 + gb.size, gb.d2);
+        final int newRuleSetLength = gb.d1 + gb.size + gb.d2;
+        assert (newRuleSetLength % attrs.ruleLength) == 0;
+        // Update number of rules.
+        numOfRules = newRuleSetLength / attrs.ruleLength;
+    }
+
+    public static void produce (final BitStringRules bsr1,
+            final BitStringRules bsr2) {
+        final GeneBlock gb1 = bsr1.getGeneBlock();
+        final GeneBlock gb2 = bsr2.getGeneBlock(gb1.d1, gb1.d2);
+        exchangeGeneBlock(gb1, gb2);
+        bsr1.setGeneBlock(gb1);
+        bsr2.setGeneBlock(gb2);
+    }
 }
