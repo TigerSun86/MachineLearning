@@ -90,7 +90,7 @@ public class GA {
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
         Dbg.print(DBG, MODULE,
-                "Population evaluated:" + Dbg.NEW_LINE + p.toString());
+                "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());
     }
 
     private static Population select (Population p, int num) {
@@ -112,7 +112,7 @@ public class GA {
             }
         }
         Dbg.print(DBG, MODULE,
-                "Population selected:" + Dbg.NEW_LINE + ps.toString());
+                "Individuals selected:" + Dbg.NEW_LINE + ps.toString());
 
         return ps;
     }
@@ -160,7 +160,7 @@ public class GA {
         for (int i : iList) {
             final Individual ind = ps.get(i);
             Dbg.print(DBG, MODULE,
-                    "Population mutated:" + i + Dbg.NEW_LINE + ind.toString());
+                    "Individual mutated:" + i + Dbg.NEW_LINE + ind.toString());
             final Individual mutatedInd = mutateInd(ind);
             ps.set(i, mutatedInd);
         }

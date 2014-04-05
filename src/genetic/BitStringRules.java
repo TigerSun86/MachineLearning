@@ -6,7 +6,6 @@ import java.util.Random;
 
 import util.Dbg;
 import util.MyMath;
-
 import common.Hypothesis;
 import common.RawAttr;
 import common.RawExample;
@@ -111,6 +110,33 @@ public class BitStringRules implements Hypothesis {
         } else {
             return defaultPredict;
         }
+    }
+
+    public boolean isValid () {
+        // Go through all rules
+        for (int i = 0; i < numOfRules; i++) {
+            final BitSet rule = getRule(i);
+            // Go through all conditions.
+            for (int j = 0; j < attrs.rawAttrs.xList.size(); j++) {
+                // Check if condtion is valid.
+                final BitSet cond = getCond(rule, j);
+                final RawAttr attr = attrs.rawAttrs.xList.get(j);
+                final boolean isValid;
+                if (attr.isContinuous) {
+                    isValid = checkCon(cond, attrs.exp.get(j));
+                } else {
+                    isValid = checkDis(cond);
+                }
+                if (!isValid) {
+                    return false;
+                }
+            }
+            final boolean isValid = checkTar(getPostcond(rule));
+            if (!isValid) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void bitSetCopy (final BitSet des, final BitSet src,
@@ -465,88 +491,28 @@ public class BitStringRules implements Hypothesis {
 
     /* predict end ******************************************* */
 
-    public static class GeneBlock {
-        public BitSet block;
-        public int size;
-        public int d1;
-        public int d2;
-
-        public GeneBlock(BitSet block, int d1, int d2, int size) {
-            this.block = block;
-            this.size = size;
-            this.d1 = d1;
-            this.d2 = d2;
+    /* isValid begin ******************************************* */
+    private static boolean checkCon (final BitSet cond, final int exp) {
+        // Check whether low <= high, only when op == 10, low <= x<= high.
+        if (cond.get(0) == false && cond.get(1) == true) {
+            final double low = getDoubleValue(cond, 2, 1);
+            final double high = getDoubleValue(cond, 2 + 64, 1);
+            if (Double.compare(low, high) > 0) {
+                return false;
+            }
         }
+        return true;
     }
 
-    public GeneBlock getGeneBlock () {
-        // Select cross cover positions.
-        // Positions are legal only when d1+d2 <= precondsLength -1;
-        final Random ran = new Random();
-        // d1 cannot be the position after last bit of cond, because there's a
-        // situation that if d1 is at the end of all preconditions, d2 has to be
-        // in the area of target bits, that's illegal.
-        final int d1 = ran.nextInt(attrs.precondsLength);
-        int d2 = ran.nextInt(attrs.precondsLength - d1);
-        // d2 changes to distance from the end of the rule (include target) to a
-        // random position in preconds.
-        d2 += attrs.condLength.get(attrs.condLength.size() - 1);
-        assert (d1 + d2) <= attrs.ruleLength - 1;
-
-        final int blockSize = (numOfRules * attrs.ruleLength) - d2 - d1;
-        final BitSet block = ruleSet.get(d1, d1 + blockSize);
-        final GeneBlock gb = new GeneBlock(block, d1, d2, blockSize);
-        return gb;
+    private static boolean checkDis (BitSet cond) {
+        // Discrete condition is invalid only when all bits are zero.
+        return !cond.isEmpty();
     }
 
-    public GeneBlock getGeneBlock (final int d1, final int d2) {
-        // If numOfRules is 3 (index 0,1,2), if d1p picked up index 1, d2p could
-        // pick up index 1 or 2.
-        final Random ran = new Random();
-        final int ruleIndexForD1p = ran.nextInt(numOfRules);
-        final int reversedRuleIndexForD2p =
-                ran.nextInt(numOfRules - ruleIndexForD1p);
-
-        final int d1p = d1 + (ruleIndexForD1p * attrs.ruleLength);
-        final int d2p = d2 + (reversedRuleIndexForD2p * attrs.ruleLength);
-
-        final int blockSize = (numOfRules * attrs.ruleLength) - d2p - d1p;
-        final BitSet block = ruleSet.get(d1p, d1p + blockSize);
-        final GeneBlock gb = new GeneBlock(block, d1p, d2p, blockSize);
-        return gb;
+    private static boolean checkTar (BitSet postcond) {
+        // Target condition is valid if and only if it has one 1 bit in it.
+        return postcond.cardinality() == 1;
     }
+    /* isValid end ******************************************* */
 
-    public static void exchangeGeneBlock (final GeneBlock gb1,
-            final GeneBlock gb2) {
-        final BitSet blockT = gb1.block;
-        final int sizeT = gb1.size;
-        gb1.block = gb2.block;
-        gb1.size = gb2.size;
-        gb2.block = blockT;
-        gb2.size = sizeT;
-    }
-
-    public void setGeneBlock (final GeneBlock gb) {
-        // The info in the rule set after the position of d2 need to be backed
-        // up first.
-        final int ruleSetLength = numOfRules * attrs.ruleLength;
-        final BitSet backup = ruleSet.get(ruleSetLength - gb.d2, ruleSetLength);
-        // Replace gene block in rule set with gb.
-        bitSetCopy(ruleSet, gb.block, gb.d1, gb.size);
-        // Recovery the tail of the rule set.
-        bitSetCopy(ruleSet, backup, gb.d1 + gb.size, gb.d2);
-        final int newRuleSetLength = gb.d1 + gb.size + gb.d2;
-        assert (newRuleSetLength % attrs.ruleLength) == 0;
-        // Update number of rules.
-        numOfRules = newRuleSetLength / attrs.ruleLength;
-    }
-
-    public static void produce (final BitStringRules bsr1,
-            final BitStringRules bsr2) {
-        final GeneBlock gb1 = bsr1.getGeneBlock();
-        final GeneBlock gb2 = bsr2.getGeneBlock(gb1.d1, gb1.d2);
-        exchangeGeneBlock(gb1, gb2);
-        bsr1.setGeneBlock(gb1);
-        bsr2.setGeneBlock(gb2);
-    }
 }

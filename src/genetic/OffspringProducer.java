@@ -18,11 +18,11 @@ public class OffspringProducer {
     public static boolean DBG = true;
 
     public static Individual[] produce (Individual p1, Individual p2) {
+        final BitStringRules[] children = cross(p1.rules, p2.rules);
         final Individual c1 = new Individual();
         final Individual c2 = new Individual();
-        c1.rules = new BitStringRules(p1.rules);
-        c2.rules = new BitStringRules(p2.rules);
-        cross(c1.rules, c2.rules);
+        c1.rules = children[0];
+        c2.rules = children[1];
         c1.accur = 0;
         c2.accur = 0;
         Dbg.print(DBG, MODULE, "Parent 1:" + Dbg.NEW_LINE + p1.toString());
@@ -32,15 +32,32 @@ public class OffspringProducer {
         return new Individual[] { c1, c2 };
     }
 
-    private static void cross (final BitStringRules indi1,
-            final BitStringRules indi2) {
-        final GeneBlock gb1 = getGeneBlock(indi1);
-        final GeneBlock gb2 = getGeneBlock(indi2, gb1.d1, gb1.d2);
-        exchangeGeneBlock(gb1, gb2);
-        // Set gene should use the origin gb, because d1 and d2 are the gap for
-        // the corresponding rule set.
-        setGeneBlock(indi1, gb1);
-        setGeneBlock(indi2, gb2);
+    private static BitStringRules[] cross (final BitStringRules p1,
+            final BitStringRules p2) {
+        BitStringRules c1 = null;
+        BitStringRules c2 = null;
+        boolean isValid = false;
+        while (!isValid) {
+            c1 = new BitStringRules(p1);
+            c2 = new BitStringRules(p2);
+            final GeneBlock gb1 = getGeneBlock(c1);
+            final GeneBlock gb2 = getGeneBlock(c2, gb1.d1, gb1.d2);
+            exchangeGeneBlock(gb1, gb2);
+            // Set gene should use the origin gb, because d1 and d2 are the gap
+            // for the corresponding rule set.
+            setGeneBlock(c1, gb1);
+            setGeneBlock(c2, gb2);
+            if (!c1.isValid()) { // If children are not valid, reproduce them
+                Dbg.print(DBG, MODULE, "Produced invalid child:" + Dbg.NEW_LINE
+                        + c1.toString());
+            } else if (!c2.isValid()) {
+                Dbg.print(DBG, MODULE, "Produced invalid child:" + Dbg.NEW_LINE
+                        + c2.toString());
+            } else {
+                isValid = true;
+            }
+        }
+        return new BitStringRules[] { c1, c2 };
     }
 
     private static class GeneBlock {
@@ -123,5 +140,4 @@ public class OffspringProducer {
         // Update number of rules.
         indi.numOfRules = newRuleSetLength / indi.attrs.ruleLength;
     }
-
 }
