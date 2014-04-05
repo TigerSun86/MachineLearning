@@ -4,7 +4,6 @@ import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
 import common.RawExampleList;
-import decisiontreelearning.DecisionTree.DecisionTreeTest;
 
 /**
  * FileName: GATest.java
@@ -21,6 +20,7 @@ public class GATest {
             "http://cs.fit.edu/~pkc/classes/ml/data/tennis-train.txt";
     private static final String TEST_FILE_URL =
             "http://cs.fit.edu/~pkc/classes/ml/data/tennis-test.txt";*/
+    
     private static final String ATTR_FILE_URL =
             "http://cs.fit.edu/~pkc/classes/ml/data/iris-attr.txt";
     private static final String TRAIN_FILE_URL =
@@ -44,7 +44,7 @@ public class GATest {
             rawTest = null;
         }
 
-        Hypothesis rule = GA.gaLearning(rawTrain, rawAttr, 0.9, 100, 0.6, 0.01);
+        Hypothesis rule = GA.gaLearning(rawTrain, rawAttr, 0.9, 100, 0.6, 0.01,GA.SELECT_RANK);
 
         System.out.println( "Train accuracy: "+Evaluator.evaluate(rule, rawTrain));
         System.out.println( "Test accuracy: "+Evaluator.evaluate(rule, rawTest));

@@ -27,7 +27,7 @@ public class BitStringRules implements Hypothesis {
     public String defaultPredict;
 
     /**
-     * Initialize with ruleSet converted by examplse.
+     * Initialize with ruleSet converted by examples.
      * */
     public BitStringRules(final BSAttrs attrs2, final RawExampleList exs) {
         this.attrs = attrs2;

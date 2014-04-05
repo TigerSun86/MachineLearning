@@ -24,9 +24,14 @@ public class GA {
     public static final String MODULE = "GAL";
     public static final boolean DBG = false;
 
-    public static Hypothesis gaLearning (final RawExampleList exs,
-            final RawAttrList attr, final double fitness_threshold,
-            final int numP, final double r, final double m) {
+    public static final int SELECT_FIT_PRO = 0;
+    public static final int SELECT_TOUR = 1;
+    public static final int SELECT_RANK = 2;
+
+    public static Hypothesis
+            gaLearning (final RawExampleList exs, final RawAttrList attr,
+                    final double fitness_threshold, final int numP,
+                    final double r, final double m, final int selectWay) {
         int numOffspring = (int) Math.round(numP * r);
         if (numOffspring % 2 != 0) {
             numOffspring--; // numOffspring has to be even.
@@ -37,23 +42,25 @@ public class GA {
         Population p = initPopulation(exs, attr, numP);
         Dbg.print(DBG, MODULE,
                 "Initial population:" + Dbg.NEW_LINE + p.toString());
-
+        int generationCount = 0;
         evaluate(p, exs); // Evaluate and sort.
         while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
             // Select (1-r)* numP members to survive.
-            final Population ps = select(p, surviveNum);
+            final Population ps = select(p, surviveNum, selectWay);
             // Produce offspring.
-            final Population offspring = crossOver(p, numOffspring);
+            final Population offspring = crossOver(p, numOffspring,selectWay);
             ps.addAll(offspring);
             // Mutate.
             mutate(ps, m);
             p = ps;
             evaluate(p, exs); // Evaluate and sort.
-            /*Dbg.print(DBG, MODULE, "Best individual:" + Dbg.NEW_LINE
-                    + p.get(0).toString());*/
+            generationCount++;
+            /* Dbg.print(DBG, MODULE, "Best individual:" + Dbg.NEW_LINE
+             * + p.get(0).toString()); */
             System.out.println("Best individual:" + Dbg.NEW_LINE
                     + p.get(0).toString());
         }
+        System.out.println("Number of generation: " + generationCount);
         return p.get(0).rules;
     }
 
@@ -97,7 +104,19 @@ public class GA {
                 "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());
     }
 
-    private static Population select (Population p, int num) {
+    private static Population select (Population p, int num, int selectWay) {
+        final Population ps;
+        if (selectWay == SELECT_FIT_PRO) {
+            ps = selectByFitPro(p, num);
+        } else if (selectWay == SELECT_TOUR) {
+            ps = selectByTourment(p, num);
+        } else { // if (selectWay ==SELECT_RANK){
+            ps = selectByRank(p, num);
+        }
+        return ps;
+    }
+
+    private static Population selectByFitPro (Population p, int num) {
         // Generate the probability distribution.
         final double[] probDistribute = getProbDistribute(p);
 
@@ -121,6 +140,75 @@ public class GA {
         return ps;
     }
 
+    // Predefined probability.
+    private static final double PROB_HIGH = 0.6;
+
+    private static Population selectByTourment (final Population p,
+            final int num) {
+        // Record the individual already been selected.
+        final HashSet<Integer> selected = new HashSet<Integer>();
+        final Population ps = new Population();
+        // Always keep the best one.
+        ps.add(p.get(0));
+        selected.add(0);
+        while (ps.size() < num) {
+            // Pick two for tourment.
+            final int[] indexes = MyMath.mOutofN(2, p.size());
+            if (!selected.contains(indexes[0])
+                    && !selected.contains(indexes[1])) {
+                // Pick one out of two.
+                final double[] probDistribute = new double[2];
+                // Smooth the difference of probability. The higher fitness one
+                // get PROB_HIGH.
+                if (Double.compare(p.get(indexes[0]).accur,
+                        p.get(indexes[1]).accur) > 0) {
+                    probDistribute[0] = PROB_HIGH;
+                    probDistribute[1] = 1 - PROB_HIGH;
+                } else {
+                    probDistribute[0] = 1 - PROB_HIGH;
+                    probDistribute[1] = PROB_HIGH;
+                }
+                final int localIndex = MyMath.selectByProb(probDistribute);
+                ps.add(p.get(indexes[localIndex])); // Add individual.
+                selected.add(indexes[localIndex]); // Record the selected one.
+            }
+        }
+        System.out.println(selected.toString());
+        return ps;
+    }
+
+    private static Population selectByRank (final Population p, final int num) {
+        // Generate the probability distribution.
+        final double[] probDistribute = getProbDistributeByRank(p);
+        // Record the individual already been selected.
+        final HashSet<Integer> selected = new HashSet<Integer>();
+        final Population ps = new Population();
+        // Always keep the best one.
+        ps.add(p.get(0));
+        selected.add(0);
+        while (ps.size() < num) {
+            // Select one individual by probability.
+            final int index = MyMath.selectByProb(probDistribute);
+            if (!selected.contains(index)) {
+                ps.add(p.get(index)); // Add individual.
+                selected.add(index); // Record the selected one.
+            }
+        }
+        System.out.println(selected.toString());
+        return ps;
+    }
+
+    private static double[] getProbDistributeByRank (final Population p) {
+        // Generate the probability distribution.
+        final double[] probDistribute = new double[p.size()];
+        final double sum = ((p.size() + 1) * p.size()) / 2;
+        for (int i = 0; i < probDistribute.length; i++) {
+            // Generate the probability by reversed rank number.
+            probDistribute[i] = (p.size() - i) / sum;
+        }
+        return probDistribute;
+    }
+
     private static double[] getProbDistribute (final Population p) {
         // Generate the probability distribution.
         final double[] probDistribute = new double[p.size()];
@@ -136,10 +224,10 @@ public class GA {
         return probDistribute;
     }
 
-    private static Population crossOver (Population p, int numOffspring) {
+    private static Population crossOver (Population p, int numOffspring,final int selectWay) {
         final Population offspring = new Population();
         // Choose numOffspring parents to crossover.
-        final Population parents = select(p, numOffspring);
+        final Population parents = select(p, numOffspring,selectWay);
         final Random ran = new Random();
         while (!parents.isEmpty()) {
             // Randomly choose two parents.

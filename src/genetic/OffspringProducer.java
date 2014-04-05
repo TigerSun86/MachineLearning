@@ -15,7 +15,7 @@ import util.Dbg;
  */
 public class OffspringProducer {
     public static final String MODULE = "OSP";
-    public static boolean DBG = true;
+    public static boolean DBG = false;
 
     public static Individual[] produce (Individual p1, Individual p2) {
         final BitStringRules[] children = cross(p1.rules, p2.rules);
