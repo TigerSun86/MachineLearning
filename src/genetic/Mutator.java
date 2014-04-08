@@ -39,8 +39,13 @@ public class Mutator {
                     ruleIndex * newIndi.attrs.ruleLength + positionInPrecond;
             final int positionToMutateStart =
                     ruleIndex * newIndi.attrs.ruleLength + positionInPrecondStart;
-            // Mutate 1 bit.
-            newIndi.ruleSet.flip(positionToMutateStart, positionToMutate);
+            // Mutate.
+            if (positionToMutate == positionToMutateStart){
+                newIndi.ruleSet.flip(positionToMutate); // At least flip one bit.
+            } else {
+                newIndi.ruleSet.flip(positionToMutateStart, positionToMutate);
+            }
+
             if (newIndi.isValid()) {
                 break;
             } else { // If new individual is not valid, remutate it.
