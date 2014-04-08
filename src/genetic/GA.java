@@ -170,7 +170,8 @@ public class GA {
                 }
                 final int localIndex = MyMath.selectByProb(probDistribute);
                 ps.add(p.get(indexes[localIndex])); // Add individual.
-                selected.add(indexes[localIndex]); // Record the selected one.
+                selected.add(indexes[0]); // Record both two individuals.
+                selected.add(indexes[1]);
             }
         }
         System.out.println(selected.toString());
