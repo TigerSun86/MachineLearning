@@ -14,7 +14,7 @@ import util.Dbg;
  */
 public class Mutator {
     public static final String MODULE = "MTR";
-    public static boolean DBG = false;
+    public static boolean DBG = true;
 
     public static Individual mutate (Individual indi) {
         final Random ran = new Random();
@@ -54,9 +54,7 @@ public class Mutator {
             }
         }
 
-        final Individual indi2 = new Individual();
-        indi2.rules = newIndi;
-        indi2.accur = 0;
+        final Individual indi2 = new Individual(newIndi);
         Dbg.print(DBG, MODULE,
                 "Before mutation:" + Dbg.NEW_LINE + indi.toString());
         Dbg.print(DBG, MODULE,

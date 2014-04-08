@@ -22,7 +22,7 @@ import common.RawExampleList;
  */
 public class GA {
     public static final String MODULE = "GAL";
-    public static final boolean DBG = false;
+    public static final boolean DBG = true;
 
     public static final int SELECT_FIT_PRO = 0;
     public static final int SELECT_TOUR = 1;
@@ -78,8 +78,7 @@ public class GA {
             }
             // Convert 2 examples to rule.
             final BitStringRules rules = new BitStringRules(bsAttrs, exs2);
-            final Individual indi = new Individual();
-            indi.rules = rules;
+            final Individual indi = new Individual(rules);
             p.add(indi); // Add individual to population.
             if (p.size() == numP) {
                 break; // Reached the number of population.
@@ -87,8 +86,7 @@ public class GA {
         }
         while (p.size() != numP) { // Need more individuals.
             final BitStringRules rules = new BitStringRules(bsAttrs);
-            final Individual indi = new Individual();
-            indi.rules = rules;
+            final Individual indi = new Individual(rules);
             p.add(indi); // Add individual to population.
         }
         return p;
@@ -97,7 +95,7 @@ public class GA {
     private static void evaluate (final Population p, final RawExampleList exs) {
         for (Individual ind : p) {
             final double accur = Evaluator.evaluate(ind.rules, exs);
-            ind.accur = accur;
+            ind.setAccuracy(accur);
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
         Dbg.print(DBG, MODULE,
@@ -113,6 +111,8 @@ public class GA {
         } else { // if (selectWay ==SELECT_RANK){
             ps = selectByRank(p, num);
         }
+        Dbg.print(DBG, MODULE,
+                "Individuals selected:" + Dbg.NEW_LINE + ps.toString());
         return ps;
     }
 
@@ -134,9 +134,6 @@ public class GA {
                 selected.add(index); // Record the selected one.
             }
         }
-        Dbg.print(DBG, MODULE,
-                "Individuals selected:" + Dbg.NEW_LINE + ps.toString());
-
         return ps;
     }
 
@@ -160,8 +157,8 @@ public class GA {
                 final double[] probDistribute = new double[2];
                 // Smooth the difference of probability. The higher fitness one
                 // get PROB_HIGH.
-                if (Double.compare(p.get(indexes[0]).accur,
-                        p.get(indexes[1]).accur) > 0) {
+                if (Double.compare(p.get(indexes[0]).fitness,
+                        p.get(indexes[1]).fitness) > 0) {
                     probDistribute[0] = PROB_HIGH;
                     probDistribute[1] = 1 - PROB_HIGH;
                 } else {
@@ -174,7 +171,6 @@ public class GA {
                 selected.add(indexes[1]);
             }
         }
-        System.out.println(selected.toString());
         return ps;
     }
 
@@ -195,7 +191,6 @@ public class GA {
                 selected.add(index); // Record the selected one.
             }
         }
-        System.out.println(selected.toString());
         return ps;
     }
 
@@ -215,8 +210,8 @@ public class GA {
         final double[] probDistribute = new double[p.size()];
         double sum = 0;
         for (int i = 0; i < probDistribute.length; i++) {
-            probDistribute[i] = p.get(i).accur;
-            sum += p.get(i).accur;
+            probDistribute[i] = p.get(i).fitness;
+            sum += p.get(i).fitness;
         }
         for (int i = 0; i < probDistribute.length; i++) {
             probDistribute[i] /= sum;

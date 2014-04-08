@@ -10,15 +10,28 @@ package genetic;
  */
 public class Individual implements Comparable<Individual> {
     public BitStringRules rules;
-    public double accur = 0;
+    public double accur;
+    public double fitness;
+
+    public Individual(final BitStringRules rules2) {
+        this.rules = rules2;
+        this.accur = 0;
+        this.fitness = 0;
+    }
+
+    public void setAccuracy (final double accur2) {
+        accur = accur2;
+        fitness = accur - (0.001 * Math.pow(rules.numOfRules, 2));
+    }
 
     @Override
     public int compareTo (Individual arg0) {
-        return Double.compare(this.accur, arg0.accur);
+        return Double.compare(this.fitness, arg0.fitness);
     }
 
     @Override
     public String toString () {
-        return rules.toString() + String.format("Accuracy: %.3f", accur);
+        return rules.toString() + String.format("Accuracy: %.3f ", accur)
+                + String.format("Fitness: %.3f", fitness);
     }
 }

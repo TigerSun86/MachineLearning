@@ -19,12 +19,8 @@ public class OffspringProducer {
 
     public static Individual[] produce (Individual p1, Individual p2) {
         final BitStringRules[] children = cross(p1.rules, p2.rules);
-        final Individual c1 = new Individual();
-        final Individual c2 = new Individual();
-        c1.rules = children[0];
-        c2.rules = children[1];
-        c1.accur = 0;
-        c2.accur = 0;
+        final Individual c1 = new Individual(children[0]);
+        final Individual c2 = new Individual(children[1]);
         Dbg.print(DBG, MODULE, "Parent 1:" + Dbg.NEW_LINE + p1.toString());
         Dbg.print(DBG, MODULE, "Parent 2:" + Dbg.NEW_LINE + p2.toString());
         Dbg.print(DBG, MODULE, "Child 1:" + Dbg.NEW_LINE + c1.toString());
