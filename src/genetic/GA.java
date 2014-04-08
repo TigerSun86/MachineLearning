@@ -22,16 +22,18 @@ import common.RawExampleList;
  */
 public class GA {
     public static final String MODULE = "GAL";
-    public static final boolean DBG = true;
+    public static final boolean DBG = false;
 
     public static final int SELECT_FIT_PRO = 0;
     public static final int SELECT_TOUR = 1;
     public static final int SELECT_RANK = 2;
 
-    public static Hypothesis
-            gaLearning (final RawExampleList exs, final RawAttrList attr,
-                    final double fitness_threshold, final int numP,
-                    final double r, final double m, final int selectWay) {
+    private static final int MAX_GENERATION = 10000;
+
+    public static Hypothesis gaLearning (final RawExampleList exs,
+            final RawAttrList attr, final double accuracyThreshold,
+            final int maxGeneration, final int numP, final double r,
+            final double m, final int selectWay) {
         int numOffspring = (int) Math.round(numP * r);
         if (numOffspring % 2 != 0) {
             numOffspring--; // numOffspring has to be even.
@@ -44,23 +46,24 @@ public class GA {
                 "Initial population:" + Dbg.NEW_LINE + p.toString());
         int generationCount = 0;
         evaluate(p, exs); // Evaluate and sort.
-        while (Double.compare(p.get(0).accur, fitness_threshold) < 0) {
+        while ((Double.compare(p.get(0).accur, accuracyThreshold) < 0)
+                && (generationCount < maxGeneration)
+                && (generationCount < MAX_GENERATION)) {
             // Select (1-r)* numP members to survive.
             final Population ps = select(p, surviveNum, selectWay);
             // Produce offspring.
-            final Population offspring = crossOver(p, numOffspring,selectWay);
+            final Population offspring = crossOver(p, numOffspring, selectWay);
             ps.addAll(offspring);
             // Mutate.
             mutate(ps, m);
             p = ps;
             evaluate(p, exs); // Evaluate and sort.
             generationCount++;
-            /* Dbg.print(DBG, MODULE, "Best individual:" + Dbg.NEW_LINE
-             * + p.get(0).toString()); */
-            System.out.println("Best individual:" + Dbg.NEW_LINE
+            Dbg.print(DBG, MODULE, "Best individual:" + Dbg.NEW_LINE
                     + p.get(0).toString());
+
         }
-        System.out.println("Number of generation: " + generationCount);
+        Dbg.print(DBG, MODULE, "Number of generation: " + generationCount);
         return p.get(0).rules;
     }
 
@@ -167,8 +170,8 @@ public class GA {
                 }
                 final int localIndex = MyMath.selectByProb(probDistribute);
                 ps.add(p.get(indexes[localIndex])); // Add individual.
-                selected.add(indexes[0]); // Record both two individuals.
-                selected.add(indexes[1]);
+                selected.add(indexes[localIndex]); // Record selected
+                                                   // individual.
             }
         }
         return ps;
@@ -210,8 +213,16 @@ public class GA {
         final double[] probDistribute = new double[p.size()];
         double sum = 0;
         for (int i = 0; i < probDistribute.length; i++) {
-            probDistribute[i] = p.get(i).fitness;
-            sum += p.get(i).fitness;
+            if (Double.compare(p.get(i).fitness, 0) <= 0) {
+                // If fitness is negative, probability is zero.
+                probDistribute[i] = 0;
+            } else {
+                probDistribute[i] = p.get(i).fitness;
+            }
+            sum += probDistribute[i];
+        }
+        if (Double.compare(sum, 0) == 0) {
+            sum = 0.001;
         }
         for (int i = 0; i < probDistribute.length; i++) {
             probDistribute[i] /= sum;
@@ -220,10 +231,11 @@ public class GA {
         return probDistribute;
     }
 
-    private static Population crossOver (Population p, int numOffspring,final int selectWay) {
+    private static Population crossOver (Population p, int numOffspring,
+            final int selectWay) {
         final Population offspring = new Population();
         // Choose numOffspring parents to crossover.
-        final Population parents = select(p, numOffspring,selectWay);
+        final Population parents = select(p, numOffspring, selectWay);
         final Random ran = new Random();
         while (!parents.isEmpty()) {
             // Randomly choose two parents.

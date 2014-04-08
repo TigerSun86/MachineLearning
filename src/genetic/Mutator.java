@@ -14,7 +14,7 @@ import util.Dbg;
  */
 public class Mutator {
     public static final String MODULE = "MTR";
-    public static boolean DBG = true;
+    public static boolean DBG = false;
 
     public static Individual mutate (Individual indi) {
         final Random ran = new Random();
