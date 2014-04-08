@@ -25,6 +25,7 @@ public class BSAttrs {
     public ArrayList<Integer> exp; // 10 based exponent.
     public int precondsLength;
     public int ruleLength;
+    public int defPredictLength;
 
     public BSAttrs(final RawExampleList exs, final RawAttrList attrs) {
         this.rawAttrs = attrs;
@@ -34,6 +35,7 @@ public class BSAttrs {
         final int tarOffset = condLength.get(condLength.size() - 1);
         precondsLength = tarStart;
         ruleLength = tarStart + tarOffset;
+        defPredictLength = tarOffset;
     }
 
     private void initCondOffset (final RawAttrList attrList2) {

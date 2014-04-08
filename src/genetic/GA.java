@@ -22,7 +22,7 @@ import common.RawExampleList;
  */
 public class GA {
     public static final String MODULE = "GAL";
-    public static final boolean DBG = false;
+    public static boolean DBG = false;
 
     public static final int SELECT_FIT_PRO = 0;
     public static final int SELECT_TOUR = 1;
@@ -256,10 +256,10 @@ public class GA {
             numMu = 1; // At least 1 mutation.
         }
         // Get a list with the indexes of individuals.
-        final int[] iList = MyMath.mOutofN(numMu, ps.size());
+        int[] iList = MyMath.mOutofN(numMu, ps.size());
         for (int i : iList) {
             final Individual ind = ps.get(i);
-            Dbg.print(DBG, MODULE, "Individual mutated:" + i + Dbg.NEW_LINE
+            Dbg.print(DBG, MODULE, "Individual about to mutate:" + i + Dbg.NEW_LINE
                     + ind.toString());
             final Individual mutatedInd = Mutator.mutate(ind);
             ps.set(i, mutatedInd);

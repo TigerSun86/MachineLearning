@@ -77,15 +77,15 @@ public class OffspringProducer {
         // d1 cannot be the position after last bit of cond, because there's a
         // situation that if d1 is at the end of all preconditions, d2 has to be
         // in the area of target bits, that's illegal.
-        final int d1 = ran.nextInt(indi.attrs.precondsLength);
+        int d1 = ran.nextInt(indi.attrs.precondsLength);
         int d2 = ran.nextInt(indi.attrs.precondsLength - d1);
         // d2 changes to distance from the end of the rule (include target) to a
         // random position in preconds.
         d2 += indi.attrs.condLength.get(indi.attrs.condLength.size() - 1);
         assert (d1 + d2) <= indi.attrs.ruleLength - 1;
-
-        final int blockSize =
-                (indi.numOfRules * indi.attrs.ruleLength) - d2 - d1;
+        // Add the header of the rule set.
+        d1 += indi.attrs.defPredictLength;
+        final int blockSize = indi.getRuleSetLength() - d2 - d1;
         final BitSet block = indi.ruleSet.get(d1, d1 + blockSize);
         final GeneBlock gb = new GeneBlock(block, d1, d2, blockSize);
         return gb;
@@ -103,8 +103,7 @@ public class OffspringProducer {
         final int d1p = d1 + (ruleIndexForD1p * indi.attrs.ruleLength);
         final int d2p = d2 + (reversedRuleIndexForD2p * indi.attrs.ruleLength);
 
-        final int blockSize =
-                (indi.numOfRules * indi.attrs.ruleLength) - d2p - d1p;
+        final int blockSize = indi.getRuleSetLength() - d2p - d1p;
         final BitSet block = indi.ruleSet.get(d1p, d1p + blockSize);
         final GeneBlock gb = new GeneBlock(block, d1p, d2p, blockSize);
         return gb;
@@ -124,7 +123,7 @@ public class OffspringProducer {
             final GeneBlock gb) {
         // The info in the rule set after the position of d2 need to be backed
         // up first.
-        final int ruleSetLength = indi.numOfRules * indi.attrs.ruleLength;
+        final int ruleSetLength = indi.getRuleSetLength();
         final BitSet backup =
                 indi.ruleSet.get(ruleSetLength - gb.d2, ruleSetLength);
         // Replace gene block in rule set with gb.
@@ -132,8 +131,10 @@ public class OffspringProducer {
         // Recovery the tail of the rule set.
         BitStringRules.bitSetCopy(indi.ruleSet, backup, gb.d1 + gb.size, gb.d2);
         final int newRuleSetLength = gb.d1 + gb.size + gb.d2;
-        assert (newRuleSetLength % indi.attrs.ruleLength) == 0;
+        assert ((newRuleSetLength - indi.attrs.defPredictLength) % indi.attrs.ruleLength) == 0;
         // Update number of rules.
-        indi.numOfRules = newRuleSetLength / indi.attrs.ruleLength;
+        indi.numOfRules =
+                (newRuleSetLength - indi.attrs.defPredictLength)
+                        / indi.attrs.ruleLength;
     }
 }

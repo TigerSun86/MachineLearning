@@ -2,6 +2,7 @@ package genetic;
 
 import java.util.Scanner;
 
+import util.Dbg;
 import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
@@ -201,6 +202,11 @@ public class GATest {
     }
 
     private static void simpleTest (final GAProblem t) {
+        Dbg.dbgSwitch = true;
+        Dbg.defaultSwitch = true;
+        GA.DBG = true;
+        OffspringProducer.DBG = true;
+        Mutator.DBG = true;
         final Hypothesis h =
                 GA.gaLearning(t.rawTrain, t.rawAttr, t.accuracyThreshold,
                         t.maxGeneration, t.numP, t.r, t.m, t.selectWay);
@@ -209,6 +215,11 @@ public class GATest {
                 + Evaluator.evaluate(h, t.rawTrain));
         System.out
                 .println("Test accuracy: " + Evaluator.evaluate(h, t.rawTest));
+        Dbg.dbgSwitch = false;
+        Dbg.defaultSwitch = false;
+        GA.DBG = false;
+        OffspringProducer.DBG = false;
+        Mutator.DBG = false;
     }
 
     private static void

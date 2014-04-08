@@ -2,10 +2,12 @@ package genetic;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.Random;
 
 import util.Dbg;
 import util.MyMath;
+
 import common.Hypothesis;
 import common.RawAttr;
 import common.RawExample;
@@ -34,13 +36,33 @@ public class BitStringRules implements Hypothesis {
         numOfRules = 0;
         ruleSet = new BitSet(); // No rule.
 
+        // To generate default predict.
+        final HashSet<Integer> targets = new HashSet<Integer>();
+        // Generate rules by examples.
         for (RawExample ex : exs) {
             // Convert example to rule.
             final BitSet rule = generateRuleByEx(ex);
             addRule(rule);
+            if (attrs.rawAttrs.t.valueList.contains(ex.t)) {
+                final int tarIndex = attrs.rawAttrs.t.valueList.indexOf(ex.t);
+                targets.add(tarIndex);
+            }
         }
-
-        defaultPredict = attrs.rawAttrs.t.valueList.get(0);
+        // Generate default predict.
+        final Random ran = new Random();
+        int defPIndex;
+        while (true) {
+            defPIndex = ran.nextInt(attrs.rawAttrs.t.valueList.size());
+            if ((attrs.rawAttrs.t.valueList.size() == targets.size())
+                    || !targets.contains(defPIndex)) {
+                // All targets have been covered by rules,
+                // or get random target haven't been covered.
+                break;
+            }
+        }
+        final BitSet defP = new BitSet();
+        defP.set(defPIndex);
+        bitSetCopy(ruleSet, defP, 0, attrs.defPredictLength);
     }
 
     /**
@@ -56,7 +78,12 @@ public class BitStringRules implements Hypothesis {
         rule = generateRuleByRan();
         addRule(rule);
 
-        defaultPredict = attrs.rawAttrs.t.valueList.get(0);
+        // Generate default predict.
+        final int defPIndex =
+                new Random().nextInt(attrs.rawAttrs.t.valueList.size());
+        final BitSet defP = new BitSet();
+        defP.set(defPIndex);
+        bitSetCopy(ruleSet, defP, 0, attrs.defPredictLength);
     }
 
     /**
@@ -66,9 +93,7 @@ public class BitStringRules implements Hypothesis {
         this.attrs = other.attrs;
         numOfRules = other.numOfRules;
         ruleSet = new BitSet();
-        bitSetCopy(ruleSet, other.ruleSet, 0, other.numOfRules
-                * attrs.ruleLength);
-        defaultPredict = other.defaultPredict;
+        bitSetCopy(ruleSet, other.ruleSet, 0, other.getRuleSetLength());
     }
 
     public int numOfRules () {
@@ -78,6 +103,7 @@ public class BitStringRules implements Hypothesis {
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
+        sb.append("Default: " + getDefPredict() + Dbg.NEW_LINE);
         // Traverse all ruleSet.
         final int numRules = this.numOfRules();
         for (int i = 0; i < numRules; i++) {
@@ -108,11 +134,15 @@ public class BitStringRules implements Hypothesis {
         if (predict != null) {
             return predict;
         } else {
-            return defaultPredict;
+            return getDefPredict();
         }
     }
 
     public boolean isValid () {
+        // Check default predict.
+        if (!checkTar(getDefPreCond())) {
+            return false;
+        }
         // Go through all rules
         for (int i = 0; i < numOfRules; i++) {
             final BitSet rule = getRule(i);
@@ -131,8 +161,8 @@ public class BitStringRules implements Hypothesis {
                     return false;
                 }
             }
-            final boolean isValid = checkTar(getPostcond(rule));
-            if (!isValid) {
+            // Check target.
+            if (!checkTar(getPostcond(rule))) {
                 return false;
             }
         }
@@ -147,11 +177,15 @@ public class BitStringRules implements Hypothesis {
         }
     }
 
+    public int getRuleSetLength () {
+        return attrs.defPredictLength + (numOfRules * attrs.ruleLength);
+    }
+
     /* basic methods begin ********************* */
 
     private BitSet getRule (final int index) {
-        return ruleSet.get(index * attrs.ruleLength, (index + 1)
-                * attrs.ruleLength);
+        return ruleSet.get(attrs.defPredictLength + index * attrs.ruleLength,
+                attrs.defPredictLength + (index + 1) * attrs.ruleLength);
     }
 
     private BitSet getCond (final BitSet rule, final int index) {
@@ -162,6 +196,18 @@ public class BitStringRules implements Hypothesis {
 
     private BitSet getPostcond (final BitSet rule) {
         return getCond(rule, attrs.condStart.size() - 1); // Target is last cond
+    }
+
+    private BitSet getDefPreCond () {
+        return ruleSet.get(0, attrs.defPredictLength);
+    }
+
+    private String getDefPredict () {
+        final BitSet predictRule = getDefPreCond();
+        assert predictRule.cardinality() == 1;
+        final int index = predictRule.nextSetBit(0);
+        assert index != -1;
+        return attrs.rawAttrs.t.valueList.get(index);
     }
 
     private double getDoubleValue (final BitSet cond, final int fromIndex,
@@ -196,8 +242,7 @@ public class BitStringRules implements Hypothesis {
 
     private void addRule (final BitSet rule) {
         // Append the rule to the end of the ruleSet.
-        bitSetCopy(ruleSet, rule, numOfRules * attrs.ruleLength,
-                attrs.ruleLength);
+        bitSetCopy(ruleSet, rule, getRuleSetLength(), attrs.ruleLength);
         numOfRules++;
     }
 

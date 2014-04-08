@@ -36,12 +36,15 @@ public class Mutator {
                 positionInPrecondStart = 0;
             }
             final int positionToMutate =
-                    ruleIndex * newIndi.attrs.ruleLength + positionInPrecond;
+                    newIndi.attrs.defPredictLength + ruleIndex
+                            * newIndi.attrs.ruleLength + positionInPrecond;
             final int positionToMutateStart =
-                    ruleIndex * newIndi.attrs.ruleLength + positionInPrecondStart;
+                    newIndi.attrs.defPredictLength + ruleIndex
+                            * newIndi.attrs.ruleLength + positionInPrecondStart;
             // Mutate.
-            if (positionToMutate == positionToMutateStart){
-                newIndi.ruleSet.flip(positionToMutate); // At least flip one bit.
+            if (positionToMutate == positionToMutateStart) {
+                newIndi.ruleSet.flip(positionToMutate); // At least flip one
+                                                        // bit.
             } else {
                 newIndi.ruleSet.flip(positionToMutateStart, positionToMutate);
             }
@@ -60,7 +63,8 @@ public class Mutator {
         Dbg.print(DBG, MODULE,
                 "After mutation:" + Dbg.NEW_LINE + indi2.toString());
         Dbg.print(DBG, MODULE, "Mutated bit from rule " + ruleIndex
-                + " postion from " + positionInPrecondStart +" to "+positionInPrecond);
+                + " postion from " + positionInPrecondStart + " to "
+                + positionInPrecond);
         return indi2;
     }
 }
