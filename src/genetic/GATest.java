@@ -1,8 +1,10 @@
 package genetic;
 
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 import util.Dbg;
+import util.DisplayChart;
 import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
@@ -222,44 +224,68 @@ public class GATest {
         Mutator.DBG = false;
     }
 
+    private static final int GENE_START = 10;
+    private static final int GENE_STEP = 10;
+    private static final int GENE_TERMINAL = 100;
+
     private static void
             selectionTest (final GAProblem t, final int numOfRepeat) {
         final int selectionBackup = t.selectWay;
-        final double[] averAccur = new double[GA.SELECT_RANK + 1];
-        for (int i = GA.SELECT_FIT_PRO; i <= GA.SELECT_RANK; i++) {
-            if (i == GA.SELECT_FIT_PRO) {
-                System.out.println("Testing fitness-proportional");
-            } else if (i == GA.SELECT_TOUR) {
-                System.out.println("Testing tournament");
-            } else {
-                System.out.println("Testing rank");
-            }
-            t.selectWay = i;
-            for (int j = 0; j < numOfRepeat; j++) {
-                final Hypothesis h =
-                        GA.gaLearning(t.rawTrain, t.rawAttr,
-                                t.accuracyThreshold, t.maxGeneration, t.numP,
-                                t.r, t.m, t.selectWay);
-                double accur = Evaluator.evaluate(h, t.rawTrain);
-                System.out.print("Train: " + accur);
-                accur = Evaluator.evaluate(h, t.rawTest);
-                System.out.println(", test: " + accur);
-                averAccur[i] += accur;
-            }
-        }
+        final double accurBackup = t.accuracyThreshold;
+        final int geneBackup = t.maxGeneration;
+
+        t.accuracyThreshold = 1.0;
+
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
 
         for (int i = GA.SELECT_FIT_PRO; i <= GA.SELECT_RANK; i++) {
+            final LinkedHashMap<Double, Double> sel =
+                    new LinkedHashMap<Double, Double>();
             if (i == GA.SELECT_FIT_PRO) {
-                System.out.printf("Accuracy fitness-proportional: %.3f",
-                        averAccur[i] / numOfRepeat);
+                System.out.println("Testing fitness-proportional");
+                dataSet.put("Fitness-proportional", sel);
             } else if (i == GA.SELECT_TOUR) {
-                System.out.printf(", tournament: %.3f", averAccur[i]
-                        / numOfRepeat);
+                System.out.println("Testing tournament");
+                dataSet.put("Tournment", sel);
             } else {
-                System.out.printf(", rank: %.3f%n", averAccur[i] / numOfRepeat);
+                System.out.println("Testing rank");
+                dataSet.put("Rank", sel);
+            }
+
+            t.selectWay = i;
+
+            for (int j = GENE_START; j <= GENE_TERMINAL; j += GENE_STEP) {
+                System.out.println("Generation number: " + j);
+                t.maxGeneration = j;
+                sel.put((double) j, 0.0);
+                for (int k = 0; k < numOfRepeat; k++) {
+                    final Hypothesis h =
+                            GA.gaLearning(t.rawTrain, t.rawAttr,
+                                    t.accuracyThreshold, t.maxGeneration,
+                                    t.numP, t.r, t.m, t.selectWay);
+                    double accur = Evaluator.evaluate(h, t.rawTrain);
+                    System.out.print("Train: " + accur);
+                    accur = Evaluator.evaluate(h, t.rawTest);
+                    System.out.println(", test: " + accur);
+                    double ac = sel.get((double) j);
+                    ac += accur;
+                    sel.put((double) j, ac);
+                }
+
+                double ac = sel.get((double) j);
+                ac /= numOfRepeat;
+                sel.put((double) j, ac);
             }
         }
+        DisplayChart.display(dataSet, "Genetic Algorithm learning"
+                + t.name,
+                "Accuracy of best individual after certain generations",
+                "Number of generations", "Average accuracy");
+
         t.selectWay = selectionBackup;
+        t.accuracyThreshold = accurBackup;
+        t.maxGeneration = geneBackup;
     }
 
     private static final double REPLACE_START = 0.1;
@@ -270,10 +296,16 @@ public class GATest {
             final int numOfRepeat) {
         final double rBackup = t.r;
         final double[] averAccur = new double[9];
-
+        
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<Double, Double> sel =
+                new LinkedHashMap<Double, Double>();
+        dataSet.put("GA", sel);
         for (double i = REPLACE_START; Double.compare(i, REPLACE_TERMINAL) <= 0; i +=
                 REPLACE_STEP) {
             System.out.println("Replacement rate :" + i);
+            sel.put((double) i, 0.0);
             for (int j = 0; j < numOfRepeat; j++) {
                 final Hypothesis h =
                         GA.gaLearning(t.rawTrain, t.rawAttr,
@@ -284,12 +316,19 @@ public class GATest {
                 accur = Evaluator.evaluate(h, t.rawTest);
                 System.out.println(", test: " + accur);
                 averAccur[(int) Math.round(i * 10) - 1] += accur;
+                double ac = sel.get(i);
+                ac += accur;
+                sel.put(i, ac);
             }
+            double ac = sel.get(i);
+            ac /= numOfRepeat;
+            sel.put(i, ac);
         }
-        for (int i = 0; i < 9; i++) {
-            System.out.printf("Replacement %.1f, accuracy: %.3f%n",
-                    (i + 1) / 10.0, averAccur[i] / numOfRepeat);
-        }
+        DisplayChart.display(dataSet, "Genetic Algorithm learning"
+                + t.name,
+                "Different replacement rate V.S. accuracy",
+                "Replacement rate", "Average accuracy");
+
         t.r = rBackup;
     }
 
@@ -303,7 +342,7 @@ public class GATest {
         private static final String TEST_FILE_URL[] = {
                 "http://cs.fit.edu/~pkc/classes/ml/data/tennis-test.txt",
                 "http://cs.fit.edu/~pkc/classes/ml/data/iris-test.txt" };
-
+        public String name;
         public RawAttrList rawAttr;
         public RawExampleList rawTrain;
         public RawExampleList rawTest;
@@ -316,6 +355,7 @@ public class GATest {
 
         public GAProblem(final String testCase) {
             if (testCase.equalsIgnoreCase("Tennis")) {
+                this.name ="Tennis";
                 this.rawAttr = new RawAttrList(ATTR_FILE_URL[0]);
                 this.rawTrain = new RawExampleList(TRAIN_FILE_URL[0]);
                 this.rawTest = new RawExampleList(TEST_FILE_URL[0]);
@@ -326,6 +366,7 @@ public class GATest {
                 this.m = 0.01;
                 this.selectWay = GA.SELECT_RANK;
             } else {
+                this.name ="Iris";
                 this.rawAttr = new RawAttrList(ATTR_FILE_URL[1]);
                 this.rawTrain = new RawExampleList(TRAIN_FILE_URL[1]);
                 this.rawTest = new RawExampleList(TEST_FILE_URL[1]);
