@@ -1,8 +1,7 @@
 package util;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.PriorityQueue;
+import java.util.HashSet;
 import java.util.Random;
 
 /**
@@ -30,37 +29,20 @@ public class MyMath {
     }
 
     public static int[] mOutofN (final int m, final int n) {
-        // Descending.
-        final PriorityQueue<NumAndValue> que =
-                new PriorityQueue<NumAndValue>(n, Collections.reverseOrder());
-        // Every number in n rolls a value.
-        final Random ran = new Random();
-        for (int i = 0; i < n; i++) {
-            final int value = ran.nextInt();
-            que.add(new NumAndValue(i, value));
-        }
-
         final int[] ret = new int[m];
-        for (int i = 0; i < m; i++) {
-            ret[i] = que.remove().num;
+        final HashSet<Integer> selected = new HashSet<Integer>();
+        final Random ran = new Random();
+        for (int i = 0; i < ret.length; i++) {
+            while (true) {
+                final int r = ran.nextInt(n);
+                if (!selected.contains(r)) {
+                    ret[i] = r;
+                    selected.add(r);
+                    break;
+                }
+            }
         }
         return ret;
-    }
-
-    private static class NumAndValue implements Comparable<NumAndValue> {
-        final int num;
-        final int value;
-
-        public NumAndValue(int i, int value2) {
-            num = i;
-            value = value2;
-        }
-
-        @Override
-        public int compareTo (NumAndValue o) {
-            // TODO Auto-generated method stub
-            return this.value - o.value;
-        }
     }
 
     public static int selectByProb (final double[] probDistribute) {
