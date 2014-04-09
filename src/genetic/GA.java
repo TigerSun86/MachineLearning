@@ -103,11 +103,12 @@ public class GA {
             ind.setAccuracy(accur);
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
-        /*Dbg.print(DBG, MODULE,
-                "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());*/
     }
 
     private static Population select (Population p, int num, int selectWay) {
+        if (num == 0) {
+            return new Population();
+        }
         final Population ps;
         if (selectWay == SELECT_FIT_PRO) {
             ps = selectByFitPro(p, num);
@@ -143,7 +144,7 @@ public class GA {
     }
 
     // Predefined probability.
-    private static final double PROB_HIGH = 0.6;
+    private static final double PROB_HIGH = 0.8;
 
     private static Population selectByTourment (final Population p,
             final int num) {
@@ -261,8 +262,8 @@ public class GA {
         int[] iList = MyMath.mOutofN(numMu, ps.size());
         for (int i : iList) {
             final Individual ind = ps.get(i);
-            Dbg.print(DBG, MODULE, "Individual about to mutate:" + i + Dbg.NEW_LINE
-                    + ind.toString());
+            Dbg.print(DBG, MODULE, "Individual about to mutate:" + i
+                    + Dbg.NEW_LINE + ind.toString());
             final Individual mutatedInd = Mutator.mutate(ind);
             ps.set(i, mutatedInd);
         }

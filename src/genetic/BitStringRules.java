@@ -430,17 +430,17 @@ public class BitStringRules implements Hypothesis {
         final String fmt = String.format("%%.%df", attrs.exp.get(attrIndex));
         if (opL == 0) { // 00: x >= low
             final double low = getDoubleValue(cond, 2, attrIndex);
-            final String ret = String.format("%s >= " + fmt, attr.name, low);
+            final String ret = String.format("%s>=" + fmt, attr.name, low);
             return ret;
         } else if (opL == 1) { // 01: x <= high
             final double high = getDoubleValue(cond, 2 + 64, attrIndex);
-            final String ret = String.format("%s <= " + fmt, attr.name, high);
+            final String ret = String.format("%s<=" + fmt, attr.name, high);
             return ret;
         } else if (opL == 2) { // 10: low <= x <= high
             final double low = getDoubleValue(cond, 2, attrIndex);
             final double high = getDoubleValue(cond, 2 + 64, attrIndex);
             final String ret =
-                    String.format(fmt + " <= %s <= " + fmt, low, attr.name,
+                    String.format(fmt + "<=%s<=" + fmt, low, attr.name,
                             high);
             return ret;
         } else { // 11: doesn't matter.

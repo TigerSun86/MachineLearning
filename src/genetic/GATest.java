@@ -5,6 +5,8 @@ import java.util.Scanner;
 
 import util.Dbg;
 import util.DisplayChart;
+import util.MyMath;
+
 import common.Evaluator;
 import common.Hypothesis;
 import common.RawAttrList;
@@ -46,50 +48,61 @@ public class GATest {
 
     public static void main (String[] args) {
         final Scanner s = new Scanner(System.in);
-
-        final GAProblem t;
-        System.out.println(TEST_INFO);
-        int command = getCommandNumber(s);
-        switch (command) {
-            case 0:
-                t = new GAProblem("Tennis");
-                break;
-            case 1:
-                t = new GAProblem("Iris");
-                break;
-            default:
-                t = null;
-                break;
-        }
-
-        boolean quit = false;
-        while (!quit && t != null) {
-            System.out.println(DISPLAY_INFO);
-            command = getCommandNumber(s);
-            int n;
+        while (true) {
+            final GAProblem t;
+            System.out.println(TEST_INFO);
+            int command = getCommandNumber(s);
             switch (command) {
                 case 0:
-                    setting(t, s);
+                    t = new GAProblem("Tennis");
                     break;
                 case 1:
-                    simpleTest(t);
-                    break;
-                case 2:
-                    System.out
-                            .println("Please input number of repeatations for each strategy:");
-                    n = getInt(s);
-                    selectionTest(t, n);
-                    break;
-                case 3:
-                    System.out
-                            .println("Please input number of repeatations for each rate:");
-                    n = getInt(s);
-                    ReplacementTest(t, n);
+                    t = new GAProblem("Iris");
                     break;
                 default:
-                    quit = true;
+                    t = null;
+                    break;
             }
-        }
+            if (t == null) {
+                break;
+            }
+            boolean quit = false;
+            while (!quit && t != null) {
+                System.out.println(DISPLAY_INFO);
+                command = getCommandNumber(s);
+                switch (command) {
+                    case 0:
+                        setting(t, s);
+                        break;
+                    case 1:
+                        simpleTest(t);
+                        break;
+                    case 2:
+                        System.out
+                                .println("Please input the base number of generation:");
+                        final int n1 = getInt(s);
+                        System.out
+                                .println("Please input the step number of generation:");
+                        final int n2 = getInt(s);
+                        System.out
+                                .println("Please input the terminal number of generation:");
+                        final int n3 = getInt(s);
+                        System.out
+                                .println("Please input number of repeats for each generation:");
+                        final int n4 = getInt(s);
+                        selectionTest(t, n1, n2, n3, n4);
+                        break;
+                    case 3:
+                        System.out
+                                .println("Please input number of repeats for each rate:");
+                        final int n = getInt(s);
+                        ReplacementTest(t, n);
+                        break;
+                    default:
+                        quit = true;
+                } // End of switch (command) {
+            } // End of while (!quit && t != null) {
+        } // End of while (true) {
         s.close();
 
     }
@@ -224,17 +237,13 @@ public class GATest {
         Mutator.DBG = false;
     }
 
-    private static final int GENE_START = 1;
-    private static final int GENE_STEP = 1;
-    private static final int GENE_TERMINAL = 10;
-
-    private static void
-            selectionTest (final GAProblem t, final int numOfRepeat) {
+    private static void selectionTest (final GAProblem t, final int base,
+            final int step, final int ternimal, final int numOfRepeat) {
         final int selectionBackup = t.selectWay;
         final double accurBackup = t.accuracyThreshold;
         final int geneBackup = t.maxGeneration;
 
-        t.accuracyThreshold = 1.0;
+        t.accuracyThreshold = 1.0; // Cancel the accuracy stop criterion.
 
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
@@ -247,7 +256,7 @@ public class GATest {
                 dataSet.put("Fitness-proportional", sel);
             } else if (i == GA.SELECT_TOUR) {
                 System.out.println("Testing tournament");
-                dataSet.put("Tournment", sel);
+                dataSet.put("Tournament", sel);
             } else {
                 System.out.println("Testing rank");
                 dataSet.put("Rank", sel);
@@ -255,7 +264,7 @@ public class GATest {
 
             t.selectWay = i;
 
-            for (int j = GENE_START; j <= GENE_TERMINAL; j += GENE_STEP) {
+            for (int j = base; j <= ternimal; j += step) {
                 System.out.println("Generation number: " + j);
                 t.maxGeneration = j;
                 sel.put((double) j, 0.0);
@@ -278,10 +287,10 @@ public class GATest {
                 sel.put((double) j, ac);
             }
         }
-        DisplayChart.display(dataSet, "Genetic Algorithm learning"
-                + t.name,
+        DisplayChart.display(dataSet, "Genetic Algorithm learning " + t.name,
                 "Accuracy of best individual after certain generations",
-                "Number of generations", "Average accuracy");
+                "Number of generations with different selection strategy",
+                "Accuracy");
 
         t.selectWay = selectionBackup;
         t.accuracyThreshold = accurBackup;
@@ -295,41 +304,57 @@ public class GATest {
     private static void ReplacementTest (final GAProblem t,
             final int numOfRepeat) {
         final double rBackup = t.r;
-        final double[] averAccur = new double[9];
+        final int selectionBackup = t.selectWay;
         
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
-        final LinkedHashMap<Double, Double> sel =
-                new LinkedHashMap<Double, Double>();
-        dataSet.put("GA", sel);
-        for (double i = REPLACE_START; Double.compare(i, REPLACE_TERMINAL) <= 0; i +=
-                REPLACE_STEP) {
-            System.out.println("Replacement rate :" + i);
-            sel.put((double) i, 0.0);
-            for (int j = 0; j < numOfRepeat; j++) {
-                final Hypothesis h =
-                        GA.gaLearning(t.rawTrain, t.rawAttr,
-                                t.accuracyThreshold, t.maxGeneration, t.numP,
-                                t.r, t.m, t.selectWay);
-                double accur = Evaluator.evaluate(h, t.rawTrain);
-                System.out.print("Train: " + accur);
-                accur = Evaluator.evaluate(h, t.rawTest);
-                System.out.println(", test: " + accur);
-                averAccur[(int) Math.round(i * 10) - 1] += accur;
-                double ac = sel.get(i);
-                ac += accur;
-                sel.put(i, ac);
+
+        for (int i = GA.SELECT_FIT_PRO; i <= GA.SELECT_RANK; i++) {
+            final LinkedHashMap<Double, Double> sel =
+                    new LinkedHashMap<Double, Double>();
+            if (i == GA.SELECT_FIT_PRO) {
+                System.out.println("Testing fitness-proportional");
+                dataSet.put("Fitness-proportional", sel);
+            } else if (i == GA.SELECT_TOUR) {
+                System.out.println("Testing tournament");
+                dataSet.put("Tournament", sel);
+            } else {
+                System.out.println("Testing rank");
+                dataSet.put("Rank", sel);
             }
-            double ac = sel.get(i);
-            ac /= numOfRepeat;
-            sel.put(i, ac);
+            
+            t.selectWay = i;
+            
+            for (double j = REPLACE_START; Double.compare(j, REPLACE_TERMINAL) <= 0; j =
+                    MyMath.doubleRound(j + REPLACE_STEP, 2)) {
+                System.out.println("Replacement rate :" + j);
+                t.r = j;
+                sel.put(j, 0.0);
+                for (int k = 0; k < numOfRepeat; k++) {
+                    final Hypothesis h =
+                            GA.gaLearning(t.rawTrain, t.rawAttr,
+                                    t.accuracyThreshold, t.maxGeneration,
+                                    t.numP, t.r, t.m, t.selectWay);
+                    double accur = Evaluator.evaluate(h, t.rawTrain);
+                    System.out.print("Train: " + accur);
+                    accur = Evaluator.evaluate(h, t.rawTrain);
+                    System.out.println(", test: " + accur);
+                    double ac = sel.get(j);
+                    ac += accur;
+                    sel.put(j, ac);
+                }
+                double ac = sel.get(j);
+                ac /= numOfRepeat;
+                sel.put(j, ac);
+            }
         }
-        DisplayChart.display(dataSet, "Genetic Algorithm learning"
-                + t.name,
-                "Different replacement rate V.S. accuracy",
-                "Replacement rate", "Average accuracy");
+        DisplayChart.display(dataSet, "Genetic Algorithm learning " + t.name,
+                "Different replacement rates versus accuracy",
+                "Replacement rate with different selection strategy",
+                "Accuracy");
 
         t.r = rBackup;
+        t.selectWay = selectionBackup;
     }
 
     private static class GAProblem {
@@ -355,22 +380,22 @@ public class GATest {
 
         public GAProblem(final String testCase) {
             if (testCase.equalsIgnoreCase("Tennis")) {
-                this.name ="Tennis";
+                this.name = "Tennis";
                 this.rawAttr = new RawAttrList(ATTR_FILE_URL[0]);
                 this.rawTrain = new RawExampleList(TRAIN_FILE_URL[0]);
                 this.rawTest = new RawExampleList(TEST_FILE_URL[0]);
                 this.accuracyThreshold = 0.9;
                 this.maxGeneration = 50;
-                this.numP = 10;
+                this.numP = 20;
                 this.r = 0.6;
                 this.m = 0.01;
                 this.selectWay = GA.SELECT_RANK;
             } else {
-                this.name ="Iris";
+                this.name = "Iris";
                 this.rawAttr = new RawAttrList(ATTR_FILE_URL[1]);
                 this.rawTrain = new RawExampleList(TRAIN_FILE_URL[1]);
                 this.rawTest = new RawExampleList(TEST_FILE_URL[1]);
-                this.accuracyThreshold = 0.9;
+                this.accuracyThreshold = 0.95;
                 this.maxGeneration = 50;
                 this.numP = 100;
                 this.r = 0.6;
