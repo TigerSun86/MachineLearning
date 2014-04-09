@@ -49,6 +49,8 @@ public class GA {
         while ((Double.compare(p.get(0).accur, accuracyThreshold) < 0)
                 && (generationCount < maxGeneration)
                 && (generationCount < MAX_GENERATION)) {
+            Dbg.print(DBG, MODULE,
+                    "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());
             // Select (1-r)* numP members to survive.
             final Population ps = select(p, surviveNum, selectWay);
             // Produce offspring.
@@ -101,8 +103,8 @@ public class GA {
             ind.setAccuracy(accur);
         }
         Collections.sort(p, Collections.reverseOrder()); // Descending.
-        Dbg.print(DBG, MODULE,
-                "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());
+        /*Dbg.print(DBG, MODULE,
+                "Individuals evaluated:" + Dbg.NEW_LINE + p.toString());*/
     }
 
     private static Population select (Population p, int num, int selectWay) {

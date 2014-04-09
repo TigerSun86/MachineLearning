@@ -28,7 +28,7 @@ public class GATest {
                     + "\t0 Set Population size (p), Replacement rate (r), Mutation rate (m),\n"
                     + "\t  Accuracy threshold, Number of generations, Selection strategy.\n"
                     + "\t1 Simple test.\n"
-                    + "\t2 Different selection strategy.\n"
+                    + "\t2 Different generation numbers with selection strategy.\n"
                     + "\t3 Different replacement rate.\n"
                     + "\tOther_number Quit.\n";
 
@@ -224,9 +224,9 @@ public class GATest {
         Mutator.DBG = false;
     }
 
-    private static final int GENE_START = 10;
-    private static final int GENE_STEP = 10;
-    private static final int GENE_TERMINAL = 100;
+    private static final int GENE_START = 1;
+    private static final int GENE_STEP = 1;
+    private static final int GENE_TERMINAL = 10;
 
     private static void
             selectionTest (final GAProblem t, final int numOfRepeat) {
