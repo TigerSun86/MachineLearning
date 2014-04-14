@@ -187,6 +187,7 @@ public class Test {
 
     }
 
+
     private static int getInt (final Scanner s) {
         int ret = -1;
         while (ret < 0) {
@@ -196,14 +197,14 @@ public class Test {
             } catch (NumberFormatException e) {
                 ret = -1;
             }
-
+            
             if (ret < 0) {
                 System.out.println("Please reinput:");
             }
         }
         return ret;
     }
-
+    
     private static double getDouble (final Scanner s) {
         double ret = Double.NaN;
         while (Double.isNaN(ret)) {
@@ -221,7 +222,6 @@ public class Test {
         }
         return ret;
     }
-
     public static double testIter (final AnnProblem t, int maxIter) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;

@@ -1,5 +1,9 @@
 package util;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
+
 /**
  * FileName: MyMath.java
  * @Description: Math methods.
@@ -22,5 +26,53 @@ public class MyMath {
         final String result = s.substring(dotPos + 1, s.length());
         assert (result.length() != 0);
         return result.length();
+    }
+
+    public static int[] mOutofN (final int m, final int n) {
+        final int[] ret = new int[m];
+        final HashSet<Integer> selected = new HashSet<Integer>();
+        final Random ran = new Random();
+        for (int i = 0; i < ret.length; i++) {
+            while (true) {
+                final int r = ran.nextInt(n);
+                if (!selected.contains(r)) {
+                    ret[i] = r;
+                    selected.add(r);
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    public static int selectByProb (final double[] probDistribute) {
+        final double[] prob = new double[probDistribute.length + 1];
+        prob[0] = 0;
+        for (int i = 0; i < probDistribute.length; i++) {
+            prob[i + 1] = prob[i] + probDistribute[i];
+        }
+
+        final double ran = new Random().nextDouble();
+
+        int index = Arrays.binarySearch(prob, ran);
+        if (index < 0) { // Didn't find the value equals with ran.
+            // Make index back to 'insertion point'.
+            index = -index;
+            index -= 1;
+            if (index == prob.length) { // Ran greater than all elements in prob
+                index -= 1; // Back 'insertion point' to last element.
+            }
+            // The selected index is 'insertion point' - 1;
+            index -= 1;
+        } else if (index == prob.length - 1) {
+            // Ran just equals with the last value.
+            index -= 1;
+        }
+        return index;
+    }
+
+    public static double
+            randomDoubleBetween (final double min, final double max) {
+        return (Math.random() * (max - min)) + min;
     }
 }
