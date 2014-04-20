@@ -46,4 +46,13 @@ public class RawExampleList extends ArrayList<RawExample> {
         } // End of while (true) {
         in.close();
     }
+    @Override
+    public String toString(){
+        final StringBuffer sb= new StringBuffer();
+        for (RawExample ex: this){
+            sb.append(ex.toString());
+            sb.append(util.Dbg.NEW_LINE);
+        }
+        return sb.toString();
+    }
 }
