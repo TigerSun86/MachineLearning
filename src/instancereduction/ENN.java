@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Random;
 
+import util.Dbg;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -18,6 +19,9 @@ import common.RawExampleList;
  * @date Apr 19, 2014 7:54:26 PM
  */
 public class ENN {
+    public static final String MODULE = "ENN";
+    public static final boolean DBG = true;
+    
     public static final int K = 3;
 
     public static RawExampleList reduce (final RawExampleList exs,
@@ -40,6 +44,7 @@ public class ENN {
                 ret.add(ex);
             }
         }
+        Dbg.print(DBG, MODULE, "Reduced size: "+ ret.size());
         return ret;
     }
 
@@ -105,7 +110,7 @@ public class ENN {
         return ret;
     }
 
-    private static double[][] getDistances (final RawExampleList exs,
+    public static double[][] getDistances (final RawExampleList exs,
             final RawAttrList attrs) {
         final double[][] diss = new double[exs.size()][exs.size()];
         // Only calculate the upper triangle.

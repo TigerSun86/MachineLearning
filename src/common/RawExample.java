@@ -17,12 +17,12 @@ public class RawExample {
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
-        sb.append("X: ");
+        //sb.append("X: ");
         for (String x : xList) {
             sb.append(x);
             sb.append(" ");
         }
-        sb.append("T: ");
+        //sb.append("T: ");
         sb.append(t);
         return sb.toString();
     }
