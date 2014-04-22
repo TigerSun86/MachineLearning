@@ -15,7 +15,7 @@ import java.util.Random;
 public class Unit {
     private static final double DEFUALT_ATTR = 1.0;
 
-    private static final boolean SEED_RANDOM = true;
+    private static final boolean SEED_RANDOM = false;
     private static Random random;
     static {
         resetRandomSeed();

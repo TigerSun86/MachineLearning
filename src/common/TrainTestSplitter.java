@@ -12,12 +12,15 @@ import java.util.Random;
  * @date Apr 20, 2014 11:45:34 PM
  */
 public class TrainTestSplitter {
-    private static final double DEFAULT_RATIO = 0.667;
+    public static final double DEFAULT_RATIO = 0.667;
+    
+/*    private static final String FILE =
+            "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data";*/
     private static final String FILE =
-            "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data";
-
+            "http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data";
+   
     public static void main (String[] args) {
-        final String fName = deleteIDAndCommaAndPutClassBack(FILE);
+        final String fName = deleteCommaAndPutClassBack(FILE);
         generateTrainTest(fName);
     }
 
@@ -63,6 +66,48 @@ public class TrainTestSplitter {
         writeExamples(exs, newName);
         return newName;
     }
+    private static String deleteCommaAndPutClassBack (final String fileName) {
+        final RawExampleList exs = new RawExampleList();
+        final DataReader in = new DataReader(fileName);
+        int numOfAttr = -1;
+        while (true) {
+            final String line = in.nextLine();
+            if (line == null) {
+                break;
+            }
+            if (line.length() <= 1) {
+                continue; // Skip empty line.
+            }
+            final String[] examStr = line.split(",");
+            final RawExample ex = new RawExample();
+            // 0 is class.
+            for (int i = 1; i <= examStr.length - 1; i++) {
+                ex.xList.add(examStr[i]);
+            }
+            ex.t = examStr[0];
+
+            if (numOfAttr == -1) { // Initialize.
+                numOfAttr = ex.xList.size();
+            } else if (numOfAttr == ex.xList.size()) {
+                exs.add(ex);
+            } else {
+                System.err.println("Inconsistent number of attributes in line "
+                        + (in.getLineNumber() + 1));
+            }
+        } // End of while (true) {
+        in.close();
+
+        final String name =
+                fileName.substring(fileName.lastIndexOf('/') + 1,
+                        fileName.lastIndexOf('.'));
+        final String resourcePath =
+                Thread.currentThread().getContextClassLoader().getResource("")
+                        .toString();
+        final String newName = resourcePath + name + ".txt";
+        System.out.println(newName);
+        writeExamples(exs, newName);
+        return newName;
+    }
 
     private static void generateTrainTest (final String fileName) {
         final RawExampleList exs = new RawExampleList(fileName);
@@ -80,9 +125,10 @@ public class TrainTestSplitter {
                         .toString();
         final String trainName = resourcePath + name + "-train.txt";
         final String testName = resourcePath + name + "-test.txt";
-        System.out.println(trainName);
         writeExamples(train, trainName);
+        System.out.println(trainName);
         writeExamples(test, testName);
+        System.out.println(testName);
     }
 
     private static void writeExamples (final RawExampleList exs,

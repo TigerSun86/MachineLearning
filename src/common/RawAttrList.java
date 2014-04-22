@@ -2,8 +2,6 @@ package common;
 
 import java.util.ArrayList;
 
-import util.Dbg;
-
 /**
  * FileName: RawAttrList.java
  * @Description:

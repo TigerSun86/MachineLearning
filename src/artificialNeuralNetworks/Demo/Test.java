@@ -22,7 +22,7 @@ import common.Evaluator;
 public class Test {
     private static final String TEST_INFO =
             "Please choose the data you want to test:\n" + "\t0 Identity.\n"
-                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\t3 Image.\n" + "\t4 Breast Cancer Wisconsin (Diagnostic).\n" + "\tOther_number quit\n";
+                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\t3 Image.\n" + "\t4 Breast Cancer Wisconsin (Diagnostic).\n" + "\t5 Wine.\n"+ "\tOther_number quit\n";
 
     private static final String DISPLAY_INFO =
             "Please input the following command number to test:\n"
@@ -66,6 +66,9 @@ public class Test {
                 break;
             case 4:
                 t = new Wdbc();
+                break;
+            case 5:
+                t = new Wine();
                 break;
             default:
                 t = null;
