@@ -1,8 +1,5 @@
 package artificialNeuralNetworks.ANN;
 
-import instancereduction.ENN;
-import instancereduction.RCI;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -25,12 +22,12 @@ public class AnnLearner {
     public static final String MODULE = "ALN";
     public static final boolean DBG = true;
 
-    private static final int MAX_ITER = 20000;
+    private static final int MAX_ITER = 10000;
 
     public final RawAttrList rawAttr;
-    public final AnnAttrList annAttr; // For nIn and nOut.
+    public AnnAttrList annAttr; // For nIn and nOut.
     public final RawExampleList rawTrain;
-    public final RawExampleList rawTest;
+    public RawExampleList rawTest;
 
     public RawExampleList rawTrainWithNoise;
 
@@ -50,19 +47,84 @@ public class AnnLearner {
         } else {
             rawTest = null;
         }
-        
+
         rawTrainWithNoise = rawTrain;
-        rawTrainWithNoise = ENN.reduce(rawTrainWithNoise, rawAttr);
-        rawTrainWithNoise = RCI.reduce(rawTrainWithNoise, rawAttr);
-        
+
         annAttr = new AnnAttrList(rawTrain, rawAttr);
-        
+
         nHidden = new ArrayList<Integer>();
         hiddenHasThres = true;
         outHasThres = true;
-        learnRate = 0;
-        momentumRate = 0;
+        learnRate = 0.1;
+        momentumRate = 0.1;
     }
+
+    /* For instance reduction begin ********************* */
+    public AnnLearner(final RawAttrList rawAttr, final double learnRate,
+            final double momentumRate) {
+        this.rawAttr = rawAttr;
+        this.rawTrain = null;
+        this.rawTest = null;
+        this.rawTrainWithNoise = null;
+        this.annAttr = null;
+        this.nHidden = null;
+        this.hiddenHasThres = true;
+        this.outHasThres = true;
+        this.learnRate = learnRate;
+        this.momentumRate = momentumRate;
+    }
+
+    public void setRawTrainWithNoise (final RawExampleList rawTrainWithNoise) {
+        this.rawTrainWithNoise = rawTrainWithNoise;
+        // Ann attributes' max and min depends on examples.
+        this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
+    }
+
+    public void setRawTest (final RawExampleList rawTest) {
+        this.rawTest = rawTest;
+    }
+
+    public void setNumOfHiddenNodes (final int nH) {
+        this.nHidden = new ArrayList<Integer>();
+        this.nHidden.add(nH);
+    }
+
+    public AccurAndIter kFoldLearning2 (final int k) {
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
+        final AnnExList[] exArray = annSet.splitIntoMultiSets(k);
+        if (exArray == null) {
+            return null;
+        }
+        int sumIter = 0;
+        for (int val = 0; val < exArray.length; val++) {
+            final AnnExList valSet = exArray[val];
+            final AnnExList trainSet = new AnnExList();
+            for (int other = 0; other < exArray.length; other++) {
+                if (other != val) { // All other set is train set.
+                    trainSet.addAll(exArray[other]);
+                }
+            }
+            final NetAndIter nai = validation(trainSet, valSet);
+            sumIter += nai.iter;
+        }
+
+        final int meanIter = sumIter / exArray.length;
+        final NeuralNetwork net = iter(annSet, meanIter);
+        final double accur = evalTest(net);
+        return new AccurAndIter(accur, meanIter);
+    }
+
+    public static class AccurAndIter {
+        public final double accur;
+        public final int iter;
+
+        public AccurAndIter(double accur, int iter) {
+            this.accur = accur;
+            this.iter = iter;
+        }
+    }
+
+    /* For instance reduction end ********************* */
 
     public double evalTrain (final NeuralNetwork net) {
         return Evaluator.evaluate(net, rawTrain);
@@ -78,8 +140,6 @@ public class AnnLearner {
 
     public void corruptTrainList (final double ratio) {
         rawTrainWithNoise = DataCorrupter.corrupt(rawTrain, rawAttr, ratio);
-        rawTrainWithNoise = ENN.reduce(rawTrainWithNoise, rawAttr);
-        rawTrainWithNoise = RCI.reduce(rawTrainWithNoise, rawAttr);
     }
 
     public void resetTrainList () {
