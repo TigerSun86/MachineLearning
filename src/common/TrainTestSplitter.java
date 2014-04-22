@@ -17,11 +17,11 @@ public class TrainTestSplitter {
 /*    private static final String FILE =
             "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data";*/
     private static final String FILE =
-            "http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data";
+            "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt" ;
    
     public static void main (String[] args) {
-        final String fName = deleteCommaAndPutClassBack(FILE);
-        generateTrainTest(fName);
+        //final String fName = deleteCommaAndPutClassBack(FILE);
+        generateTrainTest(FILE);
     }
 
     private static String deleteIDAndCommaAndPutClassBack (final String fileName) {
@@ -46,6 +46,7 @@ public class TrainTestSplitter {
 
             if (numOfAttr == -1) { // Initialize.
                 numOfAttr = ex.xList.size();
+                exs.add(ex);
             } else if (numOfAttr == ex.xList.size()) {
                 exs.add(ex);
             } else {
@@ -88,6 +89,7 @@ public class TrainTestSplitter {
 
             if (numOfAttr == -1) { // Initialize.
                 numOfAttr = ex.xList.size();
+                exs.add(ex);
             } else if (numOfAttr == ex.xList.size()) {
                 exs.add(ex);
             } else {

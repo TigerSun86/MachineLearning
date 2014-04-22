@@ -43,9 +43,9 @@ public class Test {
 
     private double learnRate = 0.1;
     private double momentum = 0.1;
-    private int[] numOfHiddenNodes = { 3 };
-    private double[] noiseRateCases = { 0.1 };
-    private int timesOfGeneratingTrainTest = 1;
+    private int[] numOfHiddenNodes = { 3, 5, 10 };
+    private double[] noiseRateCases = { 0, 0.1, 0.2 };
+    private int timesOfGeneratingTrainTest = 3;
     private String[][] dataSets = DATA_SOURCE;
 
     /* private static final String ATTR_FILE_URL =

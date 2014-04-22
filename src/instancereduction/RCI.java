@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import util.Dbg;
+import common.MapTool;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -27,7 +28,9 @@ public class RCI {
     public static RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
         assert !attrs.t.isContinuous;
-        final BitSet reduced = new BitSet(exs.size());
+        final RawExampleList exs2 = MapTool.mapExs(exs, attrs);
+        
+        final BitSet reduced = new BitSet(exs2.size());
         // Reduce instances of each class seperately.
         for (int classi = 0; classi < attrs.t.valueList.size(); classi++) {
             final String classv = attrs.t.valueList.get(classi);
@@ -36,8 +39,8 @@ public class RCI {
             // Map from new index to old index.
             final HashMap<Integer, Integer> indexMap =
                     new HashMap<Integer, Integer>();
-            for (int oldIndex = 0; oldIndex < exs.size(); oldIndex++) {
-                final RawExample ex = exs.get(oldIndex);
+            for (int oldIndex = 0; oldIndex < exs2.size(); oldIndex++) {
+                final RawExample ex = exs2.get(oldIndex);
                 if (ex.t.equals(classv)) {
                     indexMap.put(newExs.size(), oldIndex);
                     newExs.add(ex);
@@ -53,7 +56,7 @@ public class RCI {
                 reduced.set(oldIndex);
             }
         }
-
+        // Reduce original exs.
         final RawExampleList ret = new RawExampleList();
         for (int i = 0; i < exs.size(); i++) {
             if (!reduced.get(i)) {

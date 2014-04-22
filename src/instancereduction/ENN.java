@@ -5,6 +5,8 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 import util.Dbg;
+
+import common.MapTool;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -21,20 +23,24 @@ import common.RawExampleList;
 public class ENN {
     public static final String MODULE = "ENN";
     public static final boolean DBG = true;
-    
+
     public static final int K = 3;
 
     public static RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
-        // Measure distances between each examples.
-        final double[][] diss = getDistances(exs, attrs);
-        final String[] classDeterminedByNeighbors = new String[exs.size()];
+        final RawExampleList exs2 = MapTool.mapExs(exs, attrs);
 
-        for (int i = 0; i < exs.size(); i++) {
+        // Measure distances between each examples.
+        final double[][] diss = getDistances(exs2, attrs);
+        final String[] classDeterminedByNeighbors = new String[exs2.size()];
+
+        for (int i = 0; i < exs2.size(); i++) {
             final ArrayList<Integer> neighbors = kNearestNeighbor(i, diss, K);
-            final String majorityClass = majorityClass(exs, attrs, neighbors);
+            final String majorityClass = majorityClass(exs2, attrs, neighbors);
             classDeterminedByNeighbors[i] = majorityClass;
         }
+        
+        // Reduce original exs.
         final RawExampleList ret = new RawExampleList();
         for (int i = 0; i < exs.size(); i++) {
             final RawExample ex = exs.get(i);
@@ -44,7 +50,7 @@ public class ENN {
                 ret.add(ex);
             }
         }
-        Dbg.print(DBG, MODULE, "Reduced size: "+ ret.size());
+        Dbg.print(DBG, MODULE, "Reduced size: " + ret.size());
         return ret;
     }
 
@@ -129,8 +135,8 @@ public class ENN {
         return diss;
     }
 
-    private static double getDistance (final RawExample ex1, final RawExample ex2,
-            final RawAttrList attrs) {
+    private static double getDistance (final RawExample ex1,
+            final RawExample ex2, final RawAttrList attrs) {
         double sum = 0;
         for (int i = 0; i < attrs.xList.size(); i++) {
             final RawAttr attr = attrs.xList.get(i);

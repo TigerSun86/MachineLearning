@@ -15,22 +15,22 @@ import artificialNeuralNetworks.ANN.AnnProblem;
 public class Image extends AnnProblem {
     @Override
     public String getName () {
-        return "Image test";
+        return "Image Segmentation";
     }
 
     @Override
     public String getAttrFileUrl () {
-        return "http://my.fit.edu/~sunx2013/MachineLearning/image-attr.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-attr.txt";
     }
 
     @Override
     public String getTrainFileUrl () {
-        return "http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/segment/segment.dat";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-train.txt";
     }
 
     @Override
     public String getTestFileUrl () {
-        return "http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/segment/segment.dat";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-test.txt";
     }
 
     @Override

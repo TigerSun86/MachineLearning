@@ -46,6 +46,7 @@ public class RawExampleList extends ArrayList<RawExample> {
 
             if (numOfAttr == -1) { // Initialize.
                 numOfAttr = ex.xList.size();
+                this.add(ex);
             } else if (numOfAttr == ex.xList.size()) {
                 this.add(ex);
             } else {
