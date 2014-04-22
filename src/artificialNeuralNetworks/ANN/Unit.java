@@ -15,7 +15,7 @@ import java.util.Random;
 public class Unit {
     private static final double DEFUALT_ATTR = 1.0;
 
-    private static final boolean SEED_RANDOM = false;
+    private static final boolean SEED_RANDOM = true;
     private static Random random;
     static {
         resetRandomSeed();
@@ -92,13 +92,15 @@ public class Unit {
     }
 
     private static double getInitWeight () {
-        // A random number between -0.1 and 0.1.
-        return (random.nextDouble() - 0.0) / 10;
+        // A random number between -0.05 and 0.05.
+        return (random.nextDouble() - 0.5) / 10;
     }
 
     private static double sigmoidFunction (final double value) {
+        // Return value should be (0.01, 0.99). To avoid number 0 and 1.
         final double exp = Math.exp(-value);
-        return 1 / (1 + exp);
+        final double ret = (0.98 / (1 + exp)) + 0.01;
+        return ret;
     }
 
 }

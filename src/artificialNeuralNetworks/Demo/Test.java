@@ -22,7 +22,7 @@ import common.Evaluator;
 public class Test {
     private static final String TEST_INFO =
             "Please choose the data you want to test:\n" + "\t0 Identity.\n"
-                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\tOther_number quit\n";
+                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\t3 Image.\n" + "\t4 Breast Cancer Wisconsin (Diagnostic).\n" + "\tOther_number quit\n";
 
     private static final String DISPLAY_INFO =
             "Please input the following command number to test:\n"
@@ -60,6 +60,12 @@ public class Test {
                 break;
             case 2:
                 t = new Iris();
+                break;
+            case 3:
+                t = new Image();
+                break;
+            case 4:
+                t = new Wdbc();
                 break;
             default:
                 t = null;
@@ -225,7 +231,7 @@ public class Test {
     public static double testIter (final AnnProblem t, int maxIter) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
-        Evaluator.DBG = true;
+        //Evaluator.DBG = true;
 
         final NeuralNetwork net = t.learner.iterLearning(maxIter);
         double accur = t.learner.evalTrain(net);
@@ -235,7 +241,7 @@ public class Test {
 
         Dbg.dbgSwitch = false;
         Dbg.defaultSwitch = false;
-        Evaluator.DBG = false;
+        //Evaluator.DBG = false;
         return accur;
 
     }

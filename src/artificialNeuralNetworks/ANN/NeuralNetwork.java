@@ -3,8 +3,8 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 
 import util.Dbg;
+
 import common.Hypothesis;
-import common.RawAttrList;
 
 /**
  * FileName: NeuralNetwork.java
@@ -19,18 +19,18 @@ public class NeuralNetwork implements Hypothesis {
     public static final String MODULE = "NN";
     public static final boolean DBG = false;
 
-    private final RawAttrList rawAttr;
+    private final AnnAttrList attrs;
 
     public final ArrayList<Layer> layers;
 
     private double learnRate;
     private double momentumRate;
 
-    public NeuralNetwork(final RawAttrList rawAttr, final int nIn,
-            final ArrayList<Integer> nHidden, final boolean hiddenHasThres, final int nOut,
-            final boolean outHasThres, final double learnRate,
+    public NeuralNetwork(final AnnAttrList attrs, final int nIn,
+            final ArrayList<Integer> nHidden, final boolean hiddenHasThres,
+            final int nOut, final boolean outHasThres, final double learnRate,
             final double momentumRate) {
-        this.rawAttr = rawAttr;
+        this.attrs = attrs;
 
         Unit.resetRandomSeed();
         this.layers = new ArrayList<Layer>();
@@ -44,7 +44,7 @@ public class NeuralNetwork implements Hypothesis {
     }
 
     public NeuralNetwork(final NeuralNetwork net) {
-        this.rawAttr = net.rawAttr;
+        this.attrs = net.attrs;
 
         this.layers = new ArrayList<Layer>();
         for (Layer l : net.layers) {
@@ -170,15 +170,13 @@ public class NeuralNetwork implements Hypothesis {
     }
 
     @Override
-    public String predict (final ArrayList<String> attrs) {
+    public String predict (final ArrayList<String> values) {
         // Convert raw attribute to ANN version.
-        final ArrayList<Double> annExX =
-                FloatConverter.toDouble(attrs, rawAttr.xList);
+        final ArrayList<Double> annExX = FloatConverter.valuesToDouble(values, attrs);
         // Get predict of ANN.
         final ArrayList<Double> output = getV(annExX);
         // Convert ANN output to raw output.
-        final String target =
-                FloatConverter.targetBackString(output, rawAttr.t);
+        final String target = FloatConverter.targetBackString(output, attrs);
         return target;
     }
 }

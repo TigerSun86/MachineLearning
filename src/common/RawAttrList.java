@@ -2,6 +2,8 @@ package common;
 
 import java.util.ArrayList;
 
+import util.Dbg;
+
 /**
  * FileName: RawAttrList.java
  * @Description:
@@ -51,6 +53,16 @@ public class RawAttrList {
         } // End of while (true) {
         assert this.t != null;
         in.close();
+    }
+
+    @Override
+    public String toString () {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("X:");
+        sb.append(xList.toString());
+        sb.append(" T:");
+        sb.append(t.toString());
+        return sb.toString();
     }
 
 }

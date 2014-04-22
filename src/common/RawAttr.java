@@ -20,4 +20,12 @@ public class RawAttr {
         this.isContinuous = false;
         this.valueList = new ArrayList<String>();
     }
+
+    @Override
+    public String toString () {
+        final StringBuffer sb = new StringBuffer();
+        sb.append(name + " ");
+        sb.append(isContinuous ? "continuous" : valueList.toString());
+        return sb.toString();
+    }
 }

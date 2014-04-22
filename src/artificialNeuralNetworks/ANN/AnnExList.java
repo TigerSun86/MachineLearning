@@ -1,10 +1,9 @@
 package artificialNeuralNetworks.ANN;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import util.Dbg;
-import common.RawAttr;
-import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 
@@ -25,10 +24,10 @@ public class AnnExList extends ArrayList<AnnExample> {
         super();
     }
 
-    public AnnExList(final RawExampleList rawExSet, final RawAttrList ral) {
+    public AnnExList(final RawExampleList rawExSet, final AnnAttrList attrs) {
         super();
         for (RawExample re : rawExSet) {
-            final AnnExample ae = exampleRawToANN(re, ral);
+            final AnnExample ae = exampleRawToANN(re, attrs);
             this.add(ae);
         }
     }
@@ -106,17 +105,27 @@ public class AnnExList extends ArrayList<AnnExample> {
         return exArray;
     }
 
+    @Override
+    public String toString () {
+        Iterator<AnnExample> it = iterator();
+        if (!it.hasNext()) return "";
+
+        StringBuilder sb = new StringBuilder();
+        for (;;) {
+            AnnExample e = it.next();
+            sb.append(e.toString());
+            if (!it.hasNext()) return sb.toString();
+            sb.append(Dbg.NEW_LINE);
+        }
+    }
+
     private static AnnExample exampleRawToANN (final RawExample re,
-            final RawAttrList ral) {
+            final AnnAttrList attrs) {
         final AnnExample ae = new AnnExample();
         // Convert raw attribute to ANN version.
-        final ArrayList<Double> annExX =
-                FloatConverter.toDouble(re.xList, ral.xList);
-        ae.xList.addAll(annExX);
-        final String value = re.t; // Value in raw example.
-        final RawAttr ra = ral.t; // Attribute of the value.
+        ae.xList.addAll(FloatConverter.valuesToDouble(re.xList, attrs));
         // Convert raw target to ANN version.
-        FloatConverter.doubleOneValue(ae.tList, value, ra);
+        ae.tList.addAll(FloatConverter.targetToDouble(re.t, attrs));
         return ae;
     }
 }
