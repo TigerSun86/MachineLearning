@@ -22,7 +22,11 @@ import common.Evaluator;
 public class Test {
     private static final String TEST_INFO =
             "Please choose the data you want to test:\n" + "\t0 Identity.\n"
-                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\t3 Image.\n" + "\t4 Breast Cancer Wisconsin (Diagnostic).\n" + "\t5 Wine.\n"+ "\tOther_number quit\n";
+                    + "\t1 Tennis.\n" + "\t2 Iris.\n" + "\t3 Image.\n"
+                    + "\t4 Breast Cancer Wisconsin (Diagnostic).\n"
+                    + "\t5 Wine.\n" + "\t6 Ionosphere.\n"
+                    + "\t7 Liver disorders.\n" + "\t8 Car Evaluation.\n"
+                    + "\tOther_number quit\n";
 
     private static final String DISPLAY_INFO =
             "Please input the following command number to test:\n"
@@ -69,6 +73,15 @@ public class Test {
                 break;
             case 5:
                 t = new Wine();
+                break;
+            case 6:
+                t = new Ionosphere();
+                break;
+            case 7:
+                t = new Bupa();
+                break;
+            case 8:
+                t = new Car();
                 break;
             default:
                 t = null;
@@ -196,7 +209,6 @@ public class Test {
 
     }
 
-
     private static int getInt (final Scanner s) {
         int ret = -1;
         while (ret < 0) {
@@ -206,14 +218,14 @@ public class Test {
             } catch (NumberFormatException e) {
                 ret = -1;
             }
-            
+
             if (ret < 0) {
                 System.out.println("Please reinput:");
             }
         }
         return ret;
     }
-    
+
     private static double getDouble (final Scanner s) {
         double ret = Double.NaN;
         while (Double.isNaN(ret)) {
@@ -231,10 +243,11 @@ public class Test {
         }
         return ret;
     }
+
     public static double testIter (final AnnProblem t, int maxIter) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
-        //Evaluator.DBG = true;
+        // Evaluator.DBG = true;
 
         final NeuralNetwork net = t.learner.iterLearning(maxIter);
         double accur = t.learner.evalTrain(net);
@@ -244,7 +257,7 @@ public class Test {
 
         Dbg.dbgSwitch = false;
         Dbg.defaultSwitch = false;
-        //Evaluator.DBG = false;
+        // Evaluator.DBG = false;
         return accur;
 
     }

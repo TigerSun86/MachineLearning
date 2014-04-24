@@ -17,7 +17,7 @@ public class TrainTestSplitter {
 /*    private static final String FILE =
             "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data";*/
     private static final String FILE =
-            "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt" ;
+            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt" ;
    
     public static void main (String[] args) {
         //final String fName = deleteCommaAndPutClassBack(FILE);

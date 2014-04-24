@@ -1,8 +1,5 @@
 package artificialNeuralNetworks.ANN;
 
-import instancereduction.ENN;
-import instancereduction.RCI;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -52,8 +49,7 @@ public class AnnLearner {
         }
 
         rawTrainWithNoise = rawTrain;
-        rawTrainWithNoise = ENN.reduce(rawTrainWithNoise, rawAttr);
-        rawTrainWithNoise = RCI.reduce(rawTrainWithNoise, rawAttr);
+
         annAttr = new AnnAttrList(rawTrain, rawAttr);
 
         nHidden = new ArrayList<Integer>();

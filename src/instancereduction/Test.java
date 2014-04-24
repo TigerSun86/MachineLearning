@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Scanner;
 
+import util.SysUtil;
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
-
 import common.DataCorrupter;
 import common.RawAttrList;
 import common.RawExampleList;
@@ -37,9 +37,21 @@ public class Test {
                             "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-attr.txt",
                             "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt" },
                     {
+                            "Ionosphere",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere-attr.txt",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere.txt" },
+                    {
+                            "Liver Disorders",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/bupa-attr.txt",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/bupa.txt" },
+                    {
                             "Image Segmentation",
                             "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-attr.txt",
-                            "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt" } };
+                            "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt" },
+                    {
+                            "Car Evaluation",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/car-attr.txt",
+                            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt" } };
 
     private double learnRate = 0.1;
     private double momentum = 0.1;
@@ -48,18 +60,13 @@ public class Test {
     private int timesOfGeneratingTrainTest = 3;
     private String[][] dataSets = DATA_SOURCE;
 
-    /* private static final String ATTR_FILE_URL =
-     * "http://my.fit.edu/~sunx2013/MachineLearning/rcitest-attr.txt";
-     * private static final String TRAIN_FILE_URL =
-     * "http://my.fit.edu/~sunx2013/MachineLearning/rcitest-train.txt";
-     * private static final String TEST_FILE_URL =
-     * "http://cs.fit.edu/~pkc/classes/ml/data/iris-test.txt"; */
     private static final String TEST_INFO =
             "Please choose the data you want to test:\n" + "\t0 Iris.\n"
                     + "\t1 Wine.\n"
                     + "\t2 Breast Cancer Wisconsin (Diagnostic).\n"
-                    + "\t3 Image Segmentation.\n" + "\t4 Comprehensive test.\n"
-                    + "\tOther_number quit\n";
+                    + "\t3 Ionosphere.\n" + "\t4 Liver disorders.\n"
+                    + "\t5 Image Segmentation.\n" + "\t6 Car Evaluation.\n"
+                    + "\t7 Comprehensive test.\n" + "\tOther_number quit\n";
 
     public static void main (String[] args) {
         final Scanner s = new Scanner(System.in);
@@ -88,13 +95,13 @@ public class Test {
     }
 
     private static void TestOneDataSet (Test t, int dataCase) {
-        // Noise, FDS/ENN/RCI, Size/Accur/Iter
-        final double[][][] sta = new double[t.noiseRateCases.length][3][3];
+        // Noise, FDS/ENN/RCI, Size/Accur/Iter/InstanceEditingTime/TrainingTime
+        final double[][][] sta = new double[t.noiseRateCases.length][3][5];
         for (int i = 0; i < t.noiseRateCases.length; i++) {
-            sta[i] = new double[3][3];
-            for (int j = 0; j < 3; j++) {
-                sta[i][j] = new double[3];
-                for (int k = 0; k < 3; k++) {
+            sta[i] = new double[3][5];
+            for (int j = 0; j < sta[i].length; j++) {
+                sta[i][j] = new double[5];
+                for (int k = 0; k < sta[i][j].length; k++) {
                     sta[i][j][k] = 0;
                 }
             }
@@ -124,62 +131,90 @@ public class Test {
                 final double noiseRate = t.noiseRateCases[noiseI];
                 System.out.printf("Noise: %.2f%n", noiseRate);
                 // Full data set.
+
                 RawExampleList rawTrainWithNoise =
                         DataCorrupter.corrupt(train, rawAttr, noiseRate);
                 annLearner.setRawTrainWithNoise(rawTrainWithNoise);
                 sta[noiseI][0][0] += rawTrainWithNoise.size();
                 System.out.printf("FDS: size %d", rawTrainWithNoise.size());
+                // Full data set has no editing time.
+                sta[noiseI][0][3] += 0;
+                System.out.printf(" EditTime %d", 0);
                 for (int nH : t.numOfHiddenNodes) {
                     annLearner.setNumOfHiddenNodes(nH);
+                    long trainTime = SysUtil.getCpuTime();
                     final AccurAndIter aai = annLearner.kFoldLearning2(3);
+                    trainTime = SysUtil.getCpuTime() - trainTime;
                     final double accur = aai.accur;
                     final int iter = aai.iter;
                     sta[noiseI][0][1] += accur;
                     sta[noiseI][0][2] += iter;
-                    System.out.printf(" nH %d accur %.4f iter %d", nH, accur,
-                            iter);
+                    sta[noiseI][0][4] += trainTime;
+                    System.out.printf(" nH %d accur %.4f iter %d trainTime %d",
+                            nH, accur, iter, trainTime);
                 }
                 System.out.println();
                 // ENN.
+                long ennEditTime = SysUtil.getCpuTime();
                 rawTrainWithNoise = ENN.reduce(rawTrainWithNoise, rawAttr);
+                ennEditTime = SysUtil.getCpuTime() - ennEditTime;
                 annLearner.setRawTrainWithNoise(rawTrainWithNoise);
                 sta[noiseI][1][0] += rawTrainWithNoise.size();
                 System.out.printf("ENN: size %d", rawTrainWithNoise.size());
+                sta[noiseI][1][3] += ennEditTime;
+                System.out.printf(" EditTime %d", ennEditTime);
                 for (int nH : t.numOfHiddenNodes) {
                     annLearner.setNumOfHiddenNodes(nH);
+                    long trainTime = SysUtil.getCpuTime();
                     final AccurAndIter aai = annLearner.kFoldLearning2(3);
+                    trainTime = SysUtil.getCpuTime() - trainTime;
                     final double accur = aai.accur;
                     final int iter = aai.iter;
                     sta[noiseI][1][1] += accur;
                     sta[noiseI][1][2] += iter;
-                    System.out.printf(" nH %d accur %.4f iter %d", nH, accur,
-                            iter);
+                    sta[noiseI][1][4] += trainTime;
+                    System.out.printf(" nH %d accur %.4f iter %d trainTime %d",
+                            nH, accur, iter, trainTime);
                 }
                 System.out.println();
                 // RCI.
+                long rciEditTime = SysUtil.getCpuTime();
                 rawTrainWithNoise = RCI.reduce(rawTrainWithNoise, rawAttr);
+                rciEditTime = SysUtil.getCpuTime() - rciEditTime;
+                // RCI editing time is ENN time + RCI time, because RCI have to
+                // process data set based on the result of ENN.
+                rciEditTime += ennEditTime;
                 annLearner.setRawTrainWithNoise(rawTrainWithNoise);
                 sta[noiseI][2][0] += rawTrainWithNoise.size();
                 System.out.printf("RCI: size %d", rawTrainWithNoise.size());
+                sta[noiseI][2][3] += rciEditTime;
+                System.out.printf(" EditTime %d", rciEditTime);
                 for (int nH : t.numOfHiddenNodes) {
                     annLearner.setNumOfHiddenNodes(nH);
+                    long trainTime = SysUtil.getCpuTime();
                     final AccurAndIter aai = annLearner.kFoldLearning2(3);
+                    trainTime = SysUtil.getCpuTime() - trainTime;
                     final double accur = aai.accur;
                     final int iter = aai.iter;
                     sta[noiseI][2][1] += accur;
                     sta[noiseI][2][2] += iter;
-                    System.out.printf(" nH %d accur %.4f iter %d", nH, accur,
-                            iter);
+                    sta[noiseI][2][4] += trainTime;
+                    System.out.printf(" nH %d accur %.4f iter %d trainTime %d",
+                            nH, accur, iter, trainTime);
                 }
                 System.out.println();
             }
         }
 
         System.out.printf("%s statistic infomation%n", dataSetName);
+        System.out
+                .printf("EditWay NoiseRate Accuracy NumOfInstances NumofIterations "
+                        + "InstanceEditingTime TrainingTime (in nano second)%n");
         for (int i = 0; i < t.noiseRateCases.length; i++) {
-            System.out.printf("Noise: %.2f%n", t.noiseRateCases[i]);
+
             for (int j = 0; j < 3; j++) {
-                // Size repeated timesOfGeneratingTrainTest times.
+
+                // NumOfInstances repeated timesOfGeneratingTrainTest times.
                 sta[i][j][0] /= t.timesOfGeneratingTrainTest;
                 // Accuracy repeated
                 // timesOfGeneratingTrainTest * numOfHiddenNodes.length times.
@@ -189,17 +224,29 @@ public class Test {
                 // timesOfGeneratingTrainTest * numOfHiddenNodes.length times.
                 sta[i][j][2] /=
                         (t.timesOfGeneratingTrainTest * t.numOfHiddenNodes.length);
+                // InstanceEditingTime repeated timesOfGeneratingTrainTest
+                // times.
+                sta[i][j][3] /= t.timesOfGeneratingTrainTest;
+                // Training time repeated
+                // timesOfGeneratingTrainTest * numOfHiddenNodes.length times.
+                sta[i][j][4] /=
+                        (t.timesOfGeneratingTrainTest * t.numOfHiddenNodes.length);
 
+                // EditWay NoiseRate Accuracy NumOfInstances NumofIterations
+                // InstanceEditingTime TrainingTime
                 if (j == 0) {
-                    System.out.print("FDS: ");
+                    System.out.print("FDS ");
                 } else if (j == 1) {
-                    System.out.print("ENN: ");
+                    System.out.print("ENN ");
                 } else {
-                    System.out.print("RCI: ");
+                    System.out.print("RCI ");
                 }
-                System.out.printf("size %d accur %.4f iter %d%n",
-                        Math.round(sta[i][j][0]), sta[i][j][1],
-                        Math.round(sta[i][j][2]));
+                System.out.printf(" %.2f", t.noiseRateCases[i]);
+                // Accuracy NumOfInstances NumofIterations InstanceEditingTime
+                // TrainingTime
+                System.out.printf(" %.4f %4d %5d %20d %20d%n", sta[i][j][1],
+                        Math.round(sta[i][j][0]), Math.round(sta[i][j][2]),
+                        Math.round(sta[i][j][3]), Math.round(sta[i][j][4]));
             }
         }
     }
