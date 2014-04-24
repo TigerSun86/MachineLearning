@@ -1,0 +1,16 @@
+Please choose the data you want to test:
+	0 Iris.
+	1 Wine.
+	2 Breast Cancer Wisconsin (Diagnostic).
+	3 Ionosphere.
+	4 Liver disorders.
+	5 Image Segmentation.
+	6 Car Evaluation.
+	7 Comprehensive test.
+	Other_number quit
+
+Do you want to change the default setting? (y or n)
+Data set: Iris
+Times: 1
+Noise: 0.00
+FDS: size 100 EditTime 0 nH 3 accur 0.9800 iter 4033 trainTime 17687500000 nH 5 accur 0.9800 iter 2400 trainTime 16703125000

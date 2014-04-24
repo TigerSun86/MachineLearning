@@ -1,5 +1,8 @@
 package instancereduction;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,8 +70,12 @@ public class Test {
                     + "\t3 Ionosphere.\n" + "\t4 Liver disorders.\n"
                     + "\t5 Image Segmentation.\n" + "\t6 Car Evaluation.\n"
                     + "\t7 Comprehensive test.\n" + "\tOther_number quit\n";
+    private static final boolean PRINT_TO_FILE = true;
+    private static final String DBG_FILE = "output.txt";
 
-    public static void main (String[] args) {
+    public static void main (String[] args) throws FileNotFoundException {
+        final PrintStream ps = System.out;
+
         final Scanner s = new Scanner(System.in);
         while (true) {
             final Test t;
@@ -86,12 +93,21 @@ public class Test {
                 break;
             }
             setting(t, s);
-
+            if (PRINT_TO_FILE) {
+                System.out.println("Output redirecting to: "+DBG_FILE);
+                System.setOut(new PrintStream(new FileOutputStream(DBG_FILE)));
+            }
             for (int dataCase = 0; dataCase < t.dataSets.length; dataCase++) {
                 TestOneDataSet(t, dataCase);
             }
+            if (PRINT_TO_FILE) {
+                System.out.close();
+                System.setOut(ps);
+                System.out.println("File writing finished at: "+DBG_FILE);
+            }
         } // End of while (true) {
         s.close();
+
     }
 
     private static void TestOneDataSet (Test t, int dataCase) {
