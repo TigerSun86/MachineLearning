@@ -222,7 +222,7 @@ public class Test {
             }
         }
 
-        System.out.printf("%s statistic infomation%n", dataSetName);
+        System.out.printf("%s statistic information%n", dataSetName);
         System.out
                 .printf("EditWay NoiseRate Accuracy NumOfInstances NumofIterations "
                         + "InstanceEditingTime TrainingTime (in nano second)%n");
@@ -251,16 +251,16 @@ public class Test {
                 // EditWay NoiseRate Accuracy NumOfInstances NumofIterations
                 // InstanceEditingTime TrainingTime
                 if (j == 0) {
-                    System.out.print("FDS ");
+                    System.out.print("FDS, ");
                 } else if (j == 1) {
-                    System.out.print("ENN ");
+                    System.out.print("ENN, ");
                 } else {
-                    System.out.print("RCI ");
+                    System.out.print("RCI, ");
                 }
-                System.out.printf(" %.2f", t.noiseRateCases[i]);
+                System.out.printf(" %.2f, ", t.noiseRateCases[i]);
                 // Accuracy NumOfInstances NumofIterations InstanceEditingTime
                 // TrainingTime
-                System.out.printf(" %.4f %4d %5d %20d %20d%n", sta[i][j][1],
+                System.out.printf("%.4f, %4d, %5d, %20d, %20d%n", sta[i][j][1],
                         Math.round(sta[i][j][0]), Math.round(sta[i][j][2]),
                         Math.round(sta[i][j][3]), Math.round(sta[i][j][4]));
             }
