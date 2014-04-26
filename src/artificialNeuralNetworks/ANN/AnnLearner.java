@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import util.Dbg;
+
 import common.DataCorrupter;
 import common.Evaluator;
 import common.RawAttrList;
@@ -21,12 +22,12 @@ public class AnnLearner {
     public static final String MODULE = "ALN";
     public static final boolean DBG = true;
 
-    private static final int MAX_ITER = 20000;
+    private static final int MAX_ITER = 10000;
 
     public final RawAttrList rawAttr;
-    public final AnnAttrList annAttr; // For nIn and nOut.
+    public AnnAttrList annAttr; // For nIn and nOut.
     public final RawExampleList rawTrain;
-    public final RawExampleList rawTest;
+    public RawExampleList rawTest;
 
     public RawExampleList rawTrainWithNoise;
 
@@ -39,8 +40,6 @@ public class AnnLearner {
     public AnnLearner(final String attrFName, final String trainFName,
             final String testFName) {
         rawAttr = new RawAttrList(attrFName);
-        annAttr = new AnnAttrList(rawAttr);
-
         rawTrain = new RawExampleList(trainFName);
 
         if (testFName != null) {
@@ -51,12 +50,81 @@ public class AnnLearner {
 
         rawTrainWithNoise = rawTrain;
 
+        annAttr = new AnnAttrList(rawTrain, rawAttr);
+
         nHidden = new ArrayList<Integer>();
         hiddenHasThres = true;
         outHasThres = true;
-        learnRate = 0;
-        momentumRate = 0;
+        learnRate = 0.1;
+        momentumRate = 0.1;
     }
+
+    /* For instance reduction begin ********************* */
+    public AnnLearner(final RawAttrList rawAttr, final double learnRate,
+            final double momentumRate) {
+        this.rawAttr = rawAttr;
+        this.rawTrain = null;
+        this.rawTest = null;
+        this.rawTrainWithNoise = null;
+        this.annAttr = null;
+        this.nHidden = null;
+        this.hiddenHasThres = true;
+        this.outHasThres = true;
+        this.learnRate = learnRate;
+        this.momentumRate = momentumRate;
+    }
+
+    public void setRawTrainWithNoise (final RawExampleList rawTrainWithNoise) {
+        this.rawTrainWithNoise = rawTrainWithNoise;
+        // Ann attributes' max and min depends on examples.
+        this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
+    }
+
+    public void setRawTest (final RawExampleList rawTest) {
+        this.rawTest = rawTest;
+    }
+
+    public void setNumOfHiddenNodes (final int nH) {
+        this.nHidden = new ArrayList<Integer>();
+        this.nHidden.add(nH);
+    }
+
+    public AccurAndIter kFoldLearning2 (final int k) {
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
+        final AnnExList[] exArray = annSet.splitIntoMultiSets(k);
+        if (exArray == null) {
+            return null;
+        }
+        int sumIter = 0;
+        for (int val = 0; val < exArray.length; val++) {
+            final AnnExList valSet = exArray[val];
+            final AnnExList trainSet = new AnnExList();
+            for (int other = 0; other < exArray.length; other++) {
+                if (other != val) { // All other set is train set.
+                    trainSet.addAll(exArray[other]);
+                }
+            }
+            final NetAndIter nai = validation(trainSet, valSet);
+            sumIter += nai.iter;
+        }
+
+        final int meanIter = sumIter / exArray.length;
+        final NeuralNetwork net = iter(annSet, meanIter);
+        final double accur = evalTest(net);
+        return new AccurAndIter(accur, meanIter);
+    }
+
+    public static class AccurAndIter {
+        public final double accur;
+        public final int iter;
+
+        public AccurAndIter(double accur, int iter) {
+            this.accur = accur;
+            this.iter = iter;
+        }
+    }
+
+    /* For instance reduction end ********************* */
 
     public double evalTrain (final NeuralNetwork net) {
         return Evaluator.evaluate(net, rawTrain);
@@ -79,7 +147,7 @@ public class AnnLearner {
     }
 
     public NeuralNetwork iterLearning (final int maxIter) {
-        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
         return iter(annSet, maxIter);
     }
 
@@ -90,7 +158,7 @@ public class AnnLearner {
     }
 
     public NeuralNetwork validationLearning (double ratio) {
-        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
 
         final AnnExList[] exArray = annSet.splitIntoTwoSets(ratio);
         final AnnExList trainSet = exArray[0];
@@ -102,7 +170,7 @@ public class AnnLearner {
     }
 
     public NeuralNetwork kFoldLearning (final int k) {
-        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
         final AnnExList[] exArray = annSet.splitIntoMultiSets(k);
         if (exArray == null) {
             return null;
@@ -128,7 +196,7 @@ public class AnnLearner {
 
     private NeuralNetwork iter (final AnnExList trainSet, final int maxIter) {
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         int iter = 0;
@@ -159,7 +227,7 @@ public class AnnLearner {
     private NetAndIter validation (final AnnExList trainSet,
             final AnnExList valSet) {
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         NeuralNetwork lastNet = new NeuralNetwork(net);
@@ -204,14 +272,14 @@ public class AnnLearner {
 
     public LinkedHashMap<String, LinkedHashMap<Double, Double>>
             errorVersusWeightsLearning (final int maxIter) {
-        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
 
         final AnnExList[] exArray = annSet.splitIntoTwoSets(VAL_RATIO);
         final AnnExList trainSet = exArray[0];
         final AnnExList valSet = exArray[1];
 
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         NeuralNetwork lastNet = new NeuralNetwork(net);
@@ -258,7 +326,7 @@ public class AnnLearner {
             averErrorOfOutput (final AnnExList trainSet,
                     final AnnExList valSet, final int maxIter) {
         NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         NeuralNetwork lastNet = new NeuralNetwork(net);
@@ -306,11 +374,11 @@ public class AnnLearner {
     public LinkedHashMap<String, LinkedHashMap<Double, Double>>
             errForEachOutput (final int maxIter) {
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
 
-        final AnnExList train = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList train = new AnnExList(rawTrainWithNoise, annAttr);
 
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
@@ -362,11 +430,11 @@ public class AnnLearner {
     public LinkedHashMap<String, LinkedHashMap<Double, Double>>
             outputForHidden (final int maxIter) {
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
 
-        final AnnExList exSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList exSet = new AnnExList(rawTrainWithNoise, annAttr);
 
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
@@ -399,11 +467,11 @@ public class AnnLearner {
     public LinkedHashMap<String, LinkedHashMap<Double, Double>>
             weightsForOneHidden (final int maxIter) {
         final NeuralNetwork net =
-                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
 
-        final AnnExList exSet = new AnnExList(rawTrainWithNoise, rawAttr);
+        final AnnExList exSet = new AnnExList(rawTrainWithNoise, annAttr);
 
         final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
                 new LinkedHashMap<String, LinkedHashMap<Double, Double>>();

@@ -8,13 +8,13 @@ package common;
  *         email: TigerSun86@gmail.com
  * @date Mar 6, 2014
  */
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.net.URL;
 
-public class DataReader {
-    private BufferedReader in = null;
+public class DataReader{
+    private LineNumberReader in = null;
     private final String fName;
 
     public DataReader(final String fNameIn) {
@@ -22,7 +22,7 @@ public class DataReader {
         try {
             final URL attrURL = new URL(fName);
             in =
-                    new BufferedReader(new InputStreamReader(
+                    new LineNumberReader(new InputStreamReader(
                             attrURL.openStream()));
         } catch (final IOException e) {
             System.err.println("Couldn't open file: " + fName);
@@ -56,5 +56,8 @@ public class DataReader {
             }
         }
     }
-
+    
+    public final int getLineNumber(){
+        return in.getLineNumber();
+    }
 }

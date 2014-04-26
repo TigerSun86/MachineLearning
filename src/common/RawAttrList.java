@@ -53,4 +53,14 @@ public class RawAttrList {
         in.close();
     }
 
+    @Override
+    public String toString () {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("X:");
+        sb.append(xList.toString());
+        sb.append(" T:");
+        sb.append(t.toString());
+        return sb.toString();
+    }
+
 }

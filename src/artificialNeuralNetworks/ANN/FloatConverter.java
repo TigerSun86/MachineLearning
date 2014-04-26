@@ -1,7 +1,9 @@
 package artificialNeuralNetworks.ANN;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import common.Mapper;
 import common.RawAttr;
 
 /**
@@ -17,23 +19,38 @@ public class FloatConverter {
     public static final double MID_VALUE = 0.5;
     public static final double LOW_VALUE = 0.1;
 
-    public static ArrayList<Double> toDouble (final ArrayList<String> values,
-            final ArrayList<RawAttr> attrs) {
+    public static ArrayList<Double> valuesToDouble (final ArrayList<String> values,
+            final AnnAttrList attrs) {
+        assert values.size() == attrs.rAttrs.xList.size();
         final ArrayList<Double> newV = new ArrayList<Double>();
-        for (int index = 0; index < attrs.size(); index++) {
+        for (int index = 0; index < values.size(); index++) {
             final String value = values.get(index); // Value in raw example.
-            final RawAttr attr = attrs.get(index); // Attribute of the value.
-            doubleOneValue(newV, value, attr);
+            // Raw Attribute of the value.
+            final RawAttr rAttr = attrs.rAttrs.xList.get(index);
+            // Ann Attribute of the value.
+            final List<AnnAttr> annAttr = attrs.getAnnAttrsAt(index);
+            doubleOneValue(newV, value, rAttr, annAttr);
         }
         return newV;
     }
 
-    public static void doubleOneValue (final ArrayList<Double> newV,
-            final String value, final RawAttr attr) {
-        if (attr.isContinuous) {
-            newV.add(Double.parseDouble(value));
-        } else if (attr.valueList.size() == 2) { // Have 2 possible values.
-            if (value.equals(attr.valueList.get(0))) {
+    public static ArrayList<Double> targetToDouble (final String value,
+            final AnnAttrList attrs) {
+        final ArrayList<Double> newV = new ArrayList<Double>();
+        doubleOneValue(newV, value, attrs.rAttrs.t, attrs.tList);
+        return newV;
+    }
+
+    private static void
+            doubleOneValue (final ArrayList<Double> newV, final String value,
+                    final RawAttr rAttr, final List<AnnAttr> annAttr) {
+        if (rAttr.isContinuous) {
+            assert annAttr.size() == 1;
+            final double x = Double.parseDouble(value);
+            final double y = Mapper.valueToMapped(x, annAttr.get(0));
+            newV.add(y);
+        } else if (rAttr.valueList.size() == 2) { // Have 2 possible values.
+            if (value.equals(rAttr.valueList.get(0))) {
                 newV.add(HIGH_VALUE); // First value converted to 0.9.
             } else {
                 newV.add(LOW_VALUE); // Second value converted to 0.1.
@@ -41,8 +58,8 @@ public class FloatConverter {
         } else {
             // Have multiple values, so split the attribute into multiple
             // attributes, one of them is 0.9 and all others are 0.1.
-            for (int attrIndex = 0; attrIndex < attr.valueList.size(); attrIndex++) {
-                if (value.equals(attr.valueList.get(attrIndex))) {
+            for (int attrIndex = 0; attrIndex < rAttr.valueList.size(); attrIndex++) {
+                if (value.equals(rAttr.valueList.get(attrIndex))) {
                     // Value in example converted to 0.9.
                     newV.add(HIGH_VALUE);
                 } else {
@@ -54,85 +71,57 @@ public class FloatConverter {
     }
 
     public static String targetBackString (final ArrayList<Double> values,
-            final RawAttr attr) {
-        final String newV;
-        if (attr.isContinuous) {
-            final double value = values.get(0);
-            newV = String.valueOf(value);
-        } else if (attr.valueList.size() == 2) { // Have 2 possible values.
-            // If higher equal than 0.5 is the first value in attribute,
-            // otherwise is the second one.
-            final double value = values.get(0);
-            if (Double.compare(value, MID_VALUE) >= 0) {
-                newV = attr.valueList.get(0);
-            } else {
-                newV = attr.valueList.get(1);
-            }
-        } else {
-            // Find the max value in values,
-            // the attribute value corresponding to max value is the new value.
-            double maxV = Double.NEGATIVE_INFINITY;
-            int maxAttrIndex = 0;
-
-            for (int attrIndex = 0; attrIndex < attr.valueList.size(); attrIndex++) {
-                final double value = values.get(attrIndex);
-                if (Double.compare(maxV, value) < 0) {
-                    maxV = value;
-                    maxAttrIndex = attrIndex;
-                }
-            } // End of for (int attrIndex = 0;
-            newV = attr.valueList.get(maxAttrIndex);
-        }
-        return newV;
+            final AnnAttrList attrs) {
+        return backOneValue(values, attrs.rAttrs.t, attrs.tList);
     }
 
-    public static ArrayList<String> backString (final ArrayList<Double> values,
-            final ArrayList<RawAttr> attrs) {
-        final ArrayList<String> newV = new ArrayList<String>();
-        int lastIndex = 0;
-        for (int index = 0; index < attrs.size(); index++) {
-            final RawAttr attr = attrs.get(index); // Attribute of the value.
-            lastIndex = backOneValue(newV, values, lastIndex, attr);
+    public static ArrayList<String> valuesBackString (final ArrayList<Double> values,
+            final AnnAttrList attrs) {
+        final ArrayList<String> newVs = new ArrayList<String>();
+        for (int index = 0; index < attrs.rAttrs.xList.size(); index++) {
+            // Get Ann values corresponding to the raw attribute.
+            final List<Double> annValues = attrs.getAnnValuesAt(index, values);
+            // Raw Attribute of the value.
+            final RawAttr rAttr = attrs.rAttrs.xList.get(index);
+            // Ann Attribute of the value.
+            final List<AnnAttr> annAttr = attrs.getAnnAttrsAt(index);
+            final String newV = backOneValue(annValues, rAttr, annAttr);
+            newVs.add(newV);
         }
-        return newV;
+        return newVs;
     }
 
-    private static int backOneValue (final ArrayList<String> newV,
-            final ArrayList<Double> values, final int lastIndex,
-            final RawAttr attr) {
-        final int retIndex;
-        if (attr.isContinuous) {
-            final double value = values.get(lastIndex);
-            newV.add(String.valueOf(value));
-            retIndex = lastIndex + 1;
-        } else if (attr.valueList.size() == 2) { // Have 2 possible values.
+    private static String backOneValue (final List<Double> annValues,
+            final RawAttr rAttr, final List<AnnAttr> annAttr) {
+        if (rAttr.isContinuous) {
+            assert annAttr.size() == 1;
+            final double y = annValues.get(0);
+            final double x = Mapper.mappedToValue(y, annAttr.get(0));
+            return String.valueOf(x);
+        } else if (rAttr.valueList.size() == 2) { // Have 2 possible values.
             // If higher equal than 0.5 is the first value in attribute,
             // otherwise is the second one.
-            final double value = values.get(lastIndex);
+            assert annValues.size() == 1;
+            final double value = annValues.get(0);
             if (Double.compare(value, MID_VALUE) >= 0) {
-                newV.add(attr.valueList.get(0));
+                return rAttr.valueList.get(0);
             } else {
-                newV.add(attr.valueList.get(1));
+                return rAttr.valueList.get(1);
             }
-            retIndex = lastIndex + 1;
         } else {
-            // Find the max value from lastIndex to
-            // lastIndex+attr.valueList.size(),
-            // the attribute value corresponding to max value is the new value.
+            // Find the max value. The value in raw attribute corresponding to
+            // max Ann value is the new value.
+            assert annValues.size() == rAttr.valueList.size();
             double maxV = Double.NEGATIVE_INFINITY;
-            int maxAttrIndex = 0;
-
-            for (int attrIndex = 0; attrIndex < attr.valueList.size(); attrIndex++) {
-                final int curIndex = lastIndex + attrIndex;
-                final double value = values.get(curIndex);
+            int maxVIndex = 0;
+            for (int vIndex = 0; vIndex < annValues.size(); vIndex++) {
+                final double value = annValues.get(vIndex);
                 if (Double.compare(maxV, value) < 0) {
                     maxV = value;
-                    maxAttrIndex = attrIndex;
+                    maxVIndex = vIndex;
                 }
-            } // End of for (int attrIndex = 0;
-            newV.add(attr.valueList.get(maxAttrIndex));
-            retIndex = lastIndex + attr.valueList.size();
+            } // End of for (int vIndex = 0;
+            return rAttr.valueList.get(maxVIndex);
         }
-        return retIndex;
     }
 }

@@ -12,22 +12,22 @@ import java.util.ArrayList;
  * @date Mar 7, 2014 4:16:57 PM
  */
 public class AnnExample {
-    public final ArrayList<Double> xList = new ArrayList<Double>(); // Attributes
-                                                                    // value.
-    public final ArrayList<Double> tList = new ArrayList<Double>(); // Training
-                                                                    // data.
+    // Attributes value.
+    public final ArrayList<Double> xList = new ArrayList<Double>();
+    // Target value.
+    public final ArrayList<Double> tList = new ArrayList<Double>();
 
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
         sb.append("X: ");
         for (Double x : xList) {
-            sb.append(x);
+            sb.append(String.format("%.3f", x));
             sb.append(" ");
         }
         sb.append("T: ");
         for (Double t : tList) {
-            sb.append(t);
+            sb.append(String.format("%.3f", t));
             sb.append(" ");
         }
         return sb.toString();
