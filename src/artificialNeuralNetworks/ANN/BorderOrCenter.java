@@ -32,7 +32,7 @@ public class BorderOrCenter {
             "http://my.fit.edu/~sunx2013/MachineLearning/boc-train51-49.txt";
     public String testFName = null;
 
-    private NeuralNetwork iter () {
+    private NeuralNetwork singleTest () {
         rawAttr = new RawAttrList(attrFName);
         rawTrain = new RawExampleList(trainFNme);
 
@@ -89,7 +89,7 @@ public class BorderOrCenter {
         return net;
     }
     
-    private void iter2 () {
+    private void distanceTest () {
         rawAttr = new RawAttrList(attrFName);
         rawTrain = new RawExampleList(trainFNme);
 
@@ -156,7 +156,7 @@ public class BorderOrCenter {
         ex2.xList.set(1, ex2.xList.get(1) + delta);
     }
     
-    private void iter3 () {
+    private void parallelTest () {
         rawAttr = new RawAttrList(attrFName);
         rawTrain = new RawExampleList(trainFNme);
 
@@ -226,6 +226,6 @@ public class BorderOrCenter {
     }
     
     public static void main(String[] args){
-        new BorderOrCenter().iter();
+        new BorderOrCenter().singleTest();
     }
 }
