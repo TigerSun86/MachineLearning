@@ -1,12 +1,14 @@
 package instancereduction;
 
-import java.util.BitSet;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
+import artificialNeuralNetworks.ANN.AnnLearner;
+import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
+import util.Combination2OutOfN;
 import util.Dbg;
-
-import common.MapTool;
-import common.RawAttr;
+import util.SysUtil;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -20,18 +22,127 @@ import common.RawExampleList;
  * @date Jun 13, 2014 11:50:40 AM
  */
 public class POCNN {
+    public static final String MODULE = "POCNN";
+    public static final boolean DBG = true;
+    private static String attrf =
+            "http://my.fit.edu/~sunx2013/MachineLearning/wine-attr.txt";
+    private static String trainf =
+            "http://my.fit.edu/~sunx2013/MachineLearning/wine-train.txt";
+    private static String testf =
+            "http://my.fit.edu/~sunx2013/MachineLearning/wine-test.txt";
+
+    public static void main (final String[] args) {
+
+        final RawAttrList rawAttr = new RawAttrList(attrf);
+        final RawExampleList exs = new RawExampleList(trainf);
+        final RawExampleList test = new RawExampleList(testf);
+        final AnnLearner annLearner = new AnnLearner(rawAttr, 0.1, 0.1);
+        long ennEditTime = SysUtil.getCpuTime();
+        RawExampleList rawTrainWithNoise = sPocNN(exs, rawAttr);
+        ennEditTime = SysUtil.getCpuTime() - ennEditTime;
+        annLearner.setRawTrainWithNoise(rawTrainWithNoise);
+
+        annLearner.setRawTest(test);
+        System.out.printf("POCNN: size %d", rawTrainWithNoise.size());
+
+        System.out.printf(" EditTime %d", ennEditTime);
+        int nH = 3;
+
+        annLearner.setNumOfHiddenNodes(nH);
+        long trainTime = SysUtil.getCpuTime();
+        final AccurAndIter aai = annLearner.kFoldLearning2(3);
+        trainTime = SysUtil.getCpuTime() - trainTime;
+        final double accur = aai.accur;
+        final int iter = aai.iter;
+
+        System.out.printf(" nH %d accur %.4f iter %d trainTime %d", nH, accur,
+                iter, trainTime);
+
+        System.out.println();
+    }
+
+    public static RawExampleList sPocNN (final RawExampleList s,
+            final RawAttrList attrs) {
+        final RawExampleList[] subS = seperateSbyClass(s, attrs);
+        // Use HashSet to store the result to avoid duplicate examples.
+        final HashSet<RawExample> result = new HashSet<RawExample>();
+        // Number of classes
+        final int n = attrs.t.valueList.size();
+        final Combination2OutOfN c = new Combination2OutOfN(n);
+        while (true) {
+            int[] com = c.next();
+            if (com == null) {
+                break;
+            }
+            Dbg.print(DBG, MODULE,
+                    "Processing classes: " + Arrays.toString(com));
+
+            final int s1Index = com[0] - 1;
+            final int s2Index = com[1] - 1;
+            final RawExampleList s1 = subS[s1Index];
+            final RawExampleList s2 = subS[s2Index];
+            result.addAll(selectingPocNN(s1, s2));
+        }
+        final RawExampleList ret = new RawExampleList();
+        ret.addAll(result);
+        Dbg.print(DBG, MODULE, "Final data set:" + ret.size()
+                + Dbg.NEW_LINE + ret);
+        return ret;
+    }
     
-    public static RawExampleList selectingPocNN(final RawExampleList s1,
-            final RawExampleList s2){
-        
+    public static RawExampleList rPocNN (final RawExampleList s,
+            final RawAttrList attrs) {
+        final RawExampleList[] subS = seperateSbyClass(s, attrs);
+        // Use HashSet to store the result to avoid duplicate examples.
+        final HashSet<RawExample> result = new HashSet<RawExample>();
+        // Number of classes
+        final int n = attrs.t.valueList.size();
+        final Combination2OutOfN c = new Combination2OutOfN(n);
+        while (true) {
+            int[] com = c.next();
+            if (com == null) {
+                break;
+            }
+            Dbg.print(DBG, MODULE,
+                    "Processing classes: " + Arrays.toString(com));
+
+            final int s1Index = com[0] - 1;
+            final int s2Index = com[1] - 1;
+            final RawExampleList s1 = subS[s1Index];
+            final RawExampleList s2 = subS[s2Index];
+            result.addAll(replacingPocNN(s1, s2));
+        }
+        final RawExampleList ret = new RawExampleList();
+        ret.addAll(result);
+        Dbg.print(DBG, MODULE, "Final data set:" + ret.size()
+                + Dbg.NEW_LINE + ret);
+        return ret;
+    }
+    
+    private static RawExampleList[] seperateSbyClass (final RawExampleList s,
+            final RawAttrList attrs) {
+        final ArrayList<String> classes = attrs.t.valueList;
+        final RawExampleList[] subS = new RawExampleList[classes.size()];
+        for (int i = 0; i < subS.length; i++) {
+            subS[i] = new RawExampleList();
+        }
+        for (RawExample e : s) {
+            final int index = classes.indexOf(e.t);
+            subS[index].add(e);
+        }
+        return subS;
+    }
+
+    private static RawExampleList selectingPocNN (final RawExampleList s1,
+            final RawExampleList s2) {
         final RawExample[] xp = findingPocNN(s1, s2);
         final RawExample xp1 = xp[0];
         final RawExample xp2 = xp[1];
         final HyperPlane h = new HyperPlane(xp1, xp2);
         final RawExampleList r1s1 = new RawExampleList();
         final RawExampleList r2s1 = new RawExampleList();
-        for (RawExample x: s1){
-            if (Double.compare(h.ask(x),0) >=0){
+        for (RawExample x : s1) {
+            if (Double.compare(h.ask(x), 0) >= 0) {
                 r1s1.add(x);
             } else {
                 r2s1.add(x);
@@ -39,60 +150,126 @@ public class POCNN {
         }
         final RawExampleList r1s2 = new RawExampleList();
         final RawExampleList r2s2 = new RawExampleList();
-        for (RawExample x: s2){
-            if (Double.compare(h.ask(x),0) >=0){
+        for (RawExample x : s2) {
+            if (Double.compare(h.ask(x), 0) >= 0) {
                 r1s2.add(x);
             } else {
                 r2s2.add(x);
             }
         }
-        if (!r1s1.isEmpty() && !r1s2.isEmpty()){
-            
-        }
-        if (!r2s1.isEmpty() && !r2s2.isEmpty()){
-            
-        }
         
-        return null;
+        final RawExampleList ret = new RawExampleList();
+        ret.add(xp1);
+        ret.add(xp2);
+        if (!r1s1.isEmpty() && !r1s2.isEmpty()) { // Misclassification in r1
+            ret.addAll(selectingPocNN(r1s1, r1s2));
+        }
+        if (!r2s1.isEmpty() && !r2s2.isEmpty()) { // Misclassification in r2
+            ret.addAll(selectingPocNN(r2s1, r2s2));
+        }
+
+        Dbg.print(DBG, MODULE, "Selected instances:" + ret.size()
+                + Dbg.NEW_LINE + ret);
+        return ret;
     }
+
+    private static RawExampleList replacingPocNN (final RawExampleList s1,
+            final RawExampleList s2) {
+        final RawExample[] xp = findingPocNN(s1, s2);
+        final RawExample xp1 = xp[0];
+        final RawExample xp2 = xp[1];
+
+        final HyperPlane h = new HyperPlane(xp1, xp2);
+        final RawExampleList r1s1 = new RawExampleList();
+        final RawExampleList r2s1 = new RawExampleList();
+        for (RawExample x : s1) {
+            if (Double.compare(h.ask(x), 0) >= 0) {
+                r1s1.add(x);
+            } else {
+                r2s1.add(x);
+            }
+        }
+        final RawExampleList r1s2 = new RawExampleList();
+        final RawExampleList r2s2 = new RawExampleList();
+        for (RawExample x : s2) {
+            if (Double.compare(h.ask(x), 0) >= 0) {
+                r1s2.add(x);
+            } else {
+                r2s2.add(x);
+            }
+        }
+        final RawExampleList ret = new RawExampleList();
+        if (!r1s1.isEmpty() && !r1s2.isEmpty()) { // Misclassification in r1
+            ret.addAll(replacingPocNN(r1s1, r1s2));
+        } else {
+            final RawExample xmor = getXmor(r1s1, r1s2);
+            ret.add(xmor);
+        }
+        if (!r2s1.isEmpty() && !r2s2.isEmpty()) { // Misclassification in r2
+            ret.addAll(replacingPocNN(r2s1, r2s2));
+        } else {
+            final RawExample xmor = getXmor(r2s1, r2s2);
+            ret.add(xmor);
+        }
+
+        Dbg.print(DBG, MODULE, "Replaced instances:" + ret.size()
+                + Dbg.NEW_LINE + ret);
+        return ret;
+    }
+
+    private static RawExample
+            getXmor (RawExampleList s1, RawExampleList s2) {
+        final RawExampleList s;
+        if (s1.isEmpty()){
+            s= s2;
+        } else {
+            s = s1;
+        }
+        final RawExample xmor = meanOf(s);
+        return xmor;
+    }
+
     private static class HyperPlane {
         public final double[] w;
         public final double b;
-        public HyperPlane(RawExample xp1, RawExample xp2){
+
+        public HyperPlane(RawExample xp1, RawExample xp2) {
             w = getW(xp1, xp2);
-            
+
             final double[] c = middlePoint(xp1, xp2);
             double bt = 0;
-            for (int i = 0; i < w.length; i++){
+            for (int i = 0; i < w.length; i++) {
                 bt += w[i] * c[i];
             }
             b = bt;
         }
-        public double ask(RawExample x){
+
+        public double ask (RawExample x) {
             double ret = 0;
-            for (int i = 0; i < w.length; i++){
+            for (int i = 0; i < w.length; i++) {
                 final double vx = Double.parseDouble(x.xList.get(i));
                 ret += w[i] * vx;
             }
             return ret - b;
         }
+
         private static double[] getW (RawExample xp1, RawExample xp2) {
             final double[] w = new double[xp1.xList.size()];
-            for (int i = 0; i < xp1.xList.size(); i++){
+            for (int i = 0; i < xp1.xList.size(); i++) {
                 final double v1 = Double.parseDouble(xp1.xList.get(i));
                 final double v2 = Double.parseDouble(xp2.xList.get(i));
                 w[i] = v1 - v2;
             }
             double wMode = 0;
-            for (int i = 0; i < w.length; i++){
+            for (int i = 0; i < w.length; i++) {
                 wMode += w[i] * w[i];
             }
             wMode = Math.sqrt(wMode);
-            if (Double.compare(wMode, 0) == 0){ // Avoid mode equals to zero.
+            if (Double.compare(wMode, 0) == 0) { // Avoid mode equals to zero.
                 wMode = Double.MIN_VALUE;
             }
 
-            for (int i = 0; i < w.length; i++){
+            for (int i = 0; i < w.length; i++) {
                 w[i] /= wMode;
             }
 
@@ -101,17 +278,16 @@ public class POCNN {
 
         private static double[] middlePoint (RawExample xp1, RawExample xp2) {
             final double[] c = new double[xp1.xList.size()];
-            for (int i = 0; i < xp1.xList.size(); i++){
+            for (int i = 0; i < xp1.xList.size(); i++) {
                 final double v1 = Double.parseDouble(xp1.xList.get(i));
                 final double v2 = Double.parseDouble(xp2.xList.get(i));
-                c[i] = (v1 + v2) /2;
+                c[i] = (v1 + v2) / 2;
             }
             return c;
         }
     }
 
-
-    public static RawExample[] findingPocNN (final RawExampleList s1,
+    private static RawExample[] findingPocNN (final RawExampleList s1,
             final RawExampleList s2) {
         final RawExampleList st1;
         final RawExampleList st2;
@@ -172,7 +348,7 @@ public class POCNN {
                 final double v2 = Double.parseDouble(e.xList.get(i));
                 dis += Math.abs(v1[i] - v2);
             }
-            if (Double.compare(minDis, dis) < 0) {
+            if (Double.compare(minDis, dis) > 0) {
                 minDis = dis;
                 nn = e;
             }
