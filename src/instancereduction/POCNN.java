@@ -254,6 +254,7 @@ public class POCNN {
     private static class HyperPlane {
         public final double[] w;
         public final double b;
+        public final RawExample xp; // To prevent identical points.
 
         public HyperPlane(RawExample xp1, RawExample xp2) {
             boolean isEqual = true;
@@ -290,6 +291,7 @@ public class POCNN {
                 }
                 b = bt;
             }
+            xp = xp1;
         }
 
         public double ask (RawExample x) {
@@ -301,11 +303,10 @@ public class POCNN {
             if (Double.compare(ret - b, 0) != 0) {
                 return ret - b;
             } else {
-                // If point is just on the plane, return randomly to prevent two
-                // identical points which have same class but never got
-                // separated.
-                return Math.random() > 0.5 ? Double.MIN_VALUE
-                        : -Double.MIN_VALUE;
+                // If many points are just on the plane, return separately to
+                // prevent two identical points which have same class but never
+                // got separated.
+                return x.equals(xp) ? Double.MIN_VALUE : -Double.MIN_VALUE;
             }
         }
 

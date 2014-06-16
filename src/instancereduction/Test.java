@@ -67,8 +67,8 @@ public class Test {
     private int timesOfGeneratingTrainTest = 10;
     private String[][] dataSets = DATA_SOURCE;
 
-    private static final Reducible[] METHODS = { new SPOCNN(), new RPOCNN() };
-    private static final String[] METHOD_NAMES = { "SPOCNN", "RPOCNN" };
+    private static final Reducible[] METHODS = { new SPOCNN(), new RPOCNN(), new ENNSPOCNN(), new ENNRPOCNN() };
+    private static final String[] METHOD_NAMES = { "SPOCNN", "RPOCNN", "ENN+SPOCNN", "ENN+RPOCNN" };
     private BitSet metFlag = new BitSet(METHODS.length);
 
     private static final String TEST_INFO =
@@ -82,7 +82,7 @@ public class Test {
     private static final String DBG_FILE = "output.txt";
 
     public Test() {
-        metFlag.set(0, METHODS.length);
+        //metFlag.set(0, METHODS.length);
     }
 
     public static void main (String[] args) throws FileNotFoundException {
@@ -319,7 +319,6 @@ public class Test {
 
                 RawExampleList rawTrainWithNoise =
                         DataCorrupter.corrupt(train, rawAttr, noiseRate);
-                annLearner.setRawTrainWithNoise(rawTrainWithNoise);
                 System.out.printf("Noise: %.2f%n", noiseRate);
 
                 for (int metIndex = 0; metIndex < METHODS.length; metIndex++) {
@@ -481,18 +480,12 @@ public class Test {
         t.momentum = getDouble(s);
     }
 
-    private static final String METSET = "0, spocnn. 1, rpocnn";
+    private static final String METSET = "0, spocnn. 1, rpocnn. 2, enn+spocnn. 3, enn+rpocnn.";
 
     private static void setting2 (final Test t, final Scanner s) {
         System.out.println(METSET);
         int i = getInt(s);
-        if (i == 1) {
-            t.metFlag.set(1);
-            t.metFlag.set(0, false);
-        } else {
-            t.metFlag.set(0);
-            t.metFlag.set(1, false);
-        }
+        t.metFlag.set(i, true);
     }
 
     private static int getCommandNumber (final Scanner s) {
