@@ -13,4 +13,5 @@ public interface Mappable {
     public double getValueMin();
     public double getMappedMax();
     public double getMappedMin();
+    public int getFractionLength();
 }

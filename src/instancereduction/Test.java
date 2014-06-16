@@ -5,12 +5,14 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Scanner;
 
 import util.SysUtil;
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
+
 import common.DataCorrupter;
 import common.RawAttrList;
 import common.RawExampleList;
@@ -35,10 +37,10 @@ public class Test {
                             "Wine",
                             "http://my.fit.edu/~sunx2013/MachineLearning/wine-attr.txt",
                             "http://my.fit.edu/~sunx2013/MachineLearning/wine.txt" },
-                    {
+/*                    {
                             "Breast Cancer Wisconsin (Diagnostic)",
                             "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-attr.txt",
-                            "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt" },
+                            "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt" },*/
                     {
                             "Ionosphere",
                             "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere-attr.txt",
@@ -47,31 +49,41 @@ public class Test {
                             "Liver Disorders",
                             "http://my.fit.edu/~sunx2013/MachineLearning/bupa-attr.txt",
                             "http://my.fit.edu/~sunx2013/MachineLearning/bupa.txt" },
-                    {
+/*                    {
                             "Image Segmentation",
                             "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-attr.txt",
-                            "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt" },
-                    {
+                            "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt" },*/
+/*                    {
                             "Car Evaluation",
                             "http://my.fit.edu/~sunx2013/MachineLearning/car-attr.txt",
-                            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt" } };
+                            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt" } */};
 
     private double learnRate = 0.1;
     private double momentum = 0.1;
-    private int[] numOfHiddenNodes = { 3, 5, 10 };
-    private double[] noiseRateCases = { 0, 0.1, 0.2 };
-    private int timesOfGeneratingTrainTest = 3;
+     private int[] numOfHiddenNodes = { 3, 5, 10 };
+     private double[] noiseRateCases = { 0, 0.1, 0.2 }; 
+/*    private int[] numOfHiddenNodes = { 3 };
+    private double[] noiseRateCases = { 0.1 };*/
+    private int timesOfGeneratingTrainTest = 10;
     private String[][] dataSets = DATA_SOURCE;
 
+    private static final Reducible[] METHODS = { new SPOCNN(), new RPOCNN() };
+    private static final String[] METHOD_NAMES = { "SPOCNN", "RPOCNN" };
+    private BitSet metFlag = new BitSet(METHODS.length);
+
     private static final String TEST_INFO =
-            "Please choose the data you want to test:\n" + "\t0 Iris.\n"
-                    + "\t1 Wine.\n"
-                    + "\t2 Breast Cancer Wisconsin (Diagnostic).\n"
-                    + "\t3 Ionosphere.\n" + "\t4 Liver disorders.\n"
-                    + "\t5 Image Segmentation.\n" + "\t6 Car Evaluation.\n"
-                    + "\t7 Comprehensive test.\n" + "\tOther_number quit\n";
+            "Please choose the data you want to test:\n" + "\t0 Comprehensive test.\n" + "\t1 Iris.\n"
+                    + "\t2 Wine.\n"
+                    + "\t3 Breast Cancer Wisconsin (Diagnostic).\n"
+                    + "\t4 Ionosphere.\n" + "\t5 Liver disorders.\n"
+                    + "\t6 Image Segmentation.\n" + "\t7 Car Evaluation.\n"
+                     + "\tOther_number quit\n";
     private static final boolean PRINT_TO_FILE = true;
     private static final String DBG_FILE = "output.txt";
+
+    public Test() {
+        metFlag.set(0, METHODS.length);
+    }
 
     public static void main (String[] args) throws FileNotFoundException {
         final PrintStream ps = System.out;
@@ -81,10 +93,10 @@ public class Test {
             final Test t;
             System.out.println(TEST_INFO);
             int command = getCommandNumber(s);
-            if (command < DATA_SOURCE.length && command >= 0) {
+            if (command <= DATA_SOURCE.length && command > 0) {
                 t = new Test();
-                t.dataSets = new String[][] { DATA_SOURCE[command] };
-            } else if (command == DATA_SOURCE.length) {
+                t.dataSets = new String[][] { DATA_SOURCE[command - 1] };
+            } else if (command == 0) {
                 t = new Test(); // Comprehensive test.
             } else {
                 t = null;
@@ -93,17 +105,18 @@ public class Test {
                 break;
             }
             setting(t, s);
+            setting2(t, s);
             if (PRINT_TO_FILE) {
-                System.out.println("Output redirecting to: "+DBG_FILE);
+                System.out.println("Output redirecting to: " + DBG_FILE);
                 System.setOut(new PrintStream(new FileOutputStream(DBG_FILE)));
             }
             for (int dataCase = 0; dataCase < t.dataSets.length; dataCase++) {
-                TestOneDataSet(t, dataCase);
+                TestOneDataSetOnPocnn(t, dataCase);
             }
             if (PRINT_TO_FILE) {
                 System.out.close();
                 System.setOut(ps);
-                System.out.println("File writing finished at: "+DBG_FILE);
+                System.out.println("File writing finished at: " + DBG_FILE);
             }
         } // End of while (true) {
         s.close();
@@ -267,6 +280,131 @@ public class Test {
         }
     }
 
+    private static void TestOneDataSetOnPocnn (Test t, int dataCase) {
+        // Noise, FDS/ENN/RCI, Size/Accur/Iter/InstanceEditingTime/TrainingTime
+        final double[][][] sta =
+                new double[t.noiseRateCases.length][METHODS.length][5];
+        for (int i = 0; i < t.noiseRateCases.length; i++) {
+            sta[i] = new double[METHODS.length][5];
+            for (int j = 0; j < sta[i].length; j++) {
+                sta[i][j] = new double[5];
+                for (int k = 0; k < sta[i][j].length; k++) {
+                    sta[i][j][k] = 0;
+                }
+            }
+        }
+
+        final String dataSetName = t.dataSets[dataCase][0];
+        final String attrFile = t.dataSets[dataCase][1];
+        final String dataFile = t.dataSets[dataCase][2];
+        System.out.println("Data set: " + dataSetName);
+
+        final RawAttrList rawAttr = new RawAttrList(attrFile);
+        final RawExampleList exs = new RawExampleList(dataFile);
+        final AnnLearner annLearner =
+                new AnnLearner(rawAttr, t.learnRate, t.momentum);
+        for (int times = 1; times <= t.timesOfGeneratingTrainTest; times++) {
+            System.out.println("Times: " + times);
+
+            Collections.shuffle(exs); // Shuffle examples.
+            final RawExampleList[] exs2 =
+                    TrainTestSplitter.split(exs,
+                            TrainTestSplitter.DEFAULT_RATIO);
+            final RawExampleList train = exs2[0];
+            final RawExampleList test = exs2[1];
+            annLearner.setRawTest(test);
+
+            for (int noiseI = 0; noiseI < t.noiseRateCases.length; noiseI++) {
+                final double noiseRate = t.noiseRateCases[noiseI];
+
+                RawExampleList rawTrainWithNoise =
+                        DataCorrupter.corrupt(train, rawAttr, noiseRate);
+                annLearner.setRawTrainWithNoise(rawTrainWithNoise);
+                System.out.printf("Noise: %.2f%n", noiseRate);
+
+                for (int metIndex = 0; metIndex < METHODS.length; metIndex++) {
+                    if (t.metFlag.get(metIndex)) {
+                        final Reducible method = METHODS[metIndex];
+                        long editTime = SysUtil.getCpuTime();
+                        final RawExampleList reducedSet =
+                                method.reduce(rawTrainWithNoise, rawAttr);
+                        editTime = SysUtil.getCpuTime() - editTime;
+                        // Set data set for ANN learning.
+                        annLearner.setRawTrainWithNoise(reducedSet);
+
+                        sta[noiseI][metIndex][0] += reducedSet.size();
+                        System.out.printf("%s: size %d",
+                                METHOD_NAMES[metIndex],
+                                reducedSet.size());
+                        sta[noiseI][metIndex][3] += editTime;
+                        System.out.printf(" EditTime %d", editTime);
+                        for (int nH : t.numOfHiddenNodes) {
+                            annLearner.setNumOfHiddenNodes(nH);
+                            long trainTime = SysUtil.getCpuTime();
+                            final AccurAndIter aai =
+                                    annLearner.kFoldLearning2(3);
+                            trainTime = SysUtil.getCpuTime() - trainTime;
+                            final double accur = aai.accur;
+                            final int iter = aai.iter;
+                            sta[noiseI][metIndex][1] += accur;
+                            sta[noiseI][metIndex][2] += iter;
+                            sta[noiseI][metIndex][4] += trainTime;
+                            System.out.printf(
+                                    " nH %d accur %.4f iter %d trainTime %d",
+                                    nH, accur, iter, trainTime);
+                        }
+                        System.out.println();
+                    }
+                }
+            }
+        }
+
+        System.out.printf("%s statistic information%n", dataSetName);
+        System.out
+                .printf("EditWay NoiseRate Accuracy NumOfInstances NumofIterations "
+                        + "InstanceEditingTime TrainingTime (in nano second)%n");
+        for (int i = 0; i < t.noiseRateCases.length; i++) {
+
+            for (int j = 0; j < METHODS.length; j++) {
+                if (t.metFlag.get(j)) {
+                    // NumOfInstances repeated timesOfGeneratingTrainTest times.
+                    sta[i][j][0] /= t.timesOfGeneratingTrainTest;
+                    // Accuracy repeated
+                    // timesOfGeneratingTrainTest * numOfHiddenNodes.length
+                    // times.
+                    sta[i][j][1] /=
+                            (t.timesOfGeneratingTrainTest * t.numOfHiddenNodes.length);
+                    // Number of iterations repeated
+                    // timesOfGeneratingTrainTest * numOfHiddenNodes.length
+                    // times.
+                    sta[i][j][2] /=
+                            (t.timesOfGeneratingTrainTest * t.numOfHiddenNodes.length);
+                    // InstanceEditingTime repeated timesOfGeneratingTrainTest
+                    // times.
+                    sta[i][j][3] /= t.timesOfGeneratingTrainTest;
+                    // Training time repeated
+                    // timesOfGeneratingTrainTest * numOfHiddenNodes.length
+                    // times.
+                    sta[i][j][4] /=
+                            (t.timesOfGeneratingTrainTest * t.numOfHiddenNodes.length);
+
+                    // EditWay NoiseRate Accuracy NumOfInstances NumofIterations
+                    // InstanceEditingTime TrainingTime
+                    System.out.printf("%s, ", METHOD_NAMES[j]);
+
+                    System.out.printf(" %.2f, ", t.noiseRateCases[i]);
+                    // Accuracy NumOfInstances NumofIterations
+                    // InstanceEditingTime
+                    // TrainingTime
+                    System.out.printf("%.4f, %4d, %5d, %20d, %20d%n",
+                            sta[i][j][1], Math.round(sta[i][j][0]),
+                            Math.round(sta[i][j][2]), Math.round(sta[i][j][3]),
+                            Math.round(sta[i][j][4]));
+                }
+            }
+        }
+    }
+
     private static final String SETTING1 =
             "Do you want to change the default setting? (y or n)";
     private static final String SETTING2 =
@@ -341,6 +479,20 @@ public class Test {
         // Momentum rate.
         System.out.println(SETTING6 + " (default " + t.momentum + ")");
         t.momentum = getDouble(s);
+    }
+
+    private static final String METSET = "0, spocnn. 1, rpocnn";
+
+    private static void setting2 (final Test t, final Scanner s) {
+        System.out.println(METSET);
+        int i = getInt(s);
+        if (i == 1) {
+            t.metFlag.set(1);
+            t.metFlag.set(0, false);
+        } else {
+            t.metFlag.set(0);
+            t.metFlag.set(1, false);
+        }
     }
 
     private static int getCommandNumber (final Scanner s) {

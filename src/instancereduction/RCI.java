@@ -6,7 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import util.Dbg;
-import common.MapTool;
+
+import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -28,7 +29,9 @@ public class RCI {
     public static RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
         assert !attrs.t.isContinuous;
-        final RawExampleList exs2 = MapTool.mapExs(exs, attrs);
+        // Map all attributes in range 0 to 1.
+        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
+        final RawExampleList exs2 = mAttr.mapExs(exs, attrs);
         
         final BitSet reduced = new BitSet(exs2.size());
         // Reduce instances of each class seperately.

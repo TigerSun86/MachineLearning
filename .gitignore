@@ -221,3 +221,4 @@ pip-log.txt
 .svn/
 
 src/instancereduction/T.java
+output.txt

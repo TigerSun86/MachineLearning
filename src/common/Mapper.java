@@ -1,5 +1,7 @@
 package common;
 
+import util.MyMath;
+
 /**
  * FileName: Mapper.java
  * @Description:
@@ -65,6 +67,9 @@ public class Mapper {
                 ((valueMax - valueMin) / (mappedMax - mappedMin))
                         * (y - mappedMin) + valueMin;
         assert !Double.isNaN(x);
-        return x;
+        final int flen = m.getFractionLength();
+        // Keep 1 more bit fraction for potential value.
+        final double ret = MyMath.doubleRound(x, flen + 1);
+        return ret;
     }
 }

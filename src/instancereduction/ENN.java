@@ -6,7 +6,7 @@ import java.util.Random;
 
 import util.Dbg;
 
-import common.MapTool;
+import common.MappedAttrList;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -28,7 +28,9 @@ public class ENN {
 
     public static RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
-        final RawExampleList exs2 = MapTool.mapExs(exs, attrs);
+        // Map all attributes in range 0 to 1.
+        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
+        final RawExampleList exs2 = mAttr.mapExs(exs, attrs);
 
         // Measure distances between each examples.
         final double[][] diss = getDistances(exs2, attrs);

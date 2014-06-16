@@ -3,6 +3,7 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.MappedAttr;
 import common.Mapper;
 import common.RawAttr;
 
@@ -28,7 +29,7 @@ public class FloatConverter {
             // Raw Attribute of the value.
             final RawAttr rAttr = attrs.rAttrs.xList.get(index);
             // Ann Attribute of the value.
-            final List<AnnAttr> annAttr = attrs.getAnnAttrsAt(index);
+            final List<MappedAttr> annAttr = attrs.getAnnAttrsAt(index);
             doubleOneValue(newV, value, rAttr, annAttr);
         }
         return newV;
@@ -43,7 +44,7 @@ public class FloatConverter {
 
     private static void
             doubleOneValue (final ArrayList<Double> newV, final String value,
-                    final RawAttr rAttr, final List<AnnAttr> annAttr) {
+                    final RawAttr rAttr, final List<MappedAttr> annAttr) {
         if (rAttr.isContinuous) {
             assert annAttr.size() == 1;
             final double x = Double.parseDouble(value);
@@ -84,7 +85,7 @@ public class FloatConverter {
             // Raw Attribute of the value.
             final RawAttr rAttr = attrs.rAttrs.xList.get(index);
             // Ann Attribute of the value.
-            final List<AnnAttr> annAttr = attrs.getAnnAttrsAt(index);
+            final List<MappedAttr> annAttr = attrs.getAnnAttrsAt(index);
             final String newV = backOneValue(annValues, rAttr, annAttr);
             newVs.add(newV);
         }
@@ -92,7 +93,7 @@ public class FloatConverter {
     }
 
     private static String backOneValue (final List<Double> annValues,
-            final RawAttr rAttr, final List<AnnAttr> annAttr) {
+            final RawAttr rAttr, final List<MappedAttr> annAttr) {
         if (rAttr.isContinuous) {
             assert annAttr.size() == 1;
             final double y = annValues.get(0);

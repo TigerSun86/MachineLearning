@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import artificialNeuralNetworks.ANN.AnnLearner;
-import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 import util.Combination2OutOfN;
 import util.Dbg;
 import util.SysUtil;
+import artificialNeuralNetworks.ANN.AnnLearner;
+import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
+
+import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -25,11 +27,11 @@ public class POCNN {
     public static final String MODULE = "POCNN";
     public static final boolean DBG = true;
     private static String attrf =
-            "http://my.fit.edu/~sunx2013/MachineLearning/wine-attr.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-attr.txt";
     private static String trainf =
-            "http://my.fit.edu/~sunx2013/MachineLearning/wine-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-train.txt";
     private static String testf =
-            "http://my.fit.edu/~sunx2013/MachineLearning/wine-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-test.txt";
 
     public static void main (final String[] args) {
 
@@ -38,7 +40,7 @@ public class POCNN {
         final RawExampleList test = new RawExampleList(testf);
         final AnnLearner annLearner = new AnnLearner(rawAttr, 0.1, 0.1);
         long ennEditTime = SysUtil.getCpuTime();
-        RawExampleList rawTrainWithNoise = sPocNN(exs, rawAttr);
+        RawExampleList rawTrainWithNoise = rPocNN(exs, rawAttr);
         ennEditTime = SysUtil.getCpuTime() - ennEditTime;
         annLearner.setRawTrainWithNoise(rawTrainWithNoise);
 
@@ -61,8 +63,15 @@ public class POCNN {
         System.out.println();
     }
 
-    public static RawExampleList sPocNN (final RawExampleList s,
+    private static int count = 0;
+
+    public static RawExampleList sPocNN (final RawExampleList exs,
             final RawAttrList attrs) {
+        count = 0;
+        // Map all attributes in range 0 to 1.
+        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
+        final RawExampleList s = mAttr.mapExs(exs, attrs);
+
         final RawExampleList[] subS = seperateSbyClass(s, attrs);
         // Use HashSet to store the result to avoid duplicate examples.
         final HashSet<RawExample> result = new HashSet<RawExample>();
@@ -83,15 +92,22 @@ public class POCNN {
             final RawExampleList s2 = subS[s2Index];
             result.addAll(selectingPocNN(s1, s2));
         }
-        final RawExampleList ret = new RawExampleList();
+        RawExampleList ret = new RawExampleList();
         ret.addAll(result);
-        Dbg.print(DBG, MODULE, "Final data set:" + ret.size()
-                + Dbg.NEW_LINE + ret);
+
+        // Map back values.
+        ret = mAttr.backExs(ret, attrs);
+        Dbg.print(DBG, MODULE, "Final data set:" + ret.size() + Dbg.NEW_LINE
+                + ret);
         return ret;
     }
-    
-    public static RawExampleList rPocNN (final RawExampleList s,
+
+    public static RawExampleList rPocNN (final RawExampleList exs,
             final RawAttrList attrs) {
+        // Map all attributes in range 0 to 1.
+        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
+        final RawExampleList s = mAttr.mapExs(exs, attrs);
+
         final RawExampleList[] subS = seperateSbyClass(s, attrs);
         // Use HashSet to store the result to avoid duplicate examples.
         final HashSet<RawExample> result = new HashSet<RawExample>();
@@ -112,13 +128,16 @@ public class POCNN {
             final RawExampleList s2 = subS[s2Index];
             result.addAll(replacingPocNN(s1, s2));
         }
-        final RawExampleList ret = new RawExampleList();
+        RawExampleList ret = new RawExampleList();
         ret.addAll(result);
-        Dbg.print(DBG, MODULE, "Final data set:" + ret.size()
-                + Dbg.NEW_LINE + ret);
+
+        // Map back values.
+        ret = mAttr.backExs(ret, attrs);
+        Dbg.print(DBG, MODULE, "Final data set:" + ret.size() + Dbg.NEW_LINE
+                + ret);
         return ret;
     }
-    
+
     private static RawExampleList[] seperateSbyClass (final RawExampleList s,
             final RawAttrList attrs) {
         final ArrayList<String> classes = attrs.t.valueList;
@@ -135,6 +154,10 @@ public class POCNN {
 
     private static RawExampleList selectingPocNN (final RawExampleList s1,
             final RawExampleList s2) {
+        count++;
+        if (count == 1000) {
+            count++;
+        }
         final RawExample[] xp = findingPocNN(s1, s2);
         final RawExample xp1 = xp[0];
         final RawExample xp2 = xp[1];
@@ -157,7 +180,7 @@ public class POCNN {
                 r2s2.add(x);
             }
         }
-        
+
         final RawExampleList ret = new RawExampleList();
         ret.add(xp1);
         ret.add(xp2);
@@ -217,11 +240,10 @@ public class POCNN {
         return ret;
     }
 
-    private static RawExample
-            getXmor (RawExampleList s1, RawExampleList s2) {
+    private static RawExample getXmor (RawExampleList s1, RawExampleList s2) {
         final RawExampleList s;
-        if (s1.isEmpty()){
-            s= s2;
+        if (s1.isEmpty()) {
+            s = s2;
         } else {
             s = s1;
         }
@@ -234,14 +256,40 @@ public class POCNN {
         public final double b;
 
         public HyperPlane(RawExample xp1, RawExample xp2) {
-            w = getW(xp1, xp2);
-
-            final double[] c = middlePoint(xp1, xp2);
-            double bt = 0;
-            for (int i = 0; i < w.length; i++) {
-                bt += w[i] * c[i];
+            boolean isEqual = true;
+            for (int i = 0; i < xp1.xList.size(); i++) {
+                if (!xp1.xList.get(i).equals(xp2.xList.get(i))) {
+                    isEqual = false;
+                    break;
+                }
             }
-            b = bt;
+
+            if (!isEqual) {
+                w = getW(xp1, xp2);
+
+                final double[] c = middlePoint(xp1, xp2);
+                double bt = 0;
+                for (int i = 0; i < w.length; i++) {
+                    bt += w[i] * c[i];
+                }
+                b = bt;
+            } else {
+                // To prevent identical points having different classes.
+                // Slope (w) is random, point (c) is xp1.
+                w = new double[xp1.xList.size()];
+                for (int i = 0; i < w.length; i++) {
+                    w[i] = Math.random();
+                }
+                final double[] c = new double[xp1.xList.size()];
+                for (int i = 0; i < c.length; i++) {
+                    c[i] = Double.parseDouble(xp1.xList.get(i));
+                }
+                double bt = 0;
+                for (int i = 0; i < w.length; i++) {
+                    bt += w[i] * c[i];
+                }
+                b = bt;
+            }
         }
 
         public double ask (RawExample x) {
@@ -250,7 +298,15 @@ public class POCNN {
                 final double vx = Double.parseDouble(x.xList.get(i));
                 ret += w[i] * vx;
             }
-            return ret - b;
+            if (Double.compare(ret - b, 0) != 0) {
+                return ret - b;
+            } else {
+                // If point is just on the plane, return randomly to prevent two
+                // identical points which have same class but never got
+                // separated.
+                return Math.random() > 0.5 ? Double.MIN_VALUE
+                        : -Double.MIN_VALUE;
+            }
         }
 
         private static double[] getW (RawExample xp1, RawExample xp2) {
