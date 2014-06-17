@@ -1,5 +1,6 @@
 package util;
 
+import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -74,5 +75,10 @@ public class MyMath {
     public static double
             randomDoubleBetween (final double min, final double max) {
         return (Math.random() * (max - min)) + min;
+    }
+    
+    public static double distance (Point2D.Double p1, Point2D.Double p2) {
+        return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y)
+                * (p1.y - p2.y));
     }
 }
