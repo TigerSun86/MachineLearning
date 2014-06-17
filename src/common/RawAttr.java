@@ -21,6 +21,12 @@ public class RawAttr {
         this.valueList = new ArrayList<String>();
     }
 
+    public RawAttr(final String nameIn, final boolean isContinuous) {
+        this.name = nameIn;
+        this.isContinuous = isContinuous;
+        this.valueList = new ArrayList<String>();
+    }
+
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();

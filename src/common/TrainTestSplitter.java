@@ -1,5 +1,6 @@
 package common;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
@@ -13,18 +14,20 @@ import java.util.Random;
  */
 public class TrainTestSplitter {
     public static final double DEFAULT_RATIO = 0.667;
-    
-/*    private static final String FILE =
-            "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data";*/
+
+    /* private static final String FILE =
+     * "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
+     * ; */
     private static final String FILE =
-            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt" ;
-   
+            "http://my.fit.edu/~sunx2013/MachineLearning/car.txt";
+
     public static void main (String[] args) {
-        //final String fName = deleteCommaAndPutClassBack(FILE);
+        // final String fName = deleteCommaAndPutClassBack(FILE);
         generateTrainTest(FILE);
     }
 
-    private static String deleteIDAndCommaAndPutClassBack (final String fileName) {
+    private static String
+            deleteIDAndCommaAndPutClassBack (final String fileName) {
         final RawExampleList exs = new RawExampleList();
         final DataReader in = new DataReader(fileName);
         int numOfAttr = -1;
@@ -67,6 +70,7 @@ public class TrainTestSplitter {
         writeExamples(exs, newName);
         return newName;
     }
+
     private static String deleteCommaAndPutClassBack (final String fileName) {
         final RawExampleList exs = new RawExampleList();
         final DataReader in = new DataReader(fileName);
@@ -188,5 +192,59 @@ public class TrainTestSplitter {
         }
 
         return exArray;
+    }
+
+    /**
+     * public static RawExampleList[] splitSetWithConsistentClassRatio
+     * (RawExampleList exs, RawAttrList attrs, double ratio)
+     * 
+     * Splits given RawExampleList into 2 lists by given ratio in percentage.
+     * The first output RawExampleList has the number of examples of the ratio,
+     * the second one has remaining examples. Splits examples randomly.
+     * 
+     * This method guarantees returning 2 lists with same class ratio.
+     * 
+     * @return: An array with 2 ExampleSets.
+     */
+    public static RawExampleList[] splitSetWithConsistentClassRatio (
+            final RawExampleList exs, final RawAttrList attrs,
+            final double ratio) {
+        final RawExampleList[] exArray = new RawExampleList[2];
+        if (Double.compare(ratio, 1) >= 0) { // Special case.
+            exArray[0] = exs;
+            exArray[1] = new RawExampleList();
+            return exArray;
+        } else if (Double.compare(ratio, 0) <= 0) { // Special case.
+            exArray[0] = new RawExampleList();
+            exArray[1] = exs;
+            return exArray;
+        }
+        exArray[0] = new RawExampleList();
+        exArray[1] = new RawExampleList();
+
+        final RawExampleList[] setsByClass = splitSetbyClass(exs, attrs);
+        for (RawExampleList s : setsByClass) {
+            final RawExampleList[] newS = split(s, ratio);
+            exArray[0].addAll(newS[0]);
+            exArray[1].addAll(newS[1]);
+        }
+        // Shuffle examples to avoid examples of same class get together.
+        Collections.shuffle(exArray[0]);
+        Collections.shuffle(exArray[1]);
+        return exArray;
+    }
+
+    private static RawExampleList[] splitSetbyClass (final RawExampleList s,
+            final RawAttrList attrs) {
+        final ArrayList<String> classes = attrs.t.valueList;
+        final RawExampleList[] subS = new RawExampleList[classes.size()];
+        for (int i = 0; i < subS.length; i++) {
+            subS[i] = new RawExampleList();
+        }
+        for (RawExample e : s) {
+            final int index = classes.indexOf(e.t);
+            subS[index].add(e);
+        }
+        return subS;
     }
 }
