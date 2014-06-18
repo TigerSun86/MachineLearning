@@ -3,7 +3,6 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 
 import util.Dbg;
-
 import common.Hypothesis;
 
 /**
@@ -101,7 +100,7 @@ public class NeuralNetwork implements Hypothesis {
         return sum;
     }
 
-    private static final double CONVERGE_FACTOR = 0.1;
+    private static final double CONVERGE_FACTOR = 1.0;
 
     // Compare to another network to see if it has converged.
     public boolean hasConverged (final NeuralNetwork anotherNet) {
@@ -178,5 +177,13 @@ public class NeuralNetwork implements Hypothesis {
         // Convert ANN output to raw output.
         final String target = FloatConverter.targetBackString(output, attrs);
         return target;
+    }
+    @Override
+    public String toString(){
+        final StringBuilder sb = new StringBuilder();
+        for (Layer l: layers){
+            sb.append(String.format("%s%n", l));
+        }
+        return sb.toString();
     }
 }

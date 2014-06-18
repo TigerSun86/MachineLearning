@@ -102,5 +102,8 @@ public class Unit {
         final double ret = (0.98 / (1 + exp)) + 0.01;
         return ret;
     }
-
+    @Override
+    public String toString(){
+        return weights.toString();
+    }
 }

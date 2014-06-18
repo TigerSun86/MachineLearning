@@ -67,7 +67,8 @@ public class AnnLearner {
         this.rawTest = null;
         this.rawTrainWithNoise = null;
         this.annAttr = null;
-        this.nHidden = null;
+        // If didn't set hidden nodes means no hidden nodes.
+        this.nHidden = new ArrayList<Integer>(); 
         this.hiddenHasThres = true;
         this.outHasThres = true;
         this.learnRate = learnRate;
@@ -77,7 +78,7 @@ public class AnnLearner {
     public void setRawTrainWithNoise (final RawExampleList rawTrainWithNoise) {
         this.rawTrainWithNoise = rawTrainWithNoise;
         // Ann attributes' max and min depends on examples.
-        this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
+        // this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
     }
 
     public void setRawTest (final RawExampleList rawTest) {
@@ -113,7 +114,34 @@ public class AnnLearner {
         final double accur = evalTest(net);
         return new AccurAndIter(accur, meanIter);
     }
-
+    
+    public AccurAndIter learnUntilConverge () {
+        final NeuralNetwork net =
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
+                        hiddenHasThres, annAttr.tList.size(), outHasThres,
+                        learnRate, momentumRate);
+        NeuralNetwork lastNet = new NeuralNetwork(net);
+        
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
+        int iter = 0;
+        while (iter < MAX_ITER) {
+            iter(net, annSet, 100);
+            iter+=100;
+            if (net.hasConverged(lastNet)) {
+                Dbg.print(DBG, MODULE, "Network converged at iter " + iter);
+                break;
+            } else {
+                lastNet = new NeuralNetwork(net);
+            }
+        }
+        if (iter == MAX_ITER) {
+            Dbg.print(DBG, MODULE, "Stop at iter: " + iter);
+        }
+        
+        final double accur = evalTest(net);
+        return new AccurAndIter(accur, iter);
+    }
+    
     public static class AccurAndIter {
         public final double accur;
         public final int iter;

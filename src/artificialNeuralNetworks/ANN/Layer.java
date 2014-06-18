@@ -46,4 +46,8 @@ public class Layer {
     public int size () {
         return units.size();
     }
+    @Override
+    public String toString(){
+        return units.toString();
+    }
 }
