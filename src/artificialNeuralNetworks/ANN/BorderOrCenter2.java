@@ -3,10 +3,12 @@ package artificialNeuralNetworks.ANN;
 import java.awt.geom.Point2D;
 
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
+
 import common.DataGenerator;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
+import common.Region;
 import common.Region.Ribbon;
 
 /**
@@ -19,54 +21,77 @@ import common.Region.Ribbon;
  */
 public class BorderOrCenter2 {
     private static final double K = 1.0;
-    private static final double[] BP;
+    // 0, class 1. 1, class 2.
+    private static final double[][] B_FOR_CIRCLE;
     static {
         final int count = 10;
-        BP = new double[count+1];
-        for (int i = 0; i < count + 1; i++){
-            BP[i] = i / (double)count;
+        B_FOR_CIRCLE = new double[2][count + 1];
+        B_FOR_CIRCLE[0] = new double[count + 1];
+        B_FOR_CIRCLE[1] = new double[count + 1];
+        for (int i = 0; i < count + 1; i++) {
+            B_FOR_CIRCLE[0][i] = -i / (double) count;
+            B_FOR_CIRCLE[1][i] = i / (double) count;
         }
     }
-    private static final double[] BN;
+
+    // 1st dimension. different ribbon area.
+    // 2nd dimension. 0, class 1 region. 1, class 2 region.
+    private static final Ribbon[][] regsForCircleTest;
+    static {
+        regsForCircleTest = new Ribbon[B_FOR_CIRCLE[0].length - 1][2];
+        for (int i = 0; i < B_FOR_CIRCLE[0].length - 1; i++) {
+            regsForCircleTest[i] = new Ribbon[2];
+            regsForCircleTest[i][0] =
+                    new Ribbon(K, B_FOR_CIRCLE[0][i], B_FOR_CIRCLE[0][i + 1]);
+            regsForCircleTest[i][1] =
+                    new Ribbon(K, B_FOR_CIRCLE[1][i], B_FOR_CIRCLE[1][i + 1]);
+        }
+    }
+
+    // 0, class 1. 1, class 2.
+    private static final double[][] B_FOR_RECT;
     static {
         final int count = 10;
-        BN = new double[count+1];
-        for (int i = 0; i < count + 1; i++){
-            BN[i] = -i / (double)count;
+        B_FOR_RECT = new double[2][count + 1];
+        B_FOR_RECT[0] = new double[count + 1];
+        B_FOR_RECT[1] = new double[count + 1];
+        for (int i = 0; i < count + 1; i++) {
+            B_FOR_RECT[0][i] = 0.75 * (-i / (double) count);
+            B_FOR_RECT[1][i] = 0.75 * (i / (double) count);
         }
     }
     // 1st dimension. different ribbon area.
     // 2nd dimension. 0, class 1 region. 1, class 2 region.
-    private static Ribbon[][] regs = {
-            { new Ribbon(K, BN[0], BN[1]), new Ribbon(K, BP[0], BP[1]) },
-            { new Ribbon(K, BN[1], BN[2]), new Ribbon(K, BP[1], BP[2]) },
-            { new Ribbon(K, BN[2], BN[3]), new Ribbon(K, BP[2], BP[3]) } };
+    private static final Ribbon[][] regsForRectTest;
     static {
-        regs = new Ribbon[BP.length - 1][2];
-        for (int i = 0; i < BP.length - 1; i++) {
-            regs[i] = new Ribbon[2];
-            regs[i][0] = new Ribbon(K, BN[i], BN[i + 1]);
-            regs[i][1] = new Ribbon(K, BP[i], BP[i + 1]);
+        regsForRectTest = new Ribbon[B_FOR_RECT[0].length - 1][2];
+        for (int i = 0; i < B_FOR_RECT[0].length - 1; i++) {
+            regsForRectTest[i] = new Ribbon[2];
+            regsForRectTest[i][0] =
+                    new Ribbon(K, B_FOR_RECT[0][i], B_FOR_RECT[0][i + 1]);
+            regsForRectTest[i][1] =
+                    new Ribbon(K, B_FOR_RECT[1][i], B_FOR_RECT[1][i + 1]);
         }
     }
 
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toy-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyRect-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toy-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyRect-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
         final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        test(train, test);
+        test(train, test, regsForRectTest);
     }
 
-    public static void test (RawExampleList train, RawExampleList test) {
-        // 1st dimension. different ribbon area.
+    public static void test (RawExampleList train, RawExampleList test,
+            Region[][] regs) {
+        // 1st dimension. different areas.
         // 2nd dimension. 0, class 1 region. 1, class 2 region.
         final RawExampleList[][] exReg = new RawExampleList[regs.length][2];
         for (int i = 0; i < exReg.length; i++) {
@@ -96,15 +121,16 @@ public class BorderOrCenter2 {
         }
         for (int i = 0; i < exReg.length; i++) {
             for (int j = 0; j < exReg[i].length; j++) {
-                System.out
-                        .println("Region "+i + ", class " + j + " size " + exReg[i][j].size());
+                System.out.println("Region " + (i + 1) + ", class " + (j + 1)
+                        + " size " + exReg[i][j].size());
                 System.out.println(exReg[i][j]);
             }
         }
+        
+        System.out.println("Region Accuracy Iteration");
         for (int i = 0; i < exReg.length; i++) {
             double[] accurAndIter = testRegion(exReg[i][0], exReg[i][1], test);
-            System.out.println("Region " + i);
-            System.out.println("Accuracy " + accurAndIter[0] + " Iteration "
+            System.out.println((i + 1) + " " + accurAndIter[0] + " "
                     + accurAndIter[1]);
         }
     }

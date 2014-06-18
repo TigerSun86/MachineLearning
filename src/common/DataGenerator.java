@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Random;
 
 import common.Region.Circle;
+import common.Region.Parallelogram;
+import common.Region.Ribbon;
 
 /**
  * FileName: DataGenerator.java
@@ -34,10 +36,43 @@ public class DataGenerator {
     }
     
     public static void main (String[] args) {
+        geneRectangle();
+    }
+    private static void geneCircle(){
         final Region yC = new Circle(C1[0], R1);
         final Region nC = new Circle(C1[1], R1);
         final HashSet<Point2D.Double> ySet = gene(yC, NUM);
         final HashSet<Point2D.Double> nSet = gene(nC, NUM);
+
+        final RawExampleList s = new RawExampleList();
+        for (Point2D.Double p: ySet){
+            final RawExample e = new RawExample();
+            e.xList.add(String.valueOf(p.x));
+            e.xList.add(String.valueOf(p.y));
+            e.t = CLASS[0];
+            s.add(e);
+        }
+        for (Point2D.Double p: nSet){
+            final RawExample e = new RawExample();
+            e.xList.add(String.valueOf(p.x));
+            e.xList.add(String.valueOf(p.y));
+            e.t = CLASS[1];
+            s.add(e);
+        }
+        final RawExampleList[] sub = TrainTestSplitter.splitSetWithConsistentClassRatio(s, ATTRS, RATIO);
+        System.out.println("Sub 1 size: "+ sub[0].size());
+        System.out.println(sub[0]);
+        System.out.println("Sub 2 size: "+ sub[1].size());
+        System.out.println(sub[1]);
+    }
+    
+    private static final Ribbon[] C1RIB = {new Ribbon(1, 0, -0.75),new Ribbon(-1, 0.75, 1.25)};
+    private static final Ribbon[] C2RIB = {new Ribbon(1, 0, 0.75),new Ribbon(-1, 0.75, 1.25)};
+    private static final Parallelogram C1RECT = new Parallelogram(C1RIB[0],C1RIB[1]);
+    private static final Parallelogram C2RECT = new Parallelogram(C2RIB[0],C2RIB[1]);
+    private static void geneRectangle(){
+        final HashSet<Point2D.Double> ySet = gene(C1RECT, NUM);
+        final HashSet<Point2D.Double> nSet = gene(C2RECT, NUM);
 
         final RawExampleList s = new RawExampleList();
         for (Point2D.Double p: ySet){

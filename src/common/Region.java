@@ -77,4 +77,33 @@ public interface Region {
                     k, b2);
         }
     }
+    
+    /**
+     * Parallelogram region between 2 ribbons, include the boundary.
+     * 
+     * Return true if P(x, y) is inside both of 2 ribbons.
+     * */
+    public static class Parallelogram implements Region {
+        public final Ribbon rib1;
+        public final Ribbon rib2;
+
+        public Parallelogram(Ribbon rib1, Ribbon rib2) {
+            this.rib1 = rib1;
+            this.rib2 = rib2;
+        }
+
+        @Override
+        public boolean isInside (Point2D.Double p) {
+            if (rib1.isInside(p) && rib2.isInside(p)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public String toString () {
+            return "[" + rib1.toString() + rib2.toString() + "]";
+        }
+    }
 }
