@@ -1,6 +1,9 @@
 package artificialNeuralNetworks.ANN;
 
 import java.awt.geom.Point2D;
+import java.util.Collections;
+
+import util.MyMath;
 
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 
@@ -51,7 +54,7 @@ public class BorderOrCenter2 {
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_RECT;
     static {
-        final int count = 10;
+        final int count = 3;
         B_FOR_RECT = new double[2][count + 1];
         B_FOR_RECT[0] = new double[count + 1];
         B_FOR_RECT[1] = new double[count + 1];
@@ -86,10 +89,39 @@ public class BorderOrCenter2 {
     public static void main (String[] args) {
         final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        test(train, test, regsForRectTest);
+        testMultiPoints(train, test, regsForRectTest);
     }
 
-    public static void test (RawExampleList train, RawExampleList test,
+    private static void test1PairPoints (RawExampleList train, RawExampleList test,
+            Region[][] regs) {
+        final RawExampleList[][] exReg = splitSetByRegions(train, regs);
+
+        printExReg(exReg);
+
+        System.out.println("Region Accuracy Iteration");
+        for (int i = 0; i < exReg.length; i++) {
+            double[] accurAndIter = testRegion(exReg[i][0], exReg[i][1], test);
+            System.out.println((i + 1) + " " + accurAndIter[0] + " "
+                    + accurAndIter[1]);
+        }
+    }
+    private static final int PAIR = 10;
+    private static final int TIMES = 10;
+    private static void testMultiPoints (RawExampleList train,
+            RawExampleList test, Region[][] regs) {
+        final RawExampleList[][] exReg = splitSetByRegions(train, regs);
+
+        printExReg(exReg);
+        System.out.println("Pairs "+PAIR+" Times "+TIMES);
+        System.out.println("Region Accuracy Iteration");
+        for (int i = 0; i < exReg.length; i++) {
+            double[] accurAndIter = testRegionByMultiPairs(exReg[i][0], exReg[i][1], test, PAIR, TIMES);
+            System.out.println((i + 1) + " " + accurAndIter[0] + " "
+                    + accurAndIter[1]);
+        }
+    }
+
+    private static RawExampleList[][] splitSetByRegions (RawExampleList s,
             Region[][] regs) {
         // 1st dimension. different areas.
         // 2nd dimension. 0, class 1 region. 1, class 2 region.
@@ -102,7 +134,7 @@ public class BorderOrCenter2 {
         }
 
         // Divide instances into different regions.
-        for (RawExample e : train) {
+        for (RawExample e : s) {
             final int classIndex;
             if (e.t.equals(DataGenerator.CLASS[0])) {
                 classIndex = 0;
@@ -119,19 +151,16 @@ public class BorderOrCenter2 {
                 }
             }
         }
+        return exReg;
+    }
+
+    private static void printExReg (final RawExampleList[][] exReg) {
         for (int i = 0; i < exReg.length; i++) {
             for (int j = 0; j < exReg[i].length; j++) {
                 System.out.println("Region " + (i + 1) + ", class " + (j + 1)
                         + " size " + exReg[i][j].size());
                 System.out.println(exReg[i][j]);
             }
-        }
-        
-        System.out.println("Region Accuracy Iteration");
-        for (int i = 0; i < exReg.length; i++) {
-            double[] accurAndIter = testRegion(exReg[i][0], exReg[i][1], test);
-            System.out.println((i + 1) + " " + accurAndIter[0] + " "
-                    + accurAndIter[1]);
         }
     }
 
@@ -159,6 +188,41 @@ public class BorderOrCenter2 {
         final int count = class1Set.size() * class2Set.size();
         accurAndIter[0] /= count;
         accurAndIter[1] /= count;
+        return accurAndIter;
+    }
+
+    private static double[] testRegionByMultiPairs (RawExampleList class1Set,
+            RawExampleList class2Set, RawExampleList test, int numOfPairs,
+            int times) {
+        // No hidden nodes
+        final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
+        annLearner.annAttr = new AnnAttrList(test, RATTR);
+        annLearner.setRawTest(test);
+        
+        final double[] accurAndIter = new double[2];
+        for (int t = 0; t < times; t++){
+            final RawExampleList trainSet = new RawExampleList();
+            int[] selected = MyMath.mOutofN(numOfPairs, class1Set.size());
+            for (int i : selected) {
+                trainSet.add(class1Set.get(i));
+            }
+            selected = MyMath.mOutofN(numOfPairs, class2Set.size());
+            for (int i : selected) {
+                trainSet.add(class2Set.get(i));
+            }
+            Collections.shuffle(trainSet);
+
+            // Set data set for ANN learning.
+            annLearner.setRawTrainWithNoise(trainSet);
+            final AccurAndIter aai = annLearner.learnUntilConverge();
+
+            accurAndIter[0] += aai.accur;
+            accurAndIter[1] += aai.iter;
+        }
+        
+        accurAndIter[0] /= times;
+        accurAndIter[1] /= times;
+
         return accurAndIter;
     }
 }

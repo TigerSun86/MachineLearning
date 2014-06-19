@@ -30,7 +30,13 @@ public class MyMath {
     }
 
     public static int[] mOutofN (final int m, final int n) {
-        final int[] ret = new int[m];
+        final int[] ret;
+        if (m <= n){
+            ret = new int[m];
+        } else { // Special case.
+            ret = new int[n];
+        }
+        
         final HashSet<Integer> selected = new HashSet<Integer>();
         final Random ran = new Random();
         for (int i = 0; i < ret.length; i++) {
