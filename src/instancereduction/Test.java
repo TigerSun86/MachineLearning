@@ -67,8 +67,8 @@ public class Test {
     private int timesOfGeneratingTrainTest = 10;
     private String[][] dataSets = DATA_SOURCE;
 
-    private static final Reducible[] METHODS = { new SPOCNN(), new RPOCNN(), new ENNSPOCNN(), new ENNRPOCNN() };
-    private static final String[] METHOD_NAMES = { "SPOCNN", "RPOCNN", "ENN+SPOCNN", "ENN+RPOCNN" };
+    private static final Reducible[] METHODS = { new FCNN(), new RPOCNN(), new ENNSPOCNN(), new ENNRPOCNN() };
+    private static final String[] METHOD_NAMES = { "FCNN", "RPOCNN", "ENN+SPOCNN", "ENN+RPOCNN" };
     private BitSet metFlag = new BitSet(METHODS.length);
 
     private static final String TEST_INFO =

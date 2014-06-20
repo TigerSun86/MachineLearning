@@ -100,7 +100,7 @@ public class NeuralNetwork implements Hypothesis {
         return sum;
     }
 
-    private static final double CONVERGE_FACTOR = 1.0;
+    private static final double CONVERGE_FACTOR = 0.1;
 
     // Compare to another network to see if it has converged.
     public boolean hasConverged (final NeuralNetwork anotherNet) {

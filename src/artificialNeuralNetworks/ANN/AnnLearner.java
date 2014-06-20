@@ -78,7 +78,7 @@ public class AnnLearner {
     public void setRawTrainWithNoise (final RawExampleList rawTrainWithNoise) {
         this.rawTrainWithNoise = rawTrainWithNoise;
         // Ann attributes' max and min depends on examples.
-        // this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
+        this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
     }
 
     public void setRawTest (final RawExampleList rawTest) {
