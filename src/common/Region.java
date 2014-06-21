@@ -42,9 +42,13 @@ public interface Region {
      * Ribbon region between two lines, include the boundary.
      * y = kx + b1
      * y = kx + b2
+     * For vertical lines,
+     * x = b1
+     * x = b2
      * 
      * Return true if P(x, y) is
-     * y-kx-b1<=0 and y-kx-b2>=0
+     * y-kx-b1<=0 and y-kx-b2>=0 or for vertical lines,
+     * x - b1 <= 0 and x - b2 >= 0.
      * */
     public static class Ribbon implements Region {
         public final double k; // Slope.
@@ -62,22 +66,49 @@ public interface Region {
             }
         }
 
+        /** This constructor for line x = b. */
+        public Ribbon(double b1, double b2) {
+            this.k = Double.POSITIVE_INFINITY;
+            if (Double.compare(b1, b2) >= 0) {
+                this.b1 = b1;
+                this.b2 = b2;
+            } else {
+                this.b1 = b2;
+                this.b2 = b1;
+            }
+        }
+
         @Override
         public boolean isInside (Point2D.Double p) {
-            if ((p.y - k * p.x - b1 <= 0) && (p.y - k * p.x - b2 >= 0)) {
-                return true;
+            if (!Double.isInfinite(k)) {
+                if ((Double.compare(p.y - k * p.x - b1, 0) <= 0)
+                        && (Double.compare(p.y - k * p.x - b2, 0) >= 0)) {
+                    return true;
+                } else {
+                    return false;
+                }
             } else {
-                return false;
+                // x = b.
+                if ((Double.compare(p.x - b1, 0) <= 0)
+                        && (Double.compare(p.x - b2, 0) >= 0)) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         }
 
         @Override
         public String toString () {
-            return String.format("[y = %.2fx + %.2f, y = %.2fx + %.2f]", k, b1,
-                    k, b2);
+            if (!Double.isInfinite(k)) {
+                return String.format("[y = %.2fx + %.2f, y = %.2fx + %.2f]", k,
+                        b1, k, b2);
+            } else {
+                return String.format("[x = %.2f, x = %.2f]", b1, b2);
+            }
         }
     }
-    
+
     /**
      * Parallelogram region between 2 ribbons, include the boundary.
      * 
