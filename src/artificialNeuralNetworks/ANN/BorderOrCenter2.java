@@ -13,6 +13,8 @@ import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 import common.Region;
+import common.Region.Parallelogram;
+import common.Region.RegionList;
 import common.Region.Ribbon;
 
 /**
@@ -81,22 +83,16 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyRect-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyRect-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
         final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        /* testMultiPoints(train, test, regsForRectTest); */
-        
-        RawAttrList rawAttr = new RawAttrList(ATTR_FILE_URL);
-        final FCNN red = new FCNN();
-
-        final RawExampleList s = red.reduce(train, rawAttr);
-        System.out.println(s);
+        testXor(train, test, REG_XOR);
     }
 
     private static void test1PairPoints (RawExampleList train,
@@ -114,7 +110,7 @@ public class BorderOrCenter2 {
     }
 
     private static final int PAIR = 10;
-    private static final int TIMES = 10;
+    private static final int TIMES = 20;
 
     private static void testMultiPoints (RawExampleList train,
             RawExampleList test, Region[][] regs) {
@@ -135,10 +131,10 @@ public class BorderOrCenter2 {
     private static RawExampleList[][] splitSetByRegions (RawExampleList s,
             Region[][] regs) {
         // 1st dimension. different areas.
-        // 2nd dimension. 0, class 1 region. 1, class 2 region.
-        final RawExampleList[][] exReg = new RawExampleList[regs.length][2];
-        for (int i = 0; i < exReg.length; i++) {
-            exReg[i] = new RawExampleList[2];
+        // 2nd dimension. different class regions.
+        final RawExampleList[][] exReg = new RawExampleList[regs.length][regs[0].length];
+        for (int i = 0; i < regs.length; i++) {
+            exReg[i] = new RawExampleList[regs[i].length];
             for (int j = 0; j < exReg[i].length; j++) {
                 exReg[i][j] = new RawExampleList();
             }
@@ -146,18 +142,19 @@ public class BorderOrCenter2 {
 
         // Divide instances into different regions.
         for (RawExample e : s) {
-            final int classIndex;
-            if (e.t.equals(DataGenerator.CLASS[0])) {
-                classIndex = 0;
-            } else {
-                classIndex = 1;
-            }
             final Point2D.Double p =
                     new Point2D.Double(Double.parseDouble(e.xList.get(0)),
                             Double.parseDouble(e.xList.get(1)));
+            boolean foundRegion = false;
             for (int i = 0; i < regs.length; i++) {
-                if (regs[i][classIndex].isInside(p)) {
-                    exReg[i][classIndex].add(e);
+                for (int j = 0; j < regs[i].length; j++) {
+                    if (regs[i][j].isInside(p)) {
+                        exReg[i][j].add(e);
+                        foundRegion = true;
+                        break;
+                    }
+                }
+                if (foundRegion) {
                     break;
                 }
             }
@@ -168,7 +165,7 @@ public class BorderOrCenter2 {
     private static void printExReg (final RawExampleList[][] exReg) {
         for (int i = 0; i < exReg.length; i++) {
             for (int j = 0; j < exReg[i].length; j++) {
-                System.out.println("Region " + (i + 1) + ", class " + (j + 1)
+                System.out.println("Region " + (i + 1) + ", class region" + (j + 1)
                         + " size " + exReg[i][j].size());
                 System.out.println(exReg[i][j]);
             }
@@ -191,7 +188,7 @@ public class BorderOrCenter2 {
 
                 // Set data set for ANN learning.
                 annLearner.setRawTrainWithNoise(trainSet);
-                final AccurAndIter aai = annLearner.learnUntilConverge();
+                final AccurAndIter aai = annLearner.kFoldLearning2(3);
                 accurAndIter[0] += aai.accur;
                 accurAndIter[1] += aai.iter;
             }
@@ -226,6 +223,123 @@ public class BorderOrCenter2 {
             // Set data set for ANN learning.
             annLearner.setRawTrainWithNoise(trainSet);
             final AccurAndIter aai = annLearner.learnUntilConverge();
+
+            accurAndIter[0] += aai.accur;
+            accurAndIter[1] += aai.iter;
+        }
+
+        accurAndIter[0] /= times;
+        accurAndIter[1] /= times;
+
+        return accurAndIter;
+    }
+
+    private static final int XOR_COUNT = 5;
+    private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
+    // 1st dimension. border, center and far
+    // 2nd dimension. square a, b, c and d.
+    private static final Region[][] REG_XOR;
+    static {
+        REG_XOR = new Region[XOR_COUNT][4];
+        // For border, center and far regions.
+        for (int i = 0; i < XOR_COUNT; i++) {
+            final RegionList[] regs = new RegionList[4];
+            for (int j = 0; j < regs.length; j++) {
+                regs[j] = new RegionList();
+            }
+            final double lowOff = XOR_WIDTH * i;
+            final double highOff = XOR_WIDTH * (i + 1);
+            // Square a (Y)
+            // Horizontal rectangle.
+            Parallelogram hRect =
+                    new Parallelogram(
+                            new Ribbon(0, 0.5 + lowOff, 0.5 + highOff),
+                            new Ribbon(0, 0.5 - lowOff));
+            // Vertical rectangle.
+            Parallelogram vRect =
+                    new Parallelogram(new Ribbon(0.5 - lowOff, 0.5 - highOff),
+                            new Ribbon(0, 1, 0.5 + lowOff));
+            regs[0].add(hRect);
+            regs[0].add(vRect);
+
+            // Square b (N)
+            // Horizontal rectangle.
+            hRect =
+                    new Parallelogram(
+                            new Ribbon(0, 0.5 + lowOff, 0.5 + highOff),
+                            new Ribbon(1, 0.5 + lowOff));
+            // Vertical rectangle.
+            vRect =
+                    new Parallelogram(new Ribbon(0.5 + lowOff, 0.5 + highOff),
+                            new Ribbon(0, 1, 0.5 + lowOff));
+            regs[1].add(hRect);
+            regs[1].add(vRect);
+
+            // Square c (N)
+            // Horizontal rectangle.
+            hRect =
+                    new Parallelogram(
+                            new Ribbon(0, 0.5 - lowOff, 0.5 - highOff),
+                            new Ribbon(0, 0.5 - lowOff));
+            // Vertical rectangle.
+            vRect =
+                    new Parallelogram(new Ribbon(0.5 - lowOff, 0.5 - highOff),
+                            new Ribbon(0, 0, 0.5 - lowOff));
+            regs[2].add(hRect);
+            regs[2].add(vRect);
+            // Square d (Y)
+            // Horizontal rectangle.
+            hRect =
+                    new Parallelogram(
+                            new Ribbon(0, 0.5 - lowOff, 0.5 - highOff),
+                            new Ribbon(1, 0.5 + lowOff));
+            // Vertical rectangle.
+            vRect =
+                    new Parallelogram(new Ribbon(0.5 + lowOff, 0.5 + highOff),
+                            new Ribbon(0, 0, 0.5 - lowOff));
+            regs[3].add(hRect);
+            regs[3].add(vRect);
+
+            REG_XOR[i] = regs;
+        }
+    }
+
+    private static void testXor (RawExampleList train, RawExampleList test,
+            Region[][] regs) {
+        final RawExampleList[][] exReg = splitSetByRegions(train, regs);
+
+        printExReg(exReg);
+        System.out.println("Pairs " + PAIR + " Times " + TIMES);
+        System.out.println("Region Accuracy Iteration");
+        for (int i = 0; i < exReg.length; i++) {
+            double[] accurAndIter =
+                    testRegionOfXor(exReg[i], test, PAIR, TIMES);
+            System.out.println((i + 1) + " " + accurAndIter[0] + " "
+                    + accurAndIter[1]);
+        }
+    }
+
+    private static double[] testRegionOfXor (RawExampleList[] sets,
+            RawExampleList test, int numOfPairs, int times) {
+        // No hidden nodes
+        final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
+        annLearner.setNumOfHiddenNodes(2);
+        annLearner.annAttr = new AnnAttrList(test, RATTR);
+        annLearner.setRawTest(test);
+
+        final double[] accurAndIter = new double[2];
+        for (int t = 0; t < times; t++) {
+            final RawExampleList trainSet = new RawExampleList();
+            for (RawExampleList s : sets) {
+                final int[] selected = MyMath.mOutofN(numOfPairs, s.size());
+                for (int i : selected) {
+                    trainSet.add(s.get(i));
+                }
+            }
+            Collections.shuffle(trainSet);
+            // Set data set for ANN learning.
+            annLearner.setRawTrainWithNoise(trainSet);
+            final AccurAndIter aai = annLearner.kFoldLearning2(3);
 
             accurAndIter[0] += aai.accur;
             accurAndIter[1] += aai.iter;

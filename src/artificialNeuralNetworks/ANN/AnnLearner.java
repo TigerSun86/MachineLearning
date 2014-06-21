@@ -68,7 +68,7 @@ public class AnnLearner {
         this.rawTrainWithNoise = null;
         this.annAttr = null;
         // If didn't set hidden nodes means no hidden nodes.
-        this.nHidden = new ArrayList<Integer>(); 
+        this.nHidden = new ArrayList<Integer>();
         this.hiddenHasThres = true;
         this.outHasThres = true;
         this.learnRate = learnRate;
@@ -78,7 +78,7 @@ public class AnnLearner {
     public void setRawTrainWithNoise (final RawExampleList rawTrainWithNoise) {
         this.rawTrainWithNoise = rawTrainWithNoise;
         // Ann attributes' max and min depends on examples.
-        this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
+        // this.annAttr = new AnnAttrList(rawTrainWithNoise, rawAttr);
     }
 
     public void setRawTest (final RawExampleList rawTest) {
@@ -105,8 +105,7 @@ public class AnnLearner {
                     trainSet.addAll(exArray[other]);
                 }
             }
-            final NetAndIter nai = validation(trainSet, valSet);
-            sumIter += nai.iter;
+            sumIter += validation2(trainSet, valSet);
         }
 
         final int meanIter = sumIter / exArray.length;
@@ -114,19 +113,19 @@ public class AnnLearner {
         final double accur = evalTest(net);
         return new AccurAndIter(accur, meanIter);
     }
-    
+
     public AccurAndIter learnUntilConverge () {
         final NeuralNetwork net =
                 new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         NeuralNetwork lastNet = new NeuralNetwork(net);
-        
+
         final AnnExList annSet = new AnnExList(rawTrainWithNoise, annAttr);
         int iter = 0;
         while (iter < MAX_ITER) {
             iter(net, annSet, 100);
-            iter+=100;
+            iter += 100;
             if (net.hasConverged(lastNet)) {
                 Dbg.print(DBG, MODULE, "Network converged at iter " + iter);
                 break;
@@ -137,11 +136,36 @@ public class AnnLearner {
         if (iter == MAX_ITER) {
             Dbg.print(DBG, MODULE, "Stop at iter: " + iter);
         }
-        
+
         final double accur = evalTest(net);
         return new AccurAndIter(accur, iter);
     }
-    
+
+    private int validation2 (final AnnExList trainSet,
+            final AnnExList valSet) {
+        final NeuralNetwork net =
+                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
+                        hiddenHasThres, annAttr.tList.size(), outHasThres,
+                        learnRate, momentumRate);
+        
+        double minError = Double.POSITIVE_INFINITY;
+        int iter = 0;
+        int bestIter = 0;
+        while (iter < MAX_ITER) {
+            iter(net, trainSet, BASIC_ITER);
+            iter += BASIC_ITER;
+
+            final double error = net.predictError(valSet);
+            if (Double.compare(minError, error) > 0) {
+                minError = error;
+                bestIter = iter;
+            }
+        }
+
+        Dbg.print(DBG, MODULE, "Best iter: " + bestIter);
+        return bestIter;
+    }
+
     public static class AccurAndIter {
         public final double accur;
         public final int iter;

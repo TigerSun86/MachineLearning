@@ -1,6 +1,7 @@
 package common;
 
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 
 import util.MyMath;
 
@@ -135,6 +136,28 @@ public interface Region {
         @Override
         public String toString () {
             return "[" + rib1.toString() + rib2.toString() + "]";
+        }
+    }
+    
+    /**
+     * Region list contains many regions.
+     * 
+     * Return true if P(x, y) is inside any one of regions.
+     * */
+    public static class RegionList extends ArrayList<Region> implements Region {
+
+        @Override
+        public boolean isInside (java.awt.geom.Point2D.Double p) {
+            if (this.isEmpty()) {
+                return false;
+            }
+            
+            for (Region r : this) {
+                if (r.isInside(p)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

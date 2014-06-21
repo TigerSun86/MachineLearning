@@ -23,7 +23,7 @@ public class DataGenerator {
     private static final double R1 = (1 - (Math.sqrt(2)) / 2);
     private static final Point2D.Double[] C1 = {
             new Point2D.Double(1 - R1, R1), new Point2D.Double(R1, 1 - R1) };
-    private static final int NUM = 200;
+    private static final int NUM = 400;
 
     private static final double RATIO = 0.5;
 
