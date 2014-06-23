@@ -27,6 +27,9 @@ import common.Region.Ribbon;
  */
 public class BorderOrCenter2 {
     private static final double K = 1.0;
+
+    private static final int PAIR = 10;
+    private static final int TIMES = 10;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -109,8 +112,6 @@ public class BorderOrCenter2 {
         }
     }
 
-    private static final int PAIR = 10;
-    private static final int TIMES = 20;
 
     private static void testMultiPoints (RawExampleList train,
             RawExampleList test, Region[][] regs) {
@@ -234,7 +235,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 5;
+    private static final int XOR_COUNT = 1;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -308,7 +309,7 @@ public class BorderOrCenter2 {
             Region[][] regs) {
         final RawExampleList[][] exReg = splitSetByRegions(train, regs);
 
-        printExReg(exReg);
+        //printExReg(exReg);
         System.out.println("Pairs " + PAIR + " Times " + TIMES);
         System.out.println("Region Accuracy Iteration");
         for (int i = 0; i < exReg.length; i++) {
@@ -323,7 +324,7 @@ public class BorderOrCenter2 {
             RawExampleList test, int numOfPairs, int times) {
         // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
-        annLearner.setNumOfHiddenNodes(2);
+        annLearner.setNumOfHiddenNodes(4);
         annLearner.annAttr = new AnnAttrList(test, RATTR);
         annLearner.setRawTest(test);
 
@@ -339,8 +340,8 @@ public class BorderOrCenter2 {
             Collections.shuffle(trainSet);
             // Set data set for ANN learning.
             annLearner.setRawTrainWithNoise(trainSet);
-            final AccurAndIter aai = annLearner.kFoldLearning2(3);
-
+            final AccurAndIter aai = annLearner.learnUntilConverge();
+            System.out.println("acc"+ aai.accur+" iter"+ aai.iter);
             accurAndIter[0] += aai.accur;
             accurAndIter[1] += aai.iter;
         }

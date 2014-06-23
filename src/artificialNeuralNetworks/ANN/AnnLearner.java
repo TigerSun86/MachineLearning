@@ -138,6 +138,7 @@ public class AnnLearner {
         }
 
         final double accur = evalTest(net);
+        System.out.println(net);
         return new AccurAndIter(accur, iter);
     }
 
