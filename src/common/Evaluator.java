@@ -31,7 +31,7 @@ public class Evaluator {
                     ", predict: " + predict + ", target: " + target + ", result: "
                             + Boolean.toString(target.equals(predict)));
         }
-        System.out.println(wrongExs);
+        //System.out.println(wrongExs);
         return (((double) count) / dataSet.size());
     }
 }

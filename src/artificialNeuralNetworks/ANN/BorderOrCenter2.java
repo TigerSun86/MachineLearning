@@ -1,14 +1,11 @@
 package artificialNeuralNetworks.ANN;
 
-import instancereduction.FCNN;
-
 import java.awt.geom.Point2D;
 import java.util.Collections;
 
 import util.MyMath;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 
-import common.DataGenerator;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -28,8 +25,8 @@ import common.Region.Ribbon;
 public class BorderOrCenter2 {
     private static final double K = 1.0;
 
-    private static final int PAIR = 10;
-    private static final int TIMES = 10;
+    private static final int PAIR = 50;
+    private static final int TIMES = 50;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -86,9 +83,9 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor-train.txt";
+            "file:///d:/toyXor2000-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor-test.txt";
+            "file:///d:/toyXor2000-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
@@ -235,7 +232,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 1;
+    private static final int XOR_COUNT = 3;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -324,7 +321,7 @@ public class BorderOrCenter2 {
             RawExampleList test, int numOfPairs, int times) {
         // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
-        annLearner.setNumOfHiddenNodes(4);
+        annLearner.setNumOfHiddenNodes(5);
         annLearner.annAttr = new AnnAttrList(test, RATTR);
         annLearner.setRawTest(test);
 
@@ -340,7 +337,7 @@ public class BorderOrCenter2 {
             Collections.shuffle(trainSet);
             // Set data set for ANN learning.
             annLearner.setRawTrainWithNoise(trainSet);
-            final AccurAndIter aai = annLearner.learnUntilConverge();
+            final AccurAndIter aai = annLearner.kFoldLearning2(3);
             System.out.println("acc"+ aai.accur+" iter"+ aai.iter);
             accurAndIter[0] += aai.accur;
             accurAndIter[1] += aai.iter;
