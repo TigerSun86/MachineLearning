@@ -10,6 +10,8 @@ import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 import common.Region;
+import common.Region.AndRegion;
+import common.Region.NotRegion;
 import common.Region.Parallelogram;
 import common.Region.RegionList;
 import common.Region.Ribbon;
@@ -83,16 +85,16 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "file:///d:/toyXor2000-train.txt";
+            "file:///D:/Users/FIT/Paper/4border/toy4border_train.txt";
     private static final String TEST_FILE_URL =
-            "file:///d:/toyXor2000-test.txt";
+            "file:///D:/Users/FIT/Paper/4border/toy4border_test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
         final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        testXor(train, test, REG_XOR);
+        testXor(train, test, REGB4);
     }
 
     private static void test1PairPoints (RawExampleList train,
@@ -108,7 +110,6 @@ public class BorderOrCenter2 {
                     + accurAndIter[1]);
         }
     }
-
 
     private static void testMultiPoints (RawExampleList train,
             RawExampleList test, Region[][] regs) {
@@ -130,7 +131,8 @@ public class BorderOrCenter2 {
             Region[][] regs) {
         // 1st dimension. different areas.
         // 2nd dimension. different class regions.
-        final RawExampleList[][] exReg = new RawExampleList[regs.length][regs[0].length];
+        final RawExampleList[][] exReg =
+                new RawExampleList[regs.length][regs[0].length];
         for (int i = 0; i < regs.length; i++) {
             exReg[i] = new RawExampleList[regs[i].length];
             for (int j = 0; j < exReg[i].length; j++) {
@@ -163,8 +165,8 @@ public class BorderOrCenter2 {
     private static void printExReg (final RawExampleList[][] exReg) {
         for (int i = 0; i < exReg.length; i++) {
             for (int j = 0; j < exReg[i].length; j++) {
-                System.out.println("Region " + (i + 1) + ", class region" + (j + 1)
-                        + " size " + exReg[i][j].size());
+                System.out.println("Region " + (i + 1) + ", class region "
+                        + (j + 1) + " size " + exReg[i][j].size());
                 System.out.println(exReg[i][j]);
             }
         }
@@ -232,7 +234,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 3;
+    private static final int XOR_COUNT = 1;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -338,7 +340,7 @@ public class BorderOrCenter2 {
             // Set data set for ANN learning.
             annLearner.setRawTrainWithNoise(trainSet);
             final AccurAndIter aai = annLearner.kFoldLearning2(3);
-            System.out.println("acc"+ aai.accur+" iter"+ aai.iter);
+            System.out.println("acc" + aai.accur + " iter" + aai.iter);
             accurAndIter[0] += aai.accur;
             accurAndIter[1] += aai.iter;
         }
@@ -348,4 +350,74 @@ public class BorderOrCenter2 {
 
         return accurAndIter;
     }
+
+    /* 4 border begin **************** */
+    private static final int B4COUNT = 1;
+    private static final double B4_LB = (2 - Math.sqrt(2)) / 4;
+    private static final double B4_HB = (2 + Math.sqrt(2)) / 4;
+    private static final double[] B4_IN_L;
+    private static final double[] B4_IN_H;
+    static {
+        B4_IN_L = new double[B4COUNT];
+        B4_IN_H = new double[B4COUNT];
+        final double step = (B4_HB - B4_LB) / ((2 * B4COUNT));
+        for (int i = 0; i < B4COUNT; i++) {
+            B4_IN_L[i] = B4_LB + i * step;
+            B4_IN_H[i] = B4_HB - i * step;
+        }
+    }
+
+    private static final Parallelogram[] REGB4_IN;
+    static {
+        REGB4_IN = new Parallelogram[B4COUNT];
+        for (int i = 0; i < B4COUNT; i++) {
+            REGB4_IN[i] =
+                    new Parallelogram(new Ribbon(0, B4_IN_L[i], B4_IN_H[i]),
+                            new Ribbon(B4_IN_L[i], B4_IN_H[i]));
+        }
+    }
+
+    private static final double[] B4_OUT_L;
+    private static final double[] B4_OUT_H;
+    static {
+        B4_OUT_L = new double[B4COUNT];
+        B4_OUT_H = new double[B4COUNT];
+        final double step = B4_LB / B4COUNT;
+        for (int i = 0; i < B4COUNT; i++) {
+            B4_OUT_L[i] = B4_LB - i * step;
+            B4_OUT_H[i] = B4_HB + i * step;
+        }
+    }
+
+    private static final Parallelogram[] REGB4_OUT;
+    static {
+        REGB4_OUT = new Parallelogram[B4COUNT];
+        for (int i = 0; i < B4COUNT; i++) {
+            REGB4_OUT[i] =
+                    new Parallelogram(new Ribbon(0, B4_OUT_L[i], B4_OUT_H[i]),
+                            new Ribbon(B4_OUT_L[i], B4_OUT_H[i]));
+        }
+    }
+    // 1st dimension. border, center and far.
+    // 2nd dimension. class 1, class 2.
+    private static final Region[][] REGB4;
+    static {
+        REGB4 = new Region[B4COUNT][2];
+        // In
+        for (int i = 0; i < B4COUNT - 1; i++) {
+            REGB4[i][0] =
+                    new AndRegion(REGB4_IN[i], new NotRegion(REGB4_IN[i + 1]));
+        }
+        REGB4[B4COUNT - 1][0] = REGB4_IN[B4COUNT - 1]; // Most inner one.
+
+        // Out
+        for (int i = 0; i < B4COUNT - 1; i++) {
+            REGB4[i][1] =
+                    new AndRegion(new NotRegion(REGB4_OUT[i]), REGB4_OUT[i + 1]);
+        }
+        // Most outer one.
+        REGB4[B4COUNT - 1][1] = new NotRegion(REGB4_OUT[B4COUNT - 1]);
+    }
+
+    /* 4 border end **************** */
 }

@@ -138,7 +138,7 @@ public interface Region {
             return "[" + rib1.toString() + rib2.toString() + "]";
         }
     }
-    
+
     /**
      * Region list contains many regions.
      * 
@@ -151,13 +151,71 @@ public interface Region {
             if (this.isEmpty()) {
                 return false;
             }
-            
+
             for (Region r : this) {
                 if (r.isInside(p)) {
                     return true;
                 }
             }
             return false;
+        }
+    }
+
+    /**
+     * Region everywhere except inside the given reg.
+     * 
+     * Return true if p is outside the reg.
+     * */
+    public static class NotRegion implements Region {
+        private final Region reg;
+
+        public NotRegion(final Region reg) {
+            this.reg = reg;
+        }
+
+        @Override
+        public boolean isInside (java.awt.geom.Point2D.Double p) {
+            return !reg.isInside(p);
+        }
+    }
+
+    /**
+     * Region interval reg1 and reg2.
+     * 
+     * Return true if p is inside both reg1 and reg2.
+     * */
+    public static class AndRegion implements Region {
+        private final Region reg1;
+        private final Region reg2;
+
+        public AndRegion(final Region reg1, final Region reg2) {
+            this.reg1 = reg1;
+            this.reg2 = reg2;
+        }
+
+        @Override
+        public boolean isInside (java.awt.geom.Point2D.Double p) {
+            return reg1.isInside(p) && reg2.isInside(p);
+        }
+    }
+    
+    /**
+     * Region union of reg1 and reg2.
+     * 
+     * Return true if p is inside either reg1 or reg2.
+     * */
+    public static class OrRegion implements Region {
+        private final Region reg1;
+        private final Region reg2;
+
+        public OrRegion(final Region reg1, final Region reg2) {
+            this.reg1 = reg1;
+            this.reg2 = reg2;
+        }
+
+        @Override
+        public boolean isInside (java.awt.geom.Point2D.Double p) {
+            return reg1.isInside(p) || reg2.isInside(p);
         }
     }
 }

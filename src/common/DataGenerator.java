@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 import common.Region.Circle;
+import common.Region.NotRegion;
 import common.Region.Parallelogram;
 import common.Region.Ribbon;
 
@@ -37,7 +38,7 @@ public class DataGenerator {
     }
 
     public static void main (String[] args) {
-        geneXor();
+        geneSquare();
     }
 
     private static void geneCircle () {
@@ -132,7 +133,6 @@ public class DataGenerator {
         train.addAll(sub[0]);
         test.addAll(sub[1]);
 
-        
         // d region.
         sub = geneTrainAndTest(XOR_REG_C1[1], NUM, RATIO, CLASS[0]);
         train.addAll(sub[0]);
@@ -145,6 +145,34 @@ public class DataGenerator {
 
         // c region.
         sub = geneTrainAndTest(XOR_REG_C2[1], NUM, RATIO, CLASS[1]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+
+        Collections.shuffle(train);
+        Collections.shuffle(test);
+
+        System.out.println("train size: " + train.size());
+        System.out.println(train);
+        System.out.println("test size: " + test.size());
+        System.out.println(test);
+    }
+
+    /* NNN
+     * NYN
+     * NNN */
+    private static final Parallelogram SQ_REG1 = new Parallelogram(new Ribbon(
+            0, (2 - Math.sqrt(2)) / 4, (2 + Math.sqrt(2)) / 4), new Ribbon(
+            (2 - Math.sqrt(2)) / 4, (2 + Math.sqrt(2)) / 4));
+    private static final NotRegion SQ_REG2 = new NotRegion(SQ_REG1);
+
+    private static void geneSquare () {
+        final RawExampleList train = new RawExampleList();
+        final RawExampleList test = new RawExampleList();
+
+        RawExampleList[] sub = geneTrainAndTest(SQ_REG1, NUM, RATIO, CLASS[0]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+        sub = geneTrainAndTest(SQ_REG2, NUM, RATIO, CLASS[1]);
         train.addAll(sub[0]);
         test.addAll(sub[1]);
 
