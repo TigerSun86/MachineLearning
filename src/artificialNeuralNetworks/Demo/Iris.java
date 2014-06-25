@@ -21,7 +21,7 @@ public class Iris extends AnnProblem {
 
     @Override
     public String getAttrFileUrl () {
-        return "http://cs.fit.edu/~pkc/classes/ml/data/iris-attr.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/iris-attr.txt";
     }
 
     @Override
@@ -33,7 +33,12 @@ public class Iris extends AnnProblem {
     public String getTestFileUrl () {
         return "http://cs.fit.edu/~pkc/classes/ml/data/iris-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/iris.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();

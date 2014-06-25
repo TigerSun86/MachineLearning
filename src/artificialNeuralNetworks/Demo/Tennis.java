@@ -33,7 +33,12 @@ public class Tennis extends AnnProblem {
     public String getTestFileUrl () {
         return "http://cs.fit.edu/~pkc/classes/ml/data/tennis-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/tennis.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();

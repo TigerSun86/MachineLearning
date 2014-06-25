@@ -32,7 +32,12 @@ public class Wine extends AnnProblem {
     public String getTestFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/wine-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/wine.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();

@@ -44,6 +44,9 @@ public abstract class AnnProblem {
 
     // Can be null
     public abstract String getTestFileUrl ();
+    
+    // Whole data file before splitting into train and test.
+    public abstract String getDataFileUrl ();
 
     // Recommend new int[] { 3 }
     public abstract ArrayList<Integer> getDefaultNumberOfHiddenNodes ();

@@ -32,7 +32,12 @@ public class Ionosphere extends AnnProblem {
     public String getTestFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();

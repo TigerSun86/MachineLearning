@@ -32,7 +32,12 @@ public class Image extends AnnProblem {
     public String getTestFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();
@@ -49,4 +54,6 @@ public class Image extends AnnProblem {
     public double getDefaultMomentumRate () {
         return 0.1;
     }
+
+
 }

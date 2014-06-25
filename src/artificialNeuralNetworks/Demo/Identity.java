@@ -33,7 +33,12 @@ public class Identity extends AnnProblem {
     public String getTestFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/identity-train.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/identity.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();

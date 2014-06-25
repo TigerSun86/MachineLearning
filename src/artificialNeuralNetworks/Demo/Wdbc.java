@@ -32,7 +32,12 @@ public class Wdbc extends AnnProblem {
     public String getTestFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-test.txt";
     }
-
+    
+    @Override
+    public String getDataFileUrl () {
+        return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt";
+    }
+    
     @Override
     public ArrayList<Integer> getDefaultNumberOfHiddenNodes () {
         final ArrayList<Integer> nH = new ArrayList<Integer>();
