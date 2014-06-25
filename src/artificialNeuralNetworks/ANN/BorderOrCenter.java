@@ -44,7 +44,7 @@ public class BorderOrCenter {
 
         rawTrainWithNoise = rawTrain;
 
-        annAttr = new AnnAttrList(rawTrain, rawAttr);
+        annAttr = new AnnAttrList(rawAttr);
         
         nHidden = new ArrayList<Integer>();
         hiddenHasThres = true;
@@ -70,7 +70,7 @@ public class BorderOrCenter {
         System.out.printf("distance %.3f x1 %.2f x2 %.2f%n", d, x1, x2);
         
         final NeuralNetwork net =
-                new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
+                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
         System.out.println("iterations w0 w1 w2");
@@ -101,7 +101,7 @@ public class BorderOrCenter {
 
         rawTrainWithNoise = rawTrain;
 
-        annAttr = new AnnAttrList(rawTrain, rawAttr);
+        annAttr = new AnnAttrList(rawAttr);
 
         nHidden = new ArrayList<Integer>();
         hiddenHasThres = true;
@@ -125,7 +125,7 @@ public class BorderOrCenter {
         for (int i = 0; i < 49; i++){
             
             final NeuralNetwork net =
-                    new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
+                    new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
                             hiddenHasThres, annAttr.tList.size(), outHasThres,
                             learnRate, momentumRate);
             int iter = 0;
@@ -168,7 +168,7 @@ public class BorderOrCenter {
 
         rawTrainWithNoise = rawTrain;
 
-        annAttr = new AnnAttrList(rawTrain, rawAttr);
+        annAttr = new AnnAttrList(rawAttr);
 
         
         nHidden = new ArrayList<Integer>();
@@ -193,7 +193,7 @@ public class BorderOrCenter {
         for (int i = 0; i < 49; i++){
            
             final NeuralNetwork net =
-                    new NeuralNetwork(annAttr, annAttr.xList.size(), nHidden,
+                    new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
                             hiddenHasThres, annAttr.tList.size(), outHasThres,
                             learnRate, momentumRate);
             int iter = 0;

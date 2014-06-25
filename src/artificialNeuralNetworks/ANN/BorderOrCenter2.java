@@ -27,8 +27,8 @@ import common.Region.Ribbon;
 public class BorderOrCenter2 {
     private static final double K = 1.0;
 
-    private static final int PAIR = 50;
-    private static final int TIMES = 50;
+    private static final int PAIR = 1;
+    private static final int TIMES = 1;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -85,9 +85,9 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "file:///D:/Users/FIT/Paper/4border/toy4border_train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toy4border_train.txt";
     private static final String TEST_FILE_URL =
-            "file:///D:/Users/FIT/Paper/4border/toy4border_test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toy4border_test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
@@ -176,7 +176,6 @@ public class BorderOrCenter2 {
             RawExampleList class2Set, RawExampleList test) {
         // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
-        annLearner.annAttr = new AnnAttrList(test, RATTR);
         annLearner.setRawTest(test);
 
         final double[] accurAndIter = new double[2];
@@ -204,7 +203,6 @@ public class BorderOrCenter2 {
             int times) {
         // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
-        annLearner.annAttr = new AnnAttrList(test, RATTR);
         annLearner.setRawTest(test);
 
         final double[] accurAndIter = new double[2];
@@ -308,7 +306,7 @@ public class BorderOrCenter2 {
             Region[][] regs) {
         final RawExampleList[][] exReg = splitSetByRegions(train, regs);
 
-        //printExReg(exReg);
+        printExReg(exReg);
         System.out.println("Pairs " + PAIR + " Times " + TIMES);
         System.out.println("Region Accuracy Iteration");
         for (int i = 0; i < exReg.length; i++) {
@@ -324,7 +322,6 @@ public class BorderOrCenter2 {
         // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
         annLearner.setNumOfHiddenNodes(5);
-        annLearner.annAttr = new AnnAttrList(test, RATTR);
         annLearner.setRawTest(test);
 
         final double[] accurAndIter = new double[2];

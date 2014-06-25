@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import util.Dbg;
+
+import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 
@@ -24,7 +26,7 @@ public class AnnExList extends ArrayList<AnnExample> {
         super();
     }
 
-    public AnnExList(final RawExampleList rawExSet, final AnnAttrList attrs) {
+    public AnnExList(final RawExampleList rawExSet, final RawAttrList attrs) {
         super();
         for (RawExample re : rawExSet) {
             final AnnExample ae = exampleRawToANN(re, attrs);
@@ -120,7 +122,7 @@ public class AnnExList extends ArrayList<AnnExample> {
     }
 
     private static AnnExample exampleRawToANN (final RawExample re,
-            final AnnAttrList attrs) {
+            final RawAttrList attrs) {
         final AnnExample ae = new AnnExample();
         // Convert raw attribute to ANN version.
         ae.xList.addAll(FloatConverter.valuesToDouble(re.xList, attrs));

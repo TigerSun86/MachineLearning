@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import common.KNN;
-import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -20,16 +19,12 @@ import common.RawExampleList;
 public class FCNN implements Reducible {
     private static final int K = 3;
     @Override
-    public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
-        // Map all attributes in range 0 to 1.
-        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
-        final RawExampleList exs2 = mAttr.mapExs(exs, attrs);
+    public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {       
+        final double datosTrain[][] = new double[exs.size()][attrs.xList.size()];
+        final int clasesTrain[] = new int[exs.size()];
         
-        final double datosTrain[][] = new double[exs2.size()][attrs.xList.size()];
-        final int clasesTrain[] = new int[exs2.size()];
-        
-        for (int i = 0; i < exs2.size();i++){
-            final RawExample e = exs2.get(i);
+        for (int i = 0; i < exs.size();i++){
+            final RawExample e = exs.get(i);
             datosTrain[i] = new double[e.xList.size()];
             for (int j = 0; j < e.xList.size(); j++){
                 datosTrain[i][j] = Double.parseDouble(e.xList.get(j));

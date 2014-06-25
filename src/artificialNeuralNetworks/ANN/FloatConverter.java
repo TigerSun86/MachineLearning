@@ -3,9 +3,8 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 import java.util.List;
 
-import common.MappedAttr;
-import common.Mapper;
 import common.RawAttr;
+import common.RawAttrList;
 
 /**
  * FileName: FloatConverter.java
@@ -20,36 +19,30 @@ public class FloatConverter {
     public static final double MID_VALUE = 0.5;
     public static final double LOW_VALUE = 0.1;
 
-    public static ArrayList<Double> valuesToDouble (final ArrayList<String> values,
-            final AnnAttrList attrs) {
-        assert values.size() == attrs.rAttrs.xList.size();
+    public static ArrayList<Double> valuesToDouble (
+            final ArrayList<String> values, final RawAttrList attrs) {
+        assert values.size() == attrs.xList.size();
         final ArrayList<Double> newV = new ArrayList<Double>();
         for (int index = 0; index < values.size(); index++) {
             final String value = values.get(index); // Value in raw example.
             // Raw Attribute of the value.
-            final RawAttr rAttr = attrs.rAttrs.xList.get(index);
-            // Ann Attribute of the value.
-            final List<MappedAttr> annAttr = attrs.getAnnAttrsAt(index);
-            doubleOneValue(newV, value, rAttr, annAttr);
+            final RawAttr rAttr = attrs.xList.get(index);
+            doubleOneValue(newV, value, rAttr);
         }
         return newV;
     }
 
     public static ArrayList<Double> targetToDouble (final String value,
-            final AnnAttrList attrs) {
+            final RawAttrList attrs) {
         final ArrayList<Double> newV = new ArrayList<Double>();
-        doubleOneValue(newV, value, attrs.rAttrs.t, attrs.tList);
+        doubleOneValue(newV, value, attrs.t);
         return newV;
     }
 
-    private static void
-            doubleOneValue (final ArrayList<Double> newV, final String value,
-                    final RawAttr rAttr, final List<MappedAttr> annAttr) {
+    private static void doubleOneValue (final ArrayList<Double> newV,
+            final String value, final RawAttr rAttr) {
         if (rAttr.isContinuous) {
-            assert annAttr.size() == 1;
-            final double x = Double.parseDouble(value);
-            final double y = Mapper.valueToMapped(x, annAttr.get(0));
-            newV.add(y);
+            newV.add(Double.parseDouble(value));
         } else if (rAttr.valueList.size() == 2) { // Have 2 possible values.
             if (value.equals(rAttr.valueList.get(0))) {
                 newV.add(HIGH_VALUE); // First value converted to 0.9.
@@ -72,33 +65,28 @@ public class FloatConverter {
     }
 
     public static String targetBackString (final ArrayList<Double> values,
-            final AnnAttrList attrs) {
-        return backOneValue(values, attrs.rAttrs.t, attrs.tList);
+            final RawAttrList attrs) {
+        return backOneValue(values, attrs.t);
     }
 
-    public static ArrayList<String> valuesBackString (final ArrayList<Double> values,
-            final AnnAttrList attrs) {
+    public static ArrayList<String> valuesBackString (
+            final ArrayList<Double> values, final RawAttrList attrs) {
         final ArrayList<String> newVs = new ArrayList<String>();
-        for (int index = 0; index < attrs.rAttrs.xList.size(); index++) {
+        for (int index = 0; index < attrs.xList.size(); index++) {
             // Get Ann values corresponding to the raw attribute.
-            final List<Double> annValues = attrs.getAnnValuesAt(index, values);
+            final List<Double> annValues = getAnnValuesAt(index, values, attrs);
             // Raw Attribute of the value.
-            final RawAttr rAttr = attrs.rAttrs.xList.get(index);
-            // Ann Attribute of the value.
-            final List<MappedAttr> annAttr = attrs.getAnnAttrsAt(index);
-            final String newV = backOneValue(annValues, rAttr, annAttr);
+            final RawAttr rAttr = attrs.xList.get(index);
+            final String newV = backOneValue(annValues, rAttr);
             newVs.add(newV);
         }
         return newVs;
     }
 
     private static String backOneValue (final List<Double> annValues,
-            final RawAttr rAttr, final List<MappedAttr> annAttr) {
+            final RawAttr rAttr) {
         if (rAttr.isContinuous) {
-            assert annAttr.size() == 1;
-            final double y = annValues.get(0);
-            final double x = Mapper.mappedToValue(y, annAttr.get(0));
-            return String.valueOf(x);
+            return String.valueOf(annValues.get(0));
         } else if (rAttr.valueList.size() == 2) { // Have 2 possible values.
             // If higher equal than 0.5 is the first value in attribute,
             // otherwise is the second one.
@@ -123,6 +111,29 @@ public class FloatConverter {
                 }
             } // End of for (int vIndex = 0;
             return rAttr.valueList.get(maxVIndex);
+        }
+    }
+    
+    private static List<Double> getAnnValuesAt (final int indexOfRawAttr,
+            final ArrayList<Double> values, final RawAttrList rAttrs) {
+        assert indexOfRawAttr >= 0 && indexOfRawAttr < rAttrs.xList.size();
+        int fromIndex = 0;
+        for (int i = 0; i < indexOfRawAttr; i++) {
+            final int length = getLength(rAttrs.xList.get(i));
+            fromIndex += length;
+        }
+        final int toIndex =
+                fromIndex + getLength(rAttrs.xList.get(indexOfRawAttr));
+        return values.subList(fromIndex, toIndex);
+    }
+    
+    private static int getLength (RawAttr rAttr) {
+        if (rAttr.isContinuous) {
+            return 1;
+        } else if (rAttr.valueList.size() == 2) { // Have 2 possible values.
+            return 1;
+        } else {
+            return rAttr.valueList.size();
         }
     }
 }

@@ -10,7 +10,6 @@ import util.SysUtil;
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 
-import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -63,16 +62,9 @@ public class POCNN {
         System.out.println();
     }
 
-    private static int count = 0;
-
     public static RawExampleList sPocNN (final RawExampleList exs,
             final RawAttrList attrs) {
-        count = 0;
-        // Map all attributes in range 0 to 1.
-        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
-        final RawExampleList s = mAttr.mapExs(exs, attrs);
-
-        final RawExampleList[] subS = seperateSbyClass(s, attrs);
+        final RawExampleList[] subS = seperateSbyClass(exs, attrs);
         // Use HashSet to store the result to avoid duplicate examples.
         final HashSet<RawExample> result = new HashSet<RawExample>();
         // Number of classes
@@ -92,11 +84,8 @@ public class POCNN {
             final RawExampleList s2 = subS[s2Index];
             result.addAll(selectingPocNN(s1, s2));
         }
-        RawExampleList ret = new RawExampleList();
+        final RawExampleList ret = new RawExampleList();
         ret.addAll(result);
-
-        // Map back values.
-        ret = mAttr.backExs(ret, attrs);
         Dbg.print(DBG, MODULE, "Final data set:" + ret.size() + Dbg.NEW_LINE
                 + ret);
         return ret;
@@ -104,11 +93,7 @@ public class POCNN {
 
     public static RawExampleList rPocNN (final RawExampleList exs,
             final RawAttrList attrs) {
-        // Map all attributes in range 0 to 1.
-        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
-        final RawExampleList s = mAttr.mapExs(exs, attrs);
-
-        final RawExampleList[] subS = seperateSbyClass(s, attrs);
+        final RawExampleList[] subS = seperateSbyClass(exs, attrs);
         // Use HashSet to store the result to avoid duplicate examples.
         final HashSet<RawExample> result = new HashSet<RawExample>();
         // Number of classes
@@ -128,11 +113,8 @@ public class POCNN {
             final RawExampleList s2 = subS[s2Index];
             result.addAll(replacingPocNN(s1, s2));
         }
-        RawExampleList ret = new RawExampleList();
+        final RawExampleList ret = new RawExampleList();
         ret.addAll(result);
-
-        // Map back values.
-        ret = mAttr.backExs(ret, attrs);
         Dbg.print(DBG, MODULE, "Final data set:" + ret.size() + Dbg.NEW_LINE
                 + ret);
         return ret;
@@ -154,10 +136,6 @@ public class POCNN {
 
     private static RawExampleList selectingPocNN (final RawExampleList s1,
             final RawExampleList s2) {
-        count++;
-        if (count == 1000) {
-            count++;
-        }
         final RawExample[] xp = findingPocNN(s1, s2);
         final RawExample xp1 = xp[0];
         final RawExample xp2 = xp[1];

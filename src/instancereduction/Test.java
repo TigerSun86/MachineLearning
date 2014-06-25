@@ -14,6 +14,7 @@ import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 
 import common.DataCorrupter;
+import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExampleList;
 import common.TrainTestSplitter;
@@ -300,7 +301,12 @@ public class Test {
         System.out.println("Data set: " + dataSetName);
 
         final RawAttrList rawAttr = new RawAttrList(attrFile);
-        final RawExampleList exs = new RawExampleList(dataFile);
+        final RawExampleList originalExs = new RawExampleList(dataFile);
+        // Map all attributes in range 0 to 1.
+        final MappedAttrList mAttr = new MappedAttrList(originalExs, rawAttr);
+        // Rescale (map) all data in range 0 to 1.
+        final RawExampleList exs = mAttr.mapExs(originalExs, rawAttr);
+        
         final AnnLearner annLearner =
                 new AnnLearner(rawAttr, t.learnRate, t.momentum);
         for (int times = 1; times <= t.timesOfGeneratingTrainTest; times++) {

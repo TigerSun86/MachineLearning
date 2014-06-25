@@ -3,7 +3,9 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 
 import util.Dbg;
+
 import common.Hypothesis;
+import common.RawAttrList;
 
 /**
  * FileName: NeuralNetwork.java
@@ -18,14 +20,14 @@ public class NeuralNetwork implements Hypothesis {
     public static final String MODULE = "NN";
     public static final boolean DBG = false;
 
-    private final AnnAttrList attrs;
+    private final RawAttrList attrs;
 
     public final ArrayList<Layer> layers;
 
     private double learnRate;
     private double momentumRate;
 
-    public NeuralNetwork(final AnnAttrList attrs, final int nIn,
+    public NeuralNetwork(final RawAttrList attrs, final int nIn,
             final ArrayList<Integer> nHidden, final boolean hiddenHasThres,
             final int nOut, final boolean outHasThres, final double learnRate,
             final double momentumRate) {

@@ -6,7 +6,6 @@ import java.util.Random;
 
 import util.Dbg;
 
-import common.MappedAttrList;
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -28,17 +27,13 @@ public class ENN {
 
     public static RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
-        // Map all attributes in range 0 to 1.
-        final MappedAttrList mAttr = new MappedAttrList(exs, attrs);
-        final RawExampleList exs2 = mAttr.mapExs(exs, attrs);
-
         // Measure distances between each examples.
-        final double[][] diss = getDistances(exs2, attrs);
-        final String[] classDeterminedByNeighbors = new String[exs2.size()];
+        final double[][] diss = getDistances(exs, attrs);
+        final String[] classDeterminedByNeighbors = new String[exs.size()];
 
-        for (int i = 0; i < exs2.size(); i++) {
+        for (int i = 0; i < exs.size(); i++) {
             final ArrayList<Integer> neighbors = kNearestNeighbor(i, diss, K);
-            final String majorityClass = majorityClass(exs2, attrs, neighbors);
+            final String majorityClass = majorityClass(exs, attrs, neighbors);
             classDeterminedByNeighbors[i] = majorityClass;
         }
         
