@@ -1,14 +1,17 @@
 package artificialNeuralNetworks.ANN;
 
+import instancereduction.Reducible;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import util.Dbg;
-
+import util.SysUtil;
 import common.DataCorrupter;
 import common.Evaluator;
 import common.RawAttrList;
 import common.RawExampleList;
+import common.TrainTestSplitter;
 
 /**
  * FileName: AnnLearner.java
@@ -84,6 +87,7 @@ public class AnnLearner {
     }
 
     public void setNumOfHiddenNodes (final int nH) {
+        this.nHidden = new ArrayList<Integer>();
         this.nHidden.add(nH);
     }
 
@@ -140,13 +144,12 @@ public class AnnLearner {
         return new AccurAndIter(accur, iter);
     }
 
-    private int validation2 (final AnnExList trainSet,
-            final AnnExList valSet) {
+    private int validation2 (final AnnExList trainSet, final AnnExList valSet) {
         final NeuralNetwork net =
                 new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
                         hiddenHasThres, annAttr.tList.size(), outHasThres,
                         learnRate, momentumRate);
-        
+
         double minError = Double.POSITIVE_INFINITY;
         int iter = 0;
         int bestIter = 0;
@@ -165,6 +168,54 @@ public class AnnLearner {
         return bestIter;
     }
 
+    public AcSizeItTime reductionLearningWith3Fold (
+            final Reducible reductionMethod) {
+        final long trainStartTime = SysUtil.getCpuTime();
+
+        final RawExampleList[] exArray =
+                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                        rawTrainWithNoise, rawAttr);
+
+        long eTime = 0;
+        int sumIter = 0;
+        for (int val = 0; val < exArray.length; val++) {
+            final RawExampleList valSet = exArray[val];
+            final RawExampleList trainSet = new RawExampleList();
+            for (int other = 0; other < exArray.length; other++) {
+                if (other != val) { // All other set is train set.
+                    trainSet.addAll(exArray[other]);
+                }
+            }
+            final long startTime = SysUtil.getCpuTime();
+            final RawExampleList reducedTrain =
+                    reductionMethod.reduce(trainSet, rawAttr);
+            eTime += (SysUtil.getCpuTime() - startTime);
+
+            final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
+            final AnnExList annVal = new AnnExList(valSet, rawAttr);
+            sumIter += validation2(annTrain, annVal);
+        }
+
+        final long startTime = SysUtil.getCpuTime();
+        final RawExampleList reducedTrain =
+                reductionMethod.reduce(rawTrainWithNoise, rawAttr);
+        eTime += (SysUtil.getCpuTime() - startTime);
+        // Convert from nano second to second.
+        final double editTime = eTime / 1000.0;
+
+        final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
+
+        final int meanIter = sumIter / exArray.length;
+        final NeuralNetwork net = iter(annTrain, meanIter);
+        final double accur = evalTest(net);
+
+        // Convert from nano second to second.
+        final double trainTime =
+                (SysUtil.getCpuTime() - trainStartTime) / 1000.0;
+        return new AcSizeItTime(accur, reducedTrain.size(), meanIter, editTime,
+                trainTime);
+    }
+
     public static class AccurAndIter {
         public final double accur;
         public final int iter;
@@ -172,6 +223,23 @@ public class AnnLearner {
         public AccurAndIter(double accur, int iter) {
             this.accur = accur;
             this.iter = iter;
+        }
+    }
+
+    public static class AcSizeItTime {
+        public final double accur;
+        public final int size;
+        public final int iter;
+        public final double editTime;
+        public final double trainTime;
+
+        public AcSizeItTime(double accur, int size, int iter, double editTime,
+                double trainTime) {
+            this.accur = accur;
+            this.size = size;
+            this.iter = iter;
+            this.editTime = editTime;
+            this.trainTime = trainTime;
         }
     }
 

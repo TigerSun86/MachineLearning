@@ -13,7 +13,7 @@ import java.util.Random;
  * @date Apr 20, 2014 11:45:34 PM
  */
 public class TrainTestSplitter {
-    public static final double DEFAULT_RATIO = 0.667;
+    public static final double DEFAULT_RATIO = 2.0 / 3;
 
     /* private static final String FILE =
      * "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
@@ -191,6 +191,19 @@ public class TrainTestSplitter {
             }
         }
 
+        return exArray;
+    }
+
+    public static RawExampleList[] splitSetInto3FoldWithConsistentClassRatio (
+            final RawExampleList exs, final RawAttrList attrs) {
+        final RawExampleList[] set1 =
+                splitSetWithConsistentClassRatio(exs, attrs, 1.0 / 3);
+        final RawExampleList[] set2 =
+                splitSetWithConsistentClassRatio(set1[1], attrs, 0.5);
+        final RawExampleList[] exArray = new RawExampleList[3];
+        exArray[0] = set1[0];
+        exArray[1] = set2[0];
+        exArray[2] = set2[1];
         return exArray;
     }
 

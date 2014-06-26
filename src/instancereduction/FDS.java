@@ -4,18 +4,17 @@ import common.RawAttrList;
 import common.RawExampleList;
 
 /**
- * FileName:     ENNSPOCNN.java
+ * FileName:     FDS.java
  * @Description: 
  *
  * @author Xunhu(Tiger) Sun
  *         email: sunx2013@my.fit.edu
- * @date Jun 16, 2014 12:26:51 AM 
+ * @date Jun 25, 2014 10:22:11 PM 
  */
-public class ENNSPOCNN  implements Reducible {
+public class FDS implements Reducible {
 
     @Override
     public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
-        RawExampleList exs2 = new ENN().reduce(exs, attrs);
-        return POCNN.sPocNN(exs2, attrs);
+        return exs;
     }
 }

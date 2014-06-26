@@ -10,9 +10,8 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.Scanner;
 
-import util.SysUtil;
 import artificialNeuralNetworks.ANN.AnnLearner;
-import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
+import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
 import artificialNeuralNetworks.ANN.AnnProblem;
 import artificialNeuralNetworks.Demo.Bupa;
 import artificialNeuralNetworks.Demo.Image;
@@ -36,15 +35,14 @@ import common.TrainTestSplitter;
  * @date Apr 19, 2014 8:57:06 PM
  */
 public class Test {
-
     // Only use 3 stuff from data source: name, attrfile, datafile.
     private static final AnnProblem[] DATA_SOURCE = { new Iris(), new Wine(),
             new Ionosphere(), new Bupa(), new Wdbc(), new Image() };
 
-    private static final Reducible[] METHODS = { new FCNN(), new RPOCNN(),
-            new ENNSPOCNN(), new ENNRPOCNN() };
-    private static final String[] METHOD_NAMES = { "FCNN", "RPOCNN",
-            "ENN+SPOCNN", "ENN+RPOCNN" };
+    private static final Reducible[] METHODS = { new FDS(), new ENN(),
+            new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new RanR() };
+    private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
+            "SPOCNN", "RPOCNN", "Ran" };
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
@@ -58,14 +56,14 @@ public class Test {
 
     public Test() {
         dataFlag = new BitSet(DATA_SOURCE.length);
-        dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
+        // dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
         metFlag = new BitSet(METHODS.length);
         metFlag.set(0, METHODS.length); // Enable all methods.
         learnRate = 0.1;
         momentum = 0.1;
-        numOfHiddenNodes = new int[] { 3};
-        noiseRateCases = new double[] { 0.1};
-        timesOfGeneratingTrainTest = 1;
+        numOfHiddenNodes = new int[] { 3, 5, 10 };
+        noiseRateCases = new double[] { 0, 0.05, 0.1 };
+        timesOfGeneratingTrainTest = 10;
     }
 
     public static void main (String[] args) throws FileNotFoundException {
@@ -149,53 +147,44 @@ public class Test {
 
             Collections.shuffle(exs); // Shuffle examples.
             final RawExampleList[] exs2 =
-                    TrainTestSplitter.split(exs,
-                            TrainTestSplitter.DEFAULT_RATIO);
+                    TrainTestSplitter.splitSetWithConsistentClassRatio(exs,
+                            rawAttr, TrainTestSplitter.DEFAULT_RATIO);
             final RawExampleList train = exs2[0];
             final RawExampleList test = exs2[1];
             annLearner.setRawTest(test);
 
             for (int noiseI = 0; noiseI < noiseRateCases.length; noiseI++) {
                 final double noiseRate = noiseRateCases[noiseI];
-
-                RawExampleList rawTrainWithNoise =
-                        DataCorrupter.corrupt(train, rawAttr, noiseRate);
                 System.out.printf("Noise: %.2f%n", noiseRate);
 
+                final RawExampleList rawTrainWithNoise =
+                        DataCorrupter.corrupt(train, rawAttr, noiseRate);
+                // Set data set for ANN learning.
+                annLearner.setRawTrainWithNoise(rawTrainWithNoise);
+
+                // Use different method to reduce.
                 for (int metIndex = 0; metIndex < METHODS.length; metIndex++) {
                     if (metFlag.get(metIndex)) {
+                        System.out.printf("%s: ", METHOD_NAMES[metIndex]);
                         final Reducible method = METHODS[metIndex];
-                        long eTime = SysUtil.getCpuTime();
-                        final RawExampleList reducedSet =
-                                method.reduce(rawTrainWithNoise, rawAttr);
-                        eTime = SysUtil.getCpuTime() - eTime;
-                        // Convert from nano second to second.
-                        final double editTime = eTime / 1000.0;
-                        // Set data set for ANN learning.
-                        annLearner.setRawTrainWithNoise(reducedSet);
-
-                        sta[noiseI][metIndex][0] += reducedSet.size();
-                        System.out.printf("%s: size %d",
-                                METHOD_NAMES[metIndex], reducedSet.size());
-                        sta[noiseI][metIndex][3] += editTime;
-                        System.out.printf(" EditTime %.3f", editTime);
+                        // Use different hidden nodes to train.
                         for (int nH : numOfHiddenNodes) {
                             annLearner.setNumOfHiddenNodes(nH);
-                            long tTime = SysUtil.getCpuTime();
-                            final AccurAndIter aai =
-                                    annLearner.kFoldLearning2(3);
-                            tTime = SysUtil.getCpuTime() - tTime;
-                            // Convert from nano second to second.
-                            final double trainTime = tTime / 1000.0;
+                            // Train by neural network.
+                            final AcSizeItTime result =
+                                    annLearner
+                                            .reductionLearningWith3Fold(method);
 
-                            final double accur = aai.accur;
-                            final int iter = aai.iter;
-                            sta[noiseI][metIndex][1] += accur;
-                            sta[noiseI][metIndex][2] += iter;
-                            sta[noiseI][metIndex][4] += trainTime;
-                            System.out.printf(
-                                    " nH %d accur %.4f iter %d trainTime %.3f",
-                                    nH, accur, iter, trainTime);
+                            sta[noiseI][metIndex][0] += result.accur;
+                            sta[noiseI][metIndex][1] += result.size;
+                            sta[noiseI][metIndex][2] += result.iter;
+                            sta[noiseI][metIndex][3] += result.editTime;
+                            sta[noiseI][metIndex][4] += result.trainTime;
+                            System.out
+                                    .printf(" nH %d accur %.4f size %d iter %d editTime %.3f trainTime %.3f",
+                                            nH, result.accur, result.size,
+                                            result.iter, result.editTime,
+                                            result.trainTime);
                         }
                         System.out.println();
                     }
@@ -208,36 +197,22 @@ public class Test {
                 .printf("EditWay NoiseRate Accuracy NumOfInstances NumofIterations "
                         + "InstanceEditingTime TrainingTime (in second)%n");
         for (int i = 0; i < noiseRateCases.length; i++) {
-
             for (int j = 0; j < METHODS.length; j++) {
                 if (metFlag.get(j)) {
-                    // NumOfInstances repeated timesOfGeneratingTrainTest times.
-                    sta[i][j][0] /= timesOfGeneratingTrainTest;
-                    // Accuracy repeated timesOfGeneratingTrainTest *
-                    // numOfHiddenNodes.length times.
-                    sta[i][j][1] /=
-                            (timesOfGeneratingTrainTest * numOfHiddenNodes.length);
-                    // Number of iterations repeated timesOfGeneratingTrainTest
-                    // * numOfHiddenNodes.length times.
-                    sta[i][j][2] /=
-                            (timesOfGeneratingTrainTest * numOfHiddenNodes.length);
-                    // InstanceEditingTime repeated timesOfGeneratingTrainTest
-                    // times.
-                    sta[i][j][3] /= timesOfGeneratingTrainTest;
-                    // Training time repeated timesOfGeneratingTrainTest *
-                    // numOfHiddenNodes.length times.
-                    sta[i][j][4] /=
-                            (timesOfGeneratingTrainTest * numOfHiddenNodes.length);
+                    for (int k = 0; k < 5; k++) {
+                        // all result statistic data repeated
+                        // timesOfGeneratingTrainTest * numOfHiddenNodes.length
+                        // times.
+                        sta[i][j][k] /=
+                                (timesOfGeneratingTrainTest * numOfHiddenNodes.length);
+                    }
 
                     // EditWay NoiseRate Accuracy NumOfInstances NumofIterations
                     // InstanceEditingTime TrainingTime
                     System.out.printf("%s, ", METHOD_NAMES[j]);
-
-                    System.out.printf(" %.2f, ", noiseRateCases[i]);
-                    // Accuracy NumOfInstances NumofIterations
-                    // InstanceEditingTime TrainingTime
+                    System.out.printf("%.2f, ", noiseRateCases[i]);
                     System.out.printf("%.4f, %4d, %5d, %.3f, %.3f%n",
-                            sta[i][j][1], Math.round(sta[i][j][0]),
+                            sta[i][j][0], Math.round(sta[i][j][1]),
                             Math.round(sta[i][j][2]), sta[i][j][3],
                             sta[i][j][4]);
                 }
@@ -264,7 +239,7 @@ public class Test {
         return sb.toString();
     }
 
-    private String getCurDataSet(){
+    private String getCurDataSet () {
         final StringBuilder sb = new StringBuilder();
         sb.append(String.format("Current: "));
         for (int i = 0; i < DATA_SOURCE.length; i++) {
@@ -275,6 +250,7 @@ public class Test {
         }
         return sb.toString();
     }
+
     private String getSetDataInfo () {
         final StringBuilder sb = new StringBuilder();
         sb.append("Data Set: ");
@@ -282,9 +258,9 @@ public class Test {
             sb.append(String.format("%d, %s ", i + 1, DATA_SOURCE[i].getName()));
         }
         sb.append(String.format("%n"));
-        
+
         sb.append(getCurDataSet());
-        
+
         sb.append(String.format("%n"));
 
         sb.append(String
@@ -302,7 +278,8 @@ public class Test {
             dataFlag.flip(i - 1);
         }
     }
-    private String getCurMethods(){
+
+    private String getCurMethods () {
         final StringBuilder sb = new StringBuilder();
         sb.append(String.format("Current: "));
         for (int i = 0; i < METHODS.length; i++) {
@@ -312,6 +289,7 @@ public class Test {
         }
         return sb.toString();
     }
+
     private String getSetMethodInfo () {
         final StringBuilder sb = new StringBuilder();
         sb.append("Method Set: ");
@@ -319,9 +297,9 @@ public class Test {
             sb.append(String.format("%d, %s ", i + 1, METHOD_NAMES[i]));
         }
         sb.append(String.format("%n"));
-        
+
         sb.append(getCurMethods());
-        
+
         sb.append(String.format("%n"));
 
         sb.append(String
@@ -339,7 +317,8 @@ public class Test {
             metFlag.flip(i - 1);
         }
     }
-    private String getCurOther(){
+
+    private String getCurOther () {
         final StringBuilder sb = new StringBuilder();
         sb.append(String
                 .format("Current: 1, learning rate: %.1f. 2, momentum: %.1f. 3, numOfHiddenNodes: %s. 4, noiseRateCases: %s. 5, repeating times: %d.",
@@ -348,6 +327,7 @@ public class Test {
                         timesOfGeneratingTrainTest));
         return sb.toString();
     }
+
     private String getSetOtherInfo () {
         final StringBuilder sb = new StringBuilder();
         sb.append(getCurOther());

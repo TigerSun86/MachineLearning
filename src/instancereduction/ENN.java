@@ -5,7 +5,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 import util.Dbg;
-
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -19,14 +18,14 @@ import common.RawExampleList;
  *         email: TigerSun86@gmail.com
  * @date Apr 19, 2014 7:54:26 PM
  */
-public class ENN {
+public class ENN implements Reducible {
     public static final String MODULE = "ENN";
     public static final boolean DBG = true;
 
     public static final int K = 3;
 
-    public static RawExampleList reduce (final RawExampleList exs,
-            final RawAttrList attrs) {
+    @Override
+    public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
         // Measure distances between each examples.
         final double[][] diss = getDistances(exs, attrs);
         final String[] classDeterminedByNeighbors = new String[exs.size()];
@@ -36,7 +35,7 @@ public class ENN {
             final String majorityClass = majorityClass(exs, attrs, neighbors);
             classDeterminedByNeighbors[i] = majorityClass;
         }
-        
+
         // Reduce original exs.
         final RawExampleList ret = new RawExampleList();
         for (int i = 0; i < exs.size(); i++) {

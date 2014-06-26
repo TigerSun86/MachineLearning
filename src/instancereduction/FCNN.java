@@ -18,6 +18,7 @@ import common.RawExampleList;
  */
 public class FCNN implements Reducible {
     private static final int K = 3;
+    
     @Override
     public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {       
         final double datosTrain[][] = new double[exs.size()][attrs.xList.size()];
