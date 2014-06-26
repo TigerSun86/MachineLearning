@@ -170,7 +170,7 @@ public class AnnLearner {
 
     public AcSizeItTime reductionLearningWith3Fold (
             final Reducible reductionMethod) {
-        final long trainStartTime = SysUtil.getWallClockTime();
+        final long trainStartTime = SysUtil.getCpuTime();
 
         final RawExampleList[] exArray =
                 TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
@@ -186,10 +186,10 @@ public class AnnLearner {
                     trainSet.addAll(exArray[other]);
                 }
             }
-            final long startTime = SysUtil.getWallClockTime();
+            final long startTime = SysUtil.getCpuTime();
             final RawExampleList reducedTrain =
                     reductionMethod.reduce(trainSet, rawAttr);
-            final long endTime = SysUtil.getWallClockTime();
+            final long endTime = SysUtil.getCpuTime();
             editTime += (endTime - startTime);
 
             final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
@@ -197,10 +197,10 @@ public class AnnLearner {
             sumIter += validation2(annTrain, annVal);
         }
 
-        final long startTime = SysUtil.getWallClockTime();
+        final long startTime = SysUtil.getCpuTime();
         final RawExampleList reducedTrain =
                 reductionMethod.reduce(rawTrainWithNoise, rawAttr);
-        final long endTime = SysUtil.getWallClockTime();
+        final long endTime = SysUtil.getCpuTime();
         editTime += (endTime - startTime);
 
         final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
@@ -209,7 +209,7 @@ public class AnnLearner {
         final NeuralNetwork net = iter(annTrain, meanIter);
         final double accur = evalTest(net);
 
-        final long trainTime = (SysUtil.getWallClockTime() - trainStartTime);
+        final long trainTime = (SysUtil.getCpuTime() - trainStartTime);
         return new AcSizeItTime(accur, reducedTrain.size(), meanIter, editTime,
                 trainTime);
     }
