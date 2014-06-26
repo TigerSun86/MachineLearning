@@ -15,7 +15,7 @@ import artificialNeuralNetworks.ANN.AnnProblem;
 public class Ionosphere extends AnnProblem {
     @Override
     public String getName () {
-        return "Image Segmentation";
+        return "Ionosphere";
     }
 
     @Override
