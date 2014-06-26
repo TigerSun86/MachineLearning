@@ -39,7 +39,7 @@ public class Test {
     private static final AnnProblem[] DATA_SOURCE = { new Iris(), new Wine(),
             new Ionosphere(), new Bupa(), new Wdbc(), new Image() };
 
-    private static final Reducible[] METHODS = { new FDS(), new ENN(),
+    private static final Reducible[] METHODS = { new FDS (), new ENN(),
             new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new RanR() };
     private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
             "SPOCNN", "RPOCNN", "Ran" };
@@ -57,6 +57,7 @@ public class Test {
     public Test() {
         dataFlag = new BitSet(DATA_SOURCE.length);
         // dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
+        dataFlag.set(0);
         metFlag = new BitSet(METHODS.length);
         metFlag.set(0, METHODS.length); // Enable all methods.
         learnRate = 0.1;
@@ -181,7 +182,7 @@ public class Test {
                             sta[noiseI][metIndex][3] += result.editTime;
                             sta[noiseI][metIndex][4] += result.trainTime;
                             System.out
-                                    .printf(" nH %d accur %.4f size %d iter %d editTime %.3f trainTime %.3f",
+                                    .printf(" nH %d accur %.4f size %d iter %d editTime %d trainTime %d",
                                             nH, result.accur, result.size,
                                             result.iter, result.editTime,
                                             result.trainTime);
@@ -195,7 +196,7 @@ public class Test {
         System.out.printf("%s statistic information%n", dataSetName);
         System.out
                 .printf("EditWay NoiseRate Accuracy NumOfInstances NumofIterations "
-                        + "InstanceEditingTime TrainingTime (in second)%n");
+                        + "InstanceEditingTime TrainingTime (in nano second)%n");
         for (int i = 0; i < noiseRateCases.length; i++) {
             for (int j = 0; j < METHODS.length; j++) {
                 if (metFlag.get(j)) {
@@ -211,10 +212,10 @@ public class Test {
                     // InstanceEditingTime TrainingTime
                     System.out.printf("%s, ", METHOD_NAMES[j]);
                     System.out.printf("%.2f, ", noiseRateCases[i]);
-                    System.out.printf("%.4f, %4d, %5d, %.3f, %.3f%n",
+                    System.out.printf("%.4f, %4d, %5d, %d, %d%n",
                             sta[i][j][0], Math.round(sta[i][j][1]),
-                            Math.round(sta[i][j][2]), sta[i][j][3],
-                            sta[i][j][4]);
+                            Math.round(sta[i][j][2]), Math.round(sta[i][j][3]),
+                                    Math.round(sta[i][j][4]));
                 }
             }
         }

@@ -170,13 +170,13 @@ public class AnnLearner {
 
     public AcSizeItTime reductionLearningWith3Fold (
             final Reducible reductionMethod) {
-        final long trainStartTime = SysUtil.getCpuTime();
+        final long trainStartTime = SysUtil.getWallClockTime();
 
         final RawExampleList[] exArray =
                 TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
                         rawTrainWithNoise, rawAttr);
 
-        long eTime = 0;
+        long editTime = 0;
         int sumIter = 0;
         for (int val = 0; val < exArray.length; val++) {
             final RawExampleList valSet = exArray[val];
@@ -186,22 +186,22 @@ public class AnnLearner {
                     trainSet.addAll(exArray[other]);
                 }
             }
-            final long startTime = SysUtil.getCpuTime();
+            final long startTime = SysUtil.getWallClockTime();
             final RawExampleList reducedTrain =
                     reductionMethod.reduce(trainSet, rawAttr);
-            eTime += (SysUtil.getCpuTime() - startTime);
+            final long endTime = SysUtil.getWallClockTime();
+            editTime += (endTime - startTime);
 
             final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
             final AnnExList annVal = new AnnExList(valSet, rawAttr);
             sumIter += validation2(annTrain, annVal);
         }
 
-        final long startTime = SysUtil.getCpuTime();
+        final long startTime = SysUtil.getWallClockTime();
         final RawExampleList reducedTrain =
                 reductionMethod.reduce(rawTrainWithNoise, rawAttr);
-        eTime += (SysUtil.getCpuTime() - startTime);
-        // Convert from nano second to second.
-        final double editTime = eTime / 1000.0;
+        final long endTime = SysUtil.getWallClockTime();
+        editTime += (endTime - startTime);
 
         final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
 
@@ -209,9 +209,7 @@ public class AnnLearner {
         final NeuralNetwork net = iter(annTrain, meanIter);
         final double accur = evalTest(net);
 
-        // Convert from nano second to second.
-        final double trainTime =
-                (SysUtil.getCpuTime() - trainStartTime) / 1000.0;
+        final long trainTime = (SysUtil.getWallClockTime() - trainStartTime);
         return new AcSizeItTime(accur, reducedTrain.size(), meanIter, editTime,
                 trainTime);
     }
@@ -230,11 +228,11 @@ public class AnnLearner {
         public final double accur;
         public final int size;
         public final int iter;
-        public final double editTime;
-        public final double trainTime;
+        public final long editTime;
+        public final long trainTime;
 
-        public AcSizeItTime(double accur, int size, int iter, double editTime,
-                double trainTime) {
+        public AcSizeItTime(double accur, int size, int iter, long editTime,
+                long trainTime) {
             this.accur = accur;
             this.size = size;
             this.iter = iter;

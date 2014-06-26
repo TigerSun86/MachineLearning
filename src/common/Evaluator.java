@@ -17,7 +17,7 @@ public class Evaluator {
     public static double evaluate (final Hypothesis h,
             final RawExampleList dataSet) {
         int count = 0;
-        final RawExampleList wrongExs = new RawExampleList();
+        //final RawExampleList wrongExs = new RawExampleList();
         for (int i = 0; i < dataSet.size();i++){
             final RawExample ex = dataSet.get(i);
             final String predict = h.predict(ex.xList);
@@ -25,7 +25,7 @@ public class Evaluator {
             if (target.equals(predict)) {
                 count++;
             } else {
-                wrongExs.add(ex);
+                //wrongExs.add(ex);
             }
             Dbg.print(DBG, MODULE,"Ex."+ (i+1)+
                     ", predict: " + predict + ", target: " + target + ", result: "
