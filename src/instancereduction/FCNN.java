@@ -17,8 +17,13 @@ import common.RawExampleList;
  * @date Jun 20, 2014 1:27:43 PM
  */
 public class FCNN implements Reducible {
-    private static final int K = 3;
-    
+    private final int k;
+    public FCNN () {
+        this.k = 1;
+      }
+    public FCNN (int k) {
+      this.k = k;
+    }
     @Override
     public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {       
         final double datosTrain[][] = new double[exs.size()][attrs.xList.size()];
@@ -33,7 +38,7 @@ public class FCNN implements Reducible {
             clasesTrain[i] = attrs.t.valueList.indexOf(e.t);
         }
         
-        final int[] s = ejecutar(datosTrain, clasesTrain, K);
+        final int[] s = ejecutar(datosTrain, clasesTrain, k);
         
         final RawExampleList ret = new RawExampleList();
         for (int i : s){

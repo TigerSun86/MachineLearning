@@ -40,9 +40,9 @@ public class Test {
             new Ionosphere(), new Bupa(), new Wdbc(), new Image() };
 
     private static final Reducible[] METHODS = { new FDS (), new ENN(),
-            new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new RanR() };
+            new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new RanR(), new HMNEI(), new DROP3()};
     private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
-            "SPOCNN", "RPOCNN", "Ran" };
+            "SPOCNN", "RPOCNN", "Ran","HMNEI" ,"DROP3"};
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
