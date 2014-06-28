@@ -19,7 +19,7 @@ public abstract class AnnProblem {
     public final double defLearnRate;
     public final double defMomentum;
 
-    public final AnnLearner learner;
+    public final AnnLearner learner = null;
 
     public AnnProblem() {
         this.name = getName();
@@ -30,10 +30,10 @@ public abstract class AnnProblem {
         this.defLearnRate = getDefaultLearningRate();
         this.defMomentum = getDefaultMomentumRate();
 
-        learner = new AnnLearner(attrUrl, trainUrl, testUrl);
+/*        learner = new AnnLearner(attrUrl, trainUrl, testUrl);
         learner.nHidden = defNHidden;
         learner.learnRate = defLearnRate;
-        learner.momentumRate = defMomentum;
+        learner.momentumRate = defMomentum;*/
     }
 
     public abstract String getName ();

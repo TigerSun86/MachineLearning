@@ -12,22 +12,23 @@ import java.util.Scanner;
 
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
-import artificialNeuralNetworks.ANN.AnnProblem;
-import artificialNeuralNetworks.Demo.Bupa;
-import artificialNeuralNetworks.Demo.Glass;
-import artificialNeuralNetworks.Demo.Haberman;
-import artificialNeuralNetworks.Demo.Heart;
-import artificialNeuralNetworks.Demo.Image;
-import artificialNeuralNetworks.Demo.Ionosphere;
-import artificialNeuralNetworks.Demo.Iris;
-import artificialNeuralNetworks.Demo.Wdbc;
-import artificialNeuralNetworks.Demo.Wine;
 
 import common.DataCorrupter;
 import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExampleList;
 import common.TrainTestSplitter;
+
+import dataset.Bupa;
+import dataset.DataSet;
+import dataset.Glass;
+import dataset.Haberman;
+import dataset.Heart;
+import dataset.Image;
+import dataset.Ionosphere;
+import dataset.Iris;
+import dataset.Wdbc;
+import dataset.Wine;
 
 /**
  * FileName: Test.java
@@ -39,9 +40,9 @@ import common.TrainTestSplitter;
  */
 public class Test {
     // Only use 3 stuff from data source: name, attrfile, datafile.
-    private static final AnnProblem[] DATA_SOURCE = { new Iris(), new Wine(),
-            new Ionosphere(), new Bupa(), new Wdbc(), new Image(), new Heart(),
-            new Haberman(), new Glass() };
+    private static final DataSet[] DATA_SOURCE = { new Iris(), new Wine(),
+            new Glass(), new Heart(), new Haberman(), new Bupa(),
+            new Ionosphere(), new Wdbc(), new Image() };
 
     private static final Reducible[] METHODS = { new FDS(), new ENN(),
             new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new HMNEI(),
@@ -73,8 +74,8 @@ public class Test {
     }
 
     public static void main (String[] args) throws FileNotFoundException {
-        final Scanner s = new Scanner(System.in);
         final Test t = new Test();
+        final Scanner s = new Scanner(System.in);
         while (true) {
             System.out.println(t.getMainScreenInfo());
             int command = getCommandNumber(s);

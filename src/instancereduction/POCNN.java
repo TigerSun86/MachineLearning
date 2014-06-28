@@ -82,7 +82,9 @@ public class POCNN {
             final int s2Index = com[1] - 1;
             final RawExampleList s1 = subS[s1Index];
             final RawExampleList s2 = subS[s2Index];
-            result.addAll(selectingPocNN(s1, s2));
+            if (!s1.isEmpty() && !s2.isEmpty()) {
+                result.addAll(selectingPocNN(s1, s2));
+            }
         }
         final RawExampleList ret = new RawExampleList();
         ret.addAll(result);
@@ -111,7 +113,9 @@ public class POCNN {
             final int s2Index = com[1] - 1;
             final RawExampleList s1 = subS[s1Index];
             final RawExampleList s2 = subS[s2Index];
-            result.addAll(replacingPocNN(s1, s2));
+            if (!s1.isEmpty() && !s2.isEmpty()) {
+                result.addAll(replacingPocNN(s1, s2));
+            }
         }
         final RawExampleList ret = new RawExampleList();
         ret.addAll(result);
@@ -284,7 +288,7 @@ public class POCNN {
                 // If many points are just on the plane, return separately to
                 // prevent two identical points which have same class but never
                 // got separated.
-                return x.equals(xp) ? Double.MIN_VALUE : -Double.MIN_VALUE;
+                return x.t.equals(xp.t) ? Double.MIN_VALUE : -Double.MIN_VALUE;
             }
         }
 
