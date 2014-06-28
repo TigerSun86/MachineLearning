@@ -14,6 +14,9 @@ import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
 import artificialNeuralNetworks.ANN.AnnProblem;
 import artificialNeuralNetworks.Demo.Bupa;
+import artificialNeuralNetworks.Demo.Glass;
+import artificialNeuralNetworks.Demo.Haberman;
+import artificialNeuralNetworks.Demo.Heart;
 import artificialNeuralNetworks.Demo.Image;
 import artificialNeuralNetworks.Demo.Ionosphere;
 import artificialNeuralNetworks.Demo.Iris;
@@ -37,12 +40,14 @@ import common.TrainTestSplitter;
 public class Test {
     // Only use 3 stuff from data source: name, attrfile, datafile.
     private static final AnnProblem[] DATA_SOURCE = { new Iris(), new Wine(),
-            new Ionosphere(), new Bupa(), new Wdbc(), new Image() };
+            new Ionosphere(), new Bupa(), new Wdbc(), new Image(), new Heart(),
+            new Haberman(), new Glass() };
 
-    private static final Reducible[] METHODS = { new FDS (), new ENN(),
-            new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new RanR(), new HMNEI(), new DROP3()};
+    private static final Reducible[] METHODS = { new FDS(), new ENN(),
+            new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new HMNEI(),
+            new DROP3(), new RanR() };
     private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
-            "SPOCNN", "RPOCNN", "Ran","HMNEI" ,"DROP3"};
+            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" };
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
@@ -212,10 +217,9 @@ public class Test {
                     // InstanceEditingTime TrainingTime
                     System.out.printf("%s, ", METHOD_NAMES[j]);
                     System.out.printf("%.2f, ", noiseRateCases[i]);
-                    System.out.printf("%.4f, %4d, %5d, %d, %d%n",
-                            sta[i][j][0], Math.round(sta[i][j][1]),
-                            Math.round(sta[i][j][2]), Math.round(sta[i][j][3]),
-                                    Math.round(sta[i][j][4]));
+                    System.out.printf("%.4f, %4d, %5d, %d, %d%n", sta[i][j][0],
+                            Math.round(sta[i][j][1]), Math.round(sta[i][j][2]),
+                            Math.round(sta[i][j][3]), Math.round(sta[i][j][4]));
                 }
             }
         }

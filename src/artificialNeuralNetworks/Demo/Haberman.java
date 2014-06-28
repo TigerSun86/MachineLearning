@@ -5,37 +5,37 @@ import java.util.ArrayList;
 import artificialNeuralNetworks.ANN.AnnProblem;
 
 /**
- * FileName:     Wdbc.java
+ * FileName:     Haberman.java
  * @Description: 
  *
  * @author Xunhu(Tiger) Sun
  *         email: sunx2013@my.fit.edu
- * @date Apr 21, 2014 3:03:14 AM 
+ * @date Jun 27, 2014 9:51:36 PM 
  */
-public class Wdbc extends AnnProblem {
+public class Haberman extends AnnProblem {
     @Override
     public String getName () {
-        return "Wdbc";
+        return "Haberman";
     }
 
     @Override
     public String getAttrFileUrl () {
-        return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-attr.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/haberman-attr.txt";
     }
 
     @Override
     public String getTrainFileUrl () {
-        return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-train.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/haberman-train.txt";
     }
 
     @Override
     public String getTestFileUrl () {
-        return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc-test.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/haberman-test.txt";
     }
     
     @Override
     public String getDataFileUrl () {
-        return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt";
+        return "http://my.fit.edu/~sunx2013/MachineLearning/haberman.txt";
     }
     
     @Override

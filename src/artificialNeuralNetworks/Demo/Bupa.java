@@ -15,7 +15,7 @@ import artificialNeuralNetworks.ANN.AnnProblem;
 public class Bupa extends AnnProblem {
     @Override
     public String getName () {
-        return "Liver Disorders";
+        return "Bupa";
     }
 
     @Override

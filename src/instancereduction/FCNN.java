@@ -3,7 +3,8 @@ package instancereduction;
 import java.util.Arrays;
 import java.util.Vector;
 
-import common.KNN;
+import keel.Algorithms.Preprocess.Basic.KNN;
+
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
