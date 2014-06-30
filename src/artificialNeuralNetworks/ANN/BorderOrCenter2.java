@@ -1,9 +1,12 @@
 package artificialNeuralNetworks.ANN;
 
+import instancereduction.Reducible;
+
 import java.awt.geom.Point2D;
 import java.util.Collections;
 
 import util.MyMath;
+import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
 
 import common.RawAttrList;
@@ -27,8 +30,8 @@ import common.Region.Ribbon;
 public class BorderOrCenter2 {
     private static final double K = 1.0;
 
-    private static final int PAIR = 1;
-    private static final int TIMES = 1;
+    private static final int PAIR = 20;
+    private static final int TIMES = 20;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -85,16 +88,17 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toy4border_train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toy4border_test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
         final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        testXor(train, test, REGB4);
+        testXor(train, test, REG_XOR);
+        //testByMod3Fold(train, test, REG_XOR,PAIR, TIMES);
     }
 
     private static void test1PairPoints (RawExampleList train,
@@ -232,7 +236,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 1;
+    private static final int XOR_COUNT = 5;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -319,7 +323,6 @@ public class BorderOrCenter2 {
 
     private static double[] testRegionOfXor (RawExampleList[] sets,
             RawExampleList test, int numOfPairs, int times) {
-        // No hidden nodes
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
         annLearner.setNumOfHiddenNodes(5);
         annLearner.setRawTest(test);
@@ -347,9 +350,80 @@ public class BorderOrCenter2 {
 
         return accurAndIter;
     }
+    
+    private static void testByMod3Fold (RawExampleList trainSet,
+            RawExampleList test, Region[][] regs, int numOfPairs, int times) {
+        final RegionSelector[] rs = new RegionSelector[regs.length];
+        for (int i = 0; i < regs.length; i++){
+            rs[i] = new RegionSelector(regs[i], numOfPairs);
+        }
+        
 
+        final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
+        annLearner.setNumOfHiddenNodes(5);
+        // Set data set for ANN learning.
+        annLearner.setRawTrainWithNoise(trainSet);
+        annLearner.setRawTest(test);
+        
+        System.out.println("Pairs " + PAIR + " Times " + TIMES);
+        System.out.println("Region Accuracy Iteration");
+        for (int i = 0; i < rs.length; i++){
+            final double[] accurAndIter = new double[2];
+            for (int t = 0; t < times; t++) {
+                final AcSizeItTime aai = annLearner.reductionLearningWith3Fold(rs[i]);
+                System.out.println("acc" + aai.accur + " iter" + aai.iter);
+                accurAndIter[0] += aai.accur;
+                accurAndIter[1] += aai.iter;
+            }
+
+            accurAndIter[0] /= times;
+            accurAndIter[1] /= times;
+            System.out.println((i + 1) + " " + accurAndIter[0] + " "
+                    + accurAndIter[1]);
+        }
+
+    }
+    private static class RegionSelector implements Reducible {
+        private final Region[] regs;
+        private final int numOfPairs;
+        public RegionSelector(Region[] regs, int numOfPairs) {
+            this.regs = regs;
+            this.numOfPairs = numOfPairs;
+        }
+        
+        @Override
+        public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
+            final RawExampleList[] sets = new RawExampleList[regs.length];
+            for (int i = 0; i < sets.length; i++) {
+                sets[i] = new RawExampleList();
+            }
+            
+            for (RawExample e: exs){
+                final Point2D.Double p =
+                        new Point2D.Double(Double.parseDouble(e.xList.get(0)),
+                                Double.parseDouble(e.xList.get(1)));
+                for (int i = 0; i < regs.length; i++){
+                    if (regs[i].isInside(p)) {
+                        sets[i].add(e);
+                        break;
+                    }
+                }
+            }
+
+            final RawExampleList ret = new RawExampleList();
+            for (RawExampleList s : sets) {
+                final int[] selected = MyMath.mOutofN(numOfPairs, s.size());
+                for (int i : selected) {
+                    ret.add(s.get(i));
+                }
+            }
+            Collections.shuffle(ret);
+            return ret;
+        }
+    }
+    
     /* 4 border begin **************** */
-    private static final int B4COUNT = 1;
+    private static final int B4COUNT = 5;
     private static final double B4_LB = (2 - Math.sqrt(2)) / 4;
     private static final double B4_HB = (2 + Math.sqrt(2)) / 4;
     private static final double[] B4_IN_L;
