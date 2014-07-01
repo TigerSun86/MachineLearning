@@ -50,7 +50,7 @@ public class ENN implements Reducible {
         return ret;
     }
 
-    private static String majorityClass (final RawExampleList exs,
+    public static String majorityClass (final RawExampleList exs,
             final RawAttrList attrs, final ArrayList<Integer> neighbors) {
         assert !attrs.t.isContinuous;
         final ArrayList<String> classes = attrs.t.valueList;
@@ -79,7 +79,7 @@ public class ENN implements Reducible {
         return classes.get(majIndex);
     }
 
-    private static class Node implements Comparable<Node> {
+    public static class Node implements Comparable<Node> {
         public int index;
         public double dis;
 
@@ -95,7 +95,7 @@ public class ENN implements Reducible {
         }
     }
 
-    private static ArrayList<Integer> kNearestNeighbor (final int i,
+    public static ArrayList<Integer> kNearestNeighbor (final int i,
             final double[][] diss, final int k) {
         final PriorityQueue<Node> que = new PriorityQueue<Node>(); // Ascending
         for (int j = 0; j < diss[i].length; j++) {

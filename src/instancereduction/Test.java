@@ -46,9 +46,9 @@ public class Test {
 
     private static final Reducible[] METHODS = { new FDS(), new ENN(),
             new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new HMNEI(),
-            new DROP3(), new RanR() };
+            new DROP3(), new RanR() , new RanENN()};
     private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
-            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" };
+            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" , "RanENN"};
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
