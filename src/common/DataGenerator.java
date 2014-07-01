@@ -24,7 +24,7 @@ public class DataGenerator {
     private static final double R1 = (1 - (Math.sqrt(2)) / 2);
     private static final Point2D.Double[] C1 = {
             new Point2D.Double(1 - R1, R1), new Point2D.Double(R1, 1 - R1) };
-    private static final int NUM = 1000;
+    private static final int NUM = 40;
 
     private static final double RATIO = 0.5;
 
@@ -38,7 +38,7 @@ public class DataGenerator {
     }
 
     public static void main (String[] args) {
-        geneSquare();
+        geneXor();
     }
 
     private static void geneCircle () {
@@ -157,6 +157,56 @@ public class DataGenerator {
         System.out.println(test);
     }
 
+    private static final Ribbon[] XOR_D_RIB_HOR = { new Ribbon(0, 0.2, 0.3),
+            new Ribbon(0, 0.7, 0.8) };
+    private static final Ribbon[] XOR_D_RIB_VER = { new Ribbon(0.2, 0.3),
+            new Ribbon(0.7, 0.8) };
+    private static final Parallelogram[] XOR_D_REG_C1 = {
+            new Parallelogram(XOR_D_RIB_HOR[1], XOR_D_RIB_VER[0]),
+            new Parallelogram(XOR_D_RIB_HOR[0], XOR_D_RIB_VER[1]) };
+    private static final Parallelogram[] XOR_D_REG_C2 = {
+            new Parallelogram(XOR_D_RIB_HOR[0], XOR_D_RIB_VER[0]),
+            new Parallelogram(XOR_D_RIB_HOR[1], XOR_D_RIB_VER[1]) };
+    private static final int D_NUM = 20;
+    private static void geneDenseXor () {
+        final RawExampleList train = new RawExampleList();
+        final RawExampleList test = new RawExampleList();
+
+        // Generate and split instances for each region separately,
+        // To guarantee each region will have equal number in train and test.
+        // a region.
+        RawExampleList[] sub =
+                geneTrainAndTest(XOR_REG_C1[0], NUM, RATIO, CLASS[0]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+        int remain = D_NUM;
+        RawExampleList setD = geneAdditionalSet(XOR_REG_C1[0], remain, RATIO, CLASS[0], train, test);
+        remain -= setD.size();
+        
+        // d region.
+        sub = geneTrainAndTest(XOR_REG_C1[1], NUM, RATIO, CLASS[0]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+
+        // b region.
+        sub = geneTrainAndTest(XOR_REG_C2[0], NUM, RATIO, CLASS[1]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+
+        // c region.
+        sub = geneTrainAndTest(XOR_REG_C2[1], NUM, RATIO, CLASS[1]);
+        train.addAll(sub[0]);
+        test.addAll(sub[1]);
+
+        Collections.shuffle(train);
+        Collections.shuffle(test);
+
+        System.out.println("train size: " + train.size());
+        System.out.println(train);
+        System.out.println("test size: " + test.size());
+        System.out.println(test);
+    }
+    
     /* NNN
      * NYN
      * NNN */
@@ -199,6 +249,23 @@ public class DataGenerator {
 
         RawExampleList[] sub = TrainTestSplitter.split(s, ratio);
         return sub;
+    }
+
+    private static RawExampleList geneAdditionalSet (final Region reg,
+            final int num, final double ratio, final String className,
+            final RawExampleList old1, final RawExampleList old2) {
+        HashSet<Point2D.Double> set = gene(reg, num);
+        RawExampleList s = new RawExampleList();
+        for (Point2D.Double p : set) {
+            final RawExample e = new RawExample();
+            e.xList.add(String.valueOf(p.x));
+            e.xList.add(String.valueOf(p.y));
+            e.t = className;
+            if (!old1.contains(e)&& !old2.contains(e)) {
+                s.add(e);
+            }
+        }
+        return s;
     }
 
     private static HashSet<Point2D.Double>
