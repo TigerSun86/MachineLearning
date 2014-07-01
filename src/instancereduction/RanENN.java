@@ -40,17 +40,16 @@ public class RanENN implements Reducible {
                     ENN.majorityClass(exs, attrs, neighbors);
             final RawExample e = exs.get(i);
             // The instance discarded by ENN but kept by random.
-            if (!majorityClass.equals(e.t) && kept.get(i)) {               
+            if (!majorityClass.equals(e.t) && kept.get(i)) {
                 kept.clear(i);
                 ennMark.set(i);
                 final int nn =
                         nearestNeighborHasntKept(i, diss, exs, kept, ennMark);
                 if (nn != -1) {
                     kept.set(nn);
-                   
-                    System.out.println(exs.get(i));
+/*                    System.out.println(exs.get(i));
                     System.out.println("replaced by");
-                    System.out.println(exs.get(nn));
+                    System.out.println(exs.get(nn));*/
                 }
             }
         }
