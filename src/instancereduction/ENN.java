@@ -1,10 +1,12 @@
 package instancereduction;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.PriorityQueue;
 import java.util.Random;
 
 import util.Dbg;
+
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -26,6 +28,18 @@ public class ENN implements Reducible {
 
     @Override
     public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
+        final BitSet kept = reduceByEnn(exs, attrs);
+        final RawExampleList ret = new RawExampleList();
+        for (int i = 0; i < exs.size(); i++) {
+            if (kept.get(i)) {
+                ret.add(exs.get(i));
+            }
+        }
+        Dbg.print(DBG, MODULE, "Reduced size: " + ret.size());
+        return ret;
+    }
+
+    public static BitSet reduceByEnn (RawExampleList exs, RawAttrList attrs) {
         // Measure distances between each examples.
         final double[][] diss = getDistances(exs, attrs);
         final String[] classDeterminedByNeighbors = new String[exs.size()];
@@ -36,18 +50,15 @@ public class ENN implements Reducible {
             classDeterminedByNeighbors[i] = majorityClass;
         }
 
-        // Reduce original exs.
-        final RawExampleList ret = new RawExampleList();
+        final BitSet kept = new BitSet(exs.size());
         for (int i = 0; i < exs.size(); i++) {
             final RawExample ex = exs.get(i);
             if (ex.t.equals(classDeterminedByNeighbors[i])) {
-                // Keep example only when all its neighbors agree with its
-                // class.
-                ret.add(ex);
+                // Keep example only when its neighbors agree with its class.
+                kept.set(i);
             }
         }
-        Dbg.print(DBG, MODULE, "Reduced size: " + ret.size());
-        return ret;
+        return kept;
     }
 
     public static String majorityClass (final RawExampleList exs,
