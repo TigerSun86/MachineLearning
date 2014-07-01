@@ -12,13 +12,11 @@ import java.util.Scanner;
 
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
-
 import common.DataCorrupter;
 import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExampleList;
 import common.TrainTestSplitter;
-
 import dataset.Bupa;
 import dataset.DataSet;
 import dataset.Glass;
@@ -46,9 +44,9 @@ public class Test {
 
     private static final Reducible[] METHODS = { new FDS(), new ENN(),
             new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new HMNEI(),
-            new DROP3(), new RanR() , new RanENN()};
+            new DROP3(), new RanR() , new RanENN(), new RF(), new PureRF()};
     private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
-            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" , "RanENN"};
+            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" , "RanENN", "RF", "PureRF"};
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
@@ -62,8 +60,8 @@ public class Test {
 
     public Test() {
         dataFlag = new BitSet(DATA_SOURCE.length);
-        // dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
-        dataFlag.set(0);
+        dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
+        //dataFlag.set(0);
         metFlag = new BitSet(METHODS.length);
         metFlag.set(0, METHODS.length); // Enable all methods.
         learnRate = 0.1;
@@ -72,26 +70,32 @@ public class Test {
         noiseRateCases = new double[] { 0, 0.05, 0.1 };
         timesOfGeneratingTrainTest = 10;
     }
-
+    private static final boolean NO_COMMAND = true;
     public static void main (String[] args) throws FileNotFoundException {
-        final Test t = new Test();
-        final Scanner s = new Scanner(System.in);
-        while (true) {
-            System.out.println(t.getMainScreenInfo());
-            int command = getCommandNumber(s);
-            if (command == 1) {
-                t.run();
-            } else if (command == 2) {
-                t.setDataSet(s);
-            } else if (command == 3) {
-                t.setMethodSet(s);
-            } else if (command == 4) {
-                t.setOther(s);
-            } else {
-                break;
-            }
-        } // End of while (true) {
-        s.close();
+        if (NO_COMMAND){
+            final Test t = new Test();
+            t.run();
+        }
+        else {
+            final Test t = new Test();
+            final Scanner s = new Scanner(System.in);
+            while (true) {
+                System.out.println(t.getMainScreenInfo());
+                int command = getCommandNumber(s);
+                if (command == 1) {
+                    t.run();
+                } else if (command == 2) {
+                    t.setDataSet(s);
+                } else if (command == 3) {
+                    t.setMethodSet(s);
+                } else if (command == 4) {
+                    t.setOther(s);
+                } else {
+                    break;
+                }
+            } // End of while (true) {
+            s.close();
+        }
     }
 
     private void run () throws FileNotFoundException {

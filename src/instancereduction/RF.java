@@ -2,7 +2,6 @@ package instancereduction;
 
 import java.util.BitSet;
 
-import common.PureRF;
 import common.RawAttrList;
 import common.RawExampleList;
 

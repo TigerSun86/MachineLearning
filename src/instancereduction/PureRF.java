@@ -1,11 +1,12 @@
-package common;
+package instancereduction;
 
-import instancereduction.ENN;
 import instancereduction.ENN.Node;
-import instancereduction.Reducible;
 
 import java.util.BitSet;
 import java.util.PriorityQueue;
+
+import common.RawAttrList;
+import common.RawExampleList;
 
 /**
  * FileName: PureRF.java
