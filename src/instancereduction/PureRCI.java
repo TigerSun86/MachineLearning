@@ -19,16 +19,25 @@ import common.RawExampleList;
  *         email: sunx2013@my.fit.edu
  * @date Apr 20, 2014 3:34:08 PM
  */
-public class PureRCI {
+public class PureRCI implements Reducible {
     public static final String MODULE = "PureRCI";
     public static final boolean DBG = true;
 
-    public static final int K = 3;
+    public static final int DEF_K = 3;
+    private final int k;
 
-    public static RawExampleList reduce (final RawExampleList exs,
+    public PureRCI() {
+        this.k = DEF_K;
+    }
+
+    public PureRCI(final int k) {
+        this.k = k;
+    }
+
+    public RawExampleList reduce (final RawExampleList exs,
             final RawAttrList attrs) {
         assert !attrs.t.isContinuous;
-        
+
         final BitSet reduced = new BitSet(exs.size());
         // Reduce instances of each class seperately.
         for (int classi = 0; classi < attrs.t.valueList.size(); classi++) {
@@ -48,7 +57,7 @@ public class PureRCI {
 
             // Measure distances between each examples.
             final double[][] diss = ENN.getDistances(newExs, attrs);
-            final int[] reducedTemp = reduceCentral(diss);
+            final int[] reducedTemp = reduceCentral(diss, k);
             for (int newIndex : reducedTemp) {
                 final Integer oldIndex = indexMap.get(newIndex);
                 assert oldIndex != null;
@@ -66,27 +75,27 @@ public class PureRCI {
         return ret;
     }
 
-    private static int[] reduceCentral (double[][] diss) {
+    private static int[] reduceCentral (double[][] diss, int k) {
         final int numOfNodes = diss.length;
-        if (numOfNodes < K + 1) {
+        if (numOfNodes < k + 1) {
             return new int[0];
         }
         // For each node, store its distances to neighbors (neighbor list).
-        final NodeTableAndAverDis naa = initNeighborLists(diss);
+        final NodeTableAndAverDis naa = initNeighborLists(diss, k);
         final ArrayList<ArrayList<Node>> nodesTable = naa.nodesTable;
         final double averKDis = naa.averKDis;
 
         final BitSet reduced = new BitSet(numOfNodes);
         while (true) {
-            if (numOfNodes - reduced.cardinality() < K + 1) {
+            if (numOfNodes - reduced.cardinality() < k + 1) {
                 // Remain nodes is less than k + 1.
                 break;
             }
             // Find the node with shortest distance to its kth neighbor.
             final int idToReduce =
-                    indexOfNodeWithNearestKthNeihbor(nodesTable, reduced);
-            // The kth neighbor's index is K - 1.
-            final double kDis = nodesTable.get(idToReduce).get(K - 1).dis;
+                    indexOfNodeWithNearestKthNeihbor(nodesTable, reduced, k);
+            // The kth neighbor's index is DEF_K - 1.
+            final double kDis = nodesTable.get(idToReduce).get(k - 1).dis;
             if (Double.compare(kDis, averKDis) < 0) {
                 // Delete the node.
                 reduced.set(idToReduce);
@@ -142,7 +151,7 @@ public class PureRCI {
         }
     }
 
-    private static NodeTableAndAverDis initNeighborLists (double[][] diss) {
+    private static NodeTableAndAverDis initNeighborLists (double[][] diss, int k) {
         final int numOfNodes = diss.length;
         // For each node, store its distances to neighbors (neighbor list).
         final ArrayList<ArrayList<Node>> nodesTable =
@@ -157,7 +166,7 @@ public class PureRCI {
                 }
             }
             Collections.sort(neighborList); // Ascending.
-            kDisSum += neighborList.get(K - 1).dis; // For getting average.
+            kDisSum += neighborList.get(k - 1).dis; // For getting average.
             nodesTable.add(neighborList); // Store neighbors info in table.
         }
         final double averKDis = kDisSum / numOfNodes;
@@ -184,7 +193,7 @@ public class PureRCI {
     }
 
     private static int indexOfNodeWithNearestKthNeihbor (
-            final ArrayList<ArrayList<Node>> nodesTable, final BitSet reduced) {
+            final ArrayList<ArrayList<Node>> nodesTable, final BitSet reduced, final int k) {
         // Find the node with shortest distance to its kth neighbor.
         double min = Double.POSITIVE_INFINITY;
         int minId = -1;
@@ -193,8 +202,8 @@ public class PureRCI {
                 continue; // Don't check reduced nodes.
             }
             final ArrayList<Node> neighborList = nodesTable.get(id);
-            assert neighborList.size() >= K;
-            final double dis = neighborList.get(K - 1).dis;
+            assert neighborList.size() >= k;
+            final double dis = neighborList.get(k - 1).dis;
             if (Double.compare(min, dis) > 0) {
                 min = dis;
                 minId = id;
