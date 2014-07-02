@@ -12,17 +12,18 @@ import java.util.Scanner;
 
 import artificialNeuralNetworks.ANN.AnnLearner;
 import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
+
 import common.DataCorrupter;
 import common.MappedAttrList;
 import common.RawAttrList;
 import common.RawExampleList;
 import common.TrainTestSplitter;
+
 import dataset.Bupa;
 import dataset.DataSet;
 import dataset.Glass;
 import dataset.Haberman;
 import dataset.Heart;
-import dataset.Image;
 import dataset.Ionosphere;
 import dataset.Iris;
 import dataset.Wdbc;
@@ -39,14 +40,20 @@ import dataset.Wine;
 public class Test {
     // Only use 3 stuff from data source: name, attrfile, datafile.
     private static final DataSet[] DATA_SOURCE = { new Iris(), new Wine(),
-            new Glass(), new Heart(), new Haberman(), new Bupa(),
-            new Ionosphere(), new Wdbc(), new Image() };
+            new Glass(), new Ionosphere(), new Heart(), new Haberman(),
+            new Bupa(), new Wdbc() };
 
     private static final Reducible[] METHODS = { new FDS(), new ENN(),
             new RCI(), new FCNN(), new SPOCNN(), new RPOCNN(), new HMNEI(),
-            new DROP3(), new RanR() , new RanENN(), new RF(), new PureRF()};
-    private static final String[] METHOD_NAMES = { "FDS", "ENN", "RCI", "FCNN",
-            "SPOCNN", "RPOCNN", "HMNEI", "DROP3", "Ran" , "RanENN", "RF", "PureRF"};
+            new DROP3(), new RanR(), new RanENN(), new RF(), new PureRF(),
+            new RanENNRF(), new RanRF() };
+    private static final String[] METHOD_NAMES;
+    static {
+        METHOD_NAMES = new String[METHODS.length];
+        for (int i = 0; i < METHODS.length; i++) {
+            METHOD_NAMES[i] = METHODS[i].getClass().getSimpleName();
+        }
+    }
 
     private BitSet dataFlag = new BitSet(DATA_SOURCE.length);
     private BitSet metFlag = new BitSet(METHODS.length);
@@ -61,7 +68,7 @@ public class Test {
     public Test() {
         dataFlag = new BitSet(DATA_SOURCE.length);
         dataFlag.set(0, DATA_SOURCE.length); // Enable all data sets.
-        //dataFlag.set(0);
+        // dataFlag.set(0);
         metFlag = new BitSet(METHODS.length);
         metFlag.set(0, METHODS.length); // Enable all methods.
         learnRate = 0.1;
@@ -70,13 +77,14 @@ public class Test {
         noiseRateCases = new double[] { 0, 0.05, 0.1 };
         timesOfGeneratingTrainTest = 10;
     }
+
     private static final boolean NO_COMMAND = true;
+
     public static void main (String[] args) throws FileNotFoundException {
-        if (NO_COMMAND){
+        if (NO_COMMAND) {
             final Test t = new Test();
             t.run();
-        }
-        else {
+        } else {
             final Test t = new Test();
             final Scanner s = new Scanner(System.in);
             while (true) {

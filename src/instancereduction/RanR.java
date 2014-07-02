@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import util.MyMath;
+
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
-import common.TrainTestSplitter;
 
 /**
  * FileName: RanR.java

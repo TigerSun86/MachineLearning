@@ -1,5 +1,9 @@
 package artificialNeuralNetworks.ANN;
 
+import instancereduction.FDS;
+import instancereduction.RCI;
+import instancereduction.RanENNRF;
+import instancereduction.RanR;
 import instancereduction.Reducible;
 
 import java.awt.geom.Point2D;
@@ -31,7 +35,7 @@ public class BorderOrCenter2 {
     private static final double K = 1.0;
 
     private static final int PAIR = 20;
-    private static final int TIMES = 20;
+    private static final int TIMES = 5;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -86,19 +90,78 @@ public class BorderOrCenter2 {
     }
 
     private static final String ATTR_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyD.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
-        final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
-        final RawExampleList test = new RawExampleList(TEST_FILE_URL);
-        testXor(train, test, REG_XOR);
-        //testByMod3Fold(train, test, REG_XOR,PAIR, TIMES);
+         RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+        final RawExampleList cTrain = new RawExampleList("http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
+         RawExampleList test = new RawExampleList(TEST_FILE_URL);
+
+        System.out.println("RCI");
+        testDense(train, test, new RCI(), TIMES);
+        
+        System.out.println("Clean data set");
+        testDense(cTrain, test, new FDS(), TIMES);
+        
+        System.out.println("Random");
+        testDense(train, test, new RanR(2.0/3), TIMES);
+
+        System.out.println("Full data set");
+        testDense(train, test, new FDS(), TIMES);
+        Reducible red = new RanENNRF();
+        RawExampleList s = red.reduce(train, RATTR);
+        System.out.println(s.size());
+        for (RawExample e : train) {
+            if (s.contains(e)) {
+                System.out.println(e);
+            }
+        }
+
+        /* Region[][] regs = new Region[1][REGB4[0].length * 2];
+         * regs[0] = new Region[REGB4[0].length];
+         * 
+         * for (int i = 0; i < REGB4[0].length; i++) {
+         * regs[0][i] = new OrRegion(REGB4[0][i], REGB4[1][i]);
+         * 
+         * }
+         * 
+         * // testXor(train, test, REG_XOR);
+         * testByMod3Fold(train, test, regs, PAIR, TIMES); */
+    }
+
+    private static void testDense (final RawExampleList train,
+            final RawExampleList test, final Reducible met, final int times) {
+        final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
+        annLearner.setNumOfHiddenNodes(5);
+        // Set data set for ANN learning.
+        annLearner.setRawTrainWithNoise(train);
+        annLearner.setRawTest(test);
+
+        System.out.println("Times " + TIMES);
+        System.out.println("Accuracy Size Iteration");
+
+        final AcSizeItTime accurAndInst = new AcSizeItTime();
+        for (int t = 0; t < times; t++) {
+            Collections.shuffle(annLearner.rawTrainWithNoise);
+            final AcSizeItTime aai =
+                    annLearner.reductionLearningWith3Fold(met);
+            System.out.println( aai.accur + " " + aai.size + " " + aai.iter);
+            accurAndInst.accur += aai.accur;
+            accurAndInst.size += aai.size;
+            accurAndInst.iter += aai.iter;
+        }
+
+        accurAndInst.accur /=times;
+        accurAndInst.size /=times;
+        accurAndInst.iter /=times;
+        System.out.println("Average accur " + accurAndInst.accur + " size "
+                + accurAndInst.size+" iter "+ accurAndInst.iter);
     }
 
     private static void test1PairPoints (RawExampleList train,
@@ -236,7 +299,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 5;
+    private static final int XOR_COUNT = 3;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -350,27 +413,27 @@ public class BorderOrCenter2 {
 
         return accurAndIter;
     }
-    
+
     private static void testByMod3Fold (RawExampleList trainSet,
             RawExampleList test, Region[][] regs, int numOfPairs, int times) {
         final RegionSelector[] rs = new RegionSelector[regs.length];
-        for (int i = 0; i < regs.length; i++){
+        for (int i = 0; i < regs.length; i++) {
             rs[i] = new RegionSelector(regs[i], numOfPairs);
         }
-        
 
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
         annLearner.setNumOfHiddenNodes(5);
         // Set data set for ANN learning.
         annLearner.setRawTrainWithNoise(trainSet);
         annLearner.setRawTest(test);
-        
+
         System.out.println("Pairs " + PAIR + " Times " + TIMES);
         System.out.println("Region Accuracy Iteration");
-        for (int i = 0; i < rs.length; i++){
+        for (int i = 0; i < rs.length; i++) {
             final double[] accurAndIter = new double[2];
             for (int t = 0; t < times; t++) {
-                final AcSizeItTime aai = annLearner.reductionLearningWith3Fold(rs[i]);
+                final AcSizeItTime aai =
+                        annLearner.reductionLearningWith3Fold(rs[i]);
                 System.out.println("acc" + aai.accur + " iter" + aai.iter);
                 accurAndIter[0] += aai.accur;
                 accurAndIter[1] += aai.iter;
@@ -383,26 +446,28 @@ public class BorderOrCenter2 {
         }
 
     }
+
     private static class RegionSelector implements Reducible {
         private final Region[] regs;
         private final int numOfPairs;
+
         public RegionSelector(Region[] regs, int numOfPairs) {
             this.regs = regs;
             this.numOfPairs = numOfPairs;
         }
-        
+
         @Override
         public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
             final RawExampleList[] sets = new RawExampleList[regs.length];
             for (int i = 0; i < sets.length; i++) {
                 sets[i] = new RawExampleList();
             }
-            
-            for (RawExample e: exs){
+
+            for (RawExample e : exs) {
                 final Point2D.Double p =
                         new Point2D.Double(Double.parseDouble(e.xList.get(0)),
                                 Double.parseDouble(e.xList.get(1)));
-                for (int i = 0; i < regs.length; i++){
+                for (int i = 0; i < regs.length; i++) {
                     if (regs[i].isInside(p)) {
                         sets[i].add(e);
                         break;
@@ -421,9 +486,9 @@ public class BorderOrCenter2 {
             return ret;
         }
     }
-    
+
     /* 4 border begin **************** */
-    private static final int B4COUNT = 5;
+    private static final int B4COUNT = 3;
     private static final double B4_LB = (2 - Math.sqrt(2)) / 4;
     private static final double B4_HB = (2 + Math.sqrt(2)) / 4;
     private static final double[] B4_IN_L;

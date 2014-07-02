@@ -225,11 +225,14 @@ public class AnnLearner {
     }
 
     public static class AcSizeItTime {
-        public final double accur;
-        public final int size;
-        public final int iter;
-        public final long editTime;
-        public final long trainTime;
+        public double accur;
+        public int size;
+        public int iter;
+        public long editTime;
+        public long trainTime;
+
+        public AcSizeItTime() {
+        }
 
         public AcSizeItTime(double accur, int size, int iter, long editTime,
                 long trainTime) {
