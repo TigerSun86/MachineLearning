@@ -1,12 +1,12 @@
 package instancereduction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.PriorityQueue;
 import java.util.Random;
 
 import util.Dbg;
-
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -40,12 +40,11 @@ public class ENN implements Reducible {
     }
 
     public static BitSet reduceByEnn (RawExampleList exs, RawAttrList attrs) {
-        // Measure distances between each examples.
-        final double[][] diss = getDistances(exs, attrs);
+        final Node[][] nns = getNeighborMatrix(exs, attrs);
         final String[] classDeterminedByNeighbors = new String[exs.size()];
 
         for (int i = 0; i < exs.size(); i++) {
-            final ArrayList<Integer> neighbors = kNearestNeighbor(i, diss, K);
+            final ArrayList<Integer> neighbors = kNearestNeighbor(i, K, nns);
             final String majorityClass = majorityClass(exs, attrs, neighbors);
             classDeterminedByNeighbors[i] = majorityClass;
         }
@@ -107,22 +106,36 @@ public class ENN implements Reducible {
     }
 
     public static ArrayList<Integer> kNearestNeighbor (final int i,
-            final double[][] diss, final int k) {
-        final PriorityQueue<Node> que = new PriorityQueue<Node>(); // Ascending
-        for (int j = 0; j < diss[i].length; j++) {
-            if (j != i) {
-                que.add(new Node(j, diss[i][j]));
-            }
-        }
+            final int k, final Node[][] nns) {
         final ArrayList<Integer> ret = new ArrayList<Integer>();
-        int count = 0;
-        while (count < k && !que.isEmpty()) {
-            ret.add(que.remove().index);
-            count++;
+        for (int j = 0; j < k; j++){
+            ret.add(nns[i][j].index);
         }
         return ret;
     }
-
+    
+    public static Node[][] getNeighborMatrix(RawExampleList exs, RawAttrList attrs){
+        // Measure distances between each examples.
+        final double[][] diss = getDistances(exs, attrs);
+        // Copy distances to nns.
+        final Node[][] nns = new Node[diss.length][diss.length-1];
+        for (int i = 0; i < diss.length;i++){
+            nns[i] = new Node[diss.length-1];
+            int count = 0;
+            for(int j = 0; j < diss[i].length;j++){
+                if (i != j){
+                    nns[i][count] = new Node(j, diss[i][j]);
+                    count++;
+                }
+            }
+        }
+        // Sort nns.
+        for (int i =0; i < nns.length; i++){
+            Arrays.sort(nns[i]); // Ascending.
+        }
+        return nns;
+    }
+    
     public static double[][] getDistances (final RawExampleList exs,
             final RawAttrList attrs) {
         final double[][] diss = new double[exs.size()][exs.size()];

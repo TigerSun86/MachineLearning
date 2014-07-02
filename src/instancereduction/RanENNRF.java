@@ -4,29 +4,29 @@ import instancereduction.ENN.Node;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.PriorityQueue;
 
-import util.MyMath;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
 
 /**
- * FileName: RanENN.java
- * @Description:
- * 
+ * FileName:     RanENNRF.java
+ * @Description: 
+ *
  * @author Xunhu(Tiger) Sun
  *         email: sunx2013@my.fit.edu
- * @date Jun 30, 2014 8:02:02 PM
+ * @date Jul 1, 2014 9:02:51 PM 
  */
-public class RanENN implements Reducible {
-    private static final double RATIO = 0.5;
-
+public class RanENNRF implements Reducible {
+    private static final double RATIO = 0.7;
+    
     @Override
     public RawExampleList reduce (RawExampleList exs, RawAttrList attrs) {
+        // Ran.
         final BitSet kept = RanR.reduceByRandom(exs, attrs, RATIO);
-
+        // ENN.
         final BitSet ennMark = new BitSet(exs.size());
+        final BitSet ennReplaced = new BitSet(exs.size());
         final Node[][] nns = ENN.getNeighborMatrix(exs, attrs);
         for (int i = 0; i < exs.size(); i++) {
             final ArrayList<Integer> neighbors =
@@ -39,16 +39,24 @@ public class RanENN implements Reducible {
                 kept.clear(i);
                 ennMark.set(i);
                 final int nn =
-                        nearestNeighborHasntKept(i, nns, exs, kept, ennMark);
+                        RanENN.nearestNeighborHasntKept(i, nns, exs, kept, ennMark);
                 if (nn != -1) {
                     kept.set(nn);
+                    ennReplaced.set(nn);
                     /* System.out.println(exs.get(i));
                      * System.out.println("replaced by");
                      * System.out.println(exs.get(nn)); */
                 }
             }
         }
+        // RF.
+        final BitSet keptByRF = PureRF.reduceFar(exs, attrs, PureRF.DEF_K, nns);
+        // Save the one got enn replaced.
+        keptByRF.or(ennReplaced);
 
+        // Remove the one didn't get kept by RF.
+        kept.and(keptByRF);
+        
         final RawExampleList ret = new RawExampleList();
         for (int i = 0; i < exs.size(); i++) {
             if (kept.get(i)) {
@@ -58,20 +66,4 @@ public class RanENN implements Reducible {
         return ret;
     }
 
-    public static int nearestNeighborHasntKept (final int i,
-            final Node[][] nns, final RawExampleList exs, final BitSet kept,
-            final BitSet ennMark) {
-        int ret = -1;
-        final String t = exs.get(i).t;
-        for (int j = 0; j < nns[i].length; j++) {
-            final int index = nns[i][j].index;
-            // Instance in same class, hasn't kept and wasn't marked by ENN.
-            if (t.equals(exs.get(index).t) && !kept.get(index)
-                    && !ennMark.get(index)) {
-                ret = j;
-                break;
-            }
-        }
-        return ret;
-    }
 }
