@@ -1,12 +1,8 @@
 package instancereduction;
 
-import instancereduction.ENN.Node;
-
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.PriorityQueue;
 
-import util.MyMath;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -27,7 +23,7 @@ public class RanENN implements Reducible {
         final BitSet kept = RanR.reduceByRandom(exs, attrs, RATIO);
 
         final BitSet ennMark = new BitSet(exs.size());
-        final Node[][] nns = ENN.getNeighborMatrix(exs, attrs);
+        final IndAndDis[][] nns = ENN.getNeighborMatrix(exs, attrs);
         for (int i = 0; i < exs.size(); i++) {
             final ArrayList<Integer> neighbors =
                     ENN.kNearestNeighbor(i, ENN.K, nns);
@@ -59,7 +55,7 @@ public class RanENN implements Reducible {
     }
 
     public static int nearestNeighborHasntKept (final int i,
-            final Node[][] nns, final RawExampleList exs, final BitSet kept,
+            final IndAndDis[][] nns, final RawExampleList exs, final BitSet kept,
             final BitSet ennMark) {
         int ret = -1;
         final String t = exs.get(i).t;

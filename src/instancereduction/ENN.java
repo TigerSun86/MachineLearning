@@ -40,7 +40,7 @@ public class ENN implements Reducible {
     }
 
     public static BitSet reduceByEnn (RawExampleList exs, RawAttrList attrs) {
-        final Node[][] nns = getNeighborMatrix(exs, attrs);
+        final IndAndDis[][] nns = getNeighborMatrix(exs, attrs);
         final String[] classDeterminedByNeighbors = new String[exs.size()];
 
         for (int i = 0; i < exs.size(); i++) {
@@ -89,24 +89,8 @@ public class ENN implements Reducible {
         return classes.get(majIndex);
     }
 
-    public static class Node implements Comparable<Node> {
-        public int index;
-        public double dis;
-
-        public Node(int index, double dis) {
-            super();
-            this.index = index;
-            this.dis = dis;
-        }
-
-        @Override
-        public int compareTo (Node arg0) {
-            return Double.compare(this.dis, arg0.dis);
-        }
-    }
-
     public static ArrayList<Integer> kNearestNeighbor (final int i,
-            final int k, final Node[][] nns) {
+            final int k, final IndAndDis[][] nns) {
         final ArrayList<Integer> ret = new ArrayList<Integer>();
         for (int j = 0; j < k; j++){
             ret.add(nns[i][j].index);
@@ -114,17 +98,17 @@ public class ENN implements Reducible {
         return ret;
     }
     
-    public static Node[][] getNeighborMatrix(RawExampleList exs, RawAttrList attrs){
+    public static IndAndDis[][] getNeighborMatrix(RawExampleList exs, RawAttrList attrs){
         // Measure distances between each examples.
         final double[][] diss = getDistances(exs, attrs);
         // Copy distances to nns.
-        final Node[][] nns = new Node[diss.length][diss.length-1];
+        final IndAndDis[][] nns = new IndAndDis[diss.length][diss.length-1];
         for (int i = 0; i < diss.length;i++){
-            nns[i] = new Node[diss.length-1];
+            nns[i] = new IndAndDis[diss.length-1];
             int count = 0;
             for(int j = 0; j < diss[i].length;j++){
                 if (i != j){
-                    nns[i][count] = new Node(j, diss[i][j]);
+                    nns[i][count] = new IndAndDis(j, diss[i][j]);
                     count++;
                 }
             }

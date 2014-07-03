@@ -1,7 +1,5 @@
 package instancereduction;
 
-import instancereduction.ENN.Node;
-
 import java.util.BitSet;
 
 import common.RawAttrList;
@@ -41,12 +39,12 @@ public class PureRF implements Reducible {
 
     public static BitSet reduceFar (RawExampleList exs, RawAttrList attrs,
             final int k) {
-        final Node[][] nns = ENN.getNeighborMatrix(exs, attrs);
+        final IndAndDis[][] nns = ENN.getNeighborMatrix(exs, attrs);
         return reduceFar(exs, attrs, k, nns);
     }
 
     public static BitSet reduceFar (RawExampleList exs, RawAttrList attrs,
-            final int k, final Node[][] nns) {
+            final int k, final IndAndDis[][] nns) {
         final BitSet kept = new BitSet(exs.size());
         final BitSet hasEnemyNearby = new BitSet(exs.size());
 
@@ -97,12 +95,12 @@ public class PureRF implements Reducible {
     }
 
     private static DisAndNeiOrder disToNearestEnemy (final int i,
-            final Node[][] nns, final RawExampleList exs) {
+            final IndAndDis[][] nns, final RawExampleList exs) {
         final String t = exs.get(i).t;
         double ret = Double.NaN;
         int neighborOrder = -1;
         for (int j = 0; j < nns[i].length; j++) {
-            final Node n = nns[i][j];
+            final IndAndDis n = nns[i][j];
             if (!exs.get(n.index).t.equals(t)) {
                 ret = n.dis;
                 neighborOrder = j;

@@ -1,7 +1,5 @@
 package instancereduction;
 
-import instancereduction.ENN.Node;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 
@@ -27,7 +25,7 @@ public class RanENNRF implements Reducible {
         // ENN.
         final BitSet ennMark = new BitSet(exs.size());
         final BitSet ennReplaced = new BitSet(exs.size());
-        final Node[][] nns = ENN.getNeighborMatrix(exs, attrs);
+        final IndAndDis[][] nns = ENN.getNeighborMatrix(exs, attrs);
         for (int i = 0; i < exs.size(); i++) {
             final ArrayList<Integer> neighbors =
                     ENN.kNearestNeighbor(i, ENN.K, nns);
