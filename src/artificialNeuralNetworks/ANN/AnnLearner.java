@@ -1,5 +1,7 @@
 package artificialNeuralNetworks.ANN;
 
+import instancereduction.ENN;
+import instancereduction.ENN2;
 import instancereduction.Reducible;
 
 import java.util.ArrayList;
@@ -7,6 +9,7 @@ import java.util.LinkedHashMap;
 
 import util.Dbg;
 import util.SysUtil;
+
 import common.DataCorrupter;
 import common.Evaluator;
 import common.RawAttrList;
@@ -212,6 +215,92 @@ public class AnnLearner {
         final long trainTime = (SysUtil.getCpuTime() - trainStartTime);
         return new AcSizeItTime(accur, reducedTrain.size(), meanIter, editTime,
                 trainTime);
+    }
+
+    public AcSizeItTime normal3Fold (final Reducible reductionMethod) {
+        final long trainStartTime = SysUtil.getCpuTime();
+
+        final long startTime = SysUtil.getCpuTime();
+        final RawExampleList reducedTrain =
+                reductionMethod.reduce(rawTrainWithNoise, rawAttr);
+        final long endTime = SysUtil.getCpuTime();
+        final long editTime = (endTime - startTime);
+
+        final RawExampleList[] exArray =
+                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                        reducedTrain, rawAttr);
+
+        int sumIter = 0;
+        for (int val = 0; val < exArray.length; val++) {
+            final RawExampleList valSet = exArray[val];
+            final RawExampleList trainSet = new RawExampleList();
+            for (int other = 0; other < exArray.length; other++) {
+                if (other != val) { // All other set is train set.
+                    trainSet.addAll(exArray[other]);
+                }
+            }
+            final AnnExList annTrain = new AnnExList(trainSet, rawAttr);
+            final AnnExList annVal = new AnnExList(valSet, rawAttr);
+            sumIter += validation2(annTrain, annVal);
+        }
+
+        final AnnExList annTrain = new AnnExList(reducedTrain, rawAttr);
+
+        final int meanIter = sumIter / exArray.length;
+        final NeuralNetwork net = iter(annTrain, meanIter);
+        final double accur = evalTest(net);
+
+        final long trainTime = (SysUtil.getCpuTime() - trainStartTime);
+        return new AcSizeItTime(accur, reducedTrain.size(), meanIter, editTime,
+                trainTime);
+    }
+
+    public AcSizeItTime[]  testENN () {
+        final RawExampleList[] exArray =
+                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                        rawTrainWithNoise, rawAttr);
+        int sumIter1 = 0;
+        int sumIter2 = 0;
+        for (int val = 0; val < exArray.length; val++) {
+            final RawExampleList valSet = exArray[val];
+            final RawExampleList trainSet = new RawExampleList();
+            for (int other = 0; other < exArray.length; other++) {
+                if (other != val) { // All other set is train set.
+                    trainSet.addAll(exArray[other]);
+                }
+            }
+            final AnnExList annVal = new AnnExList(valSet, rawAttr);
+
+            RawExampleList reducedTrain1 = new ENN().reduce(trainSet, rawAttr);
+            final AnnExList annTrain1 = new AnnExList(reducedTrain1, rawAttr);
+            sumIter1 += validation2(annTrain1, annVal);
+            
+            RawExampleList reducedTrain2 = new ENN2().reduce(trainSet, rawAttr);
+            AnnExList annTrain2 = new AnnExList(reducedTrain2, rawAttr);
+            sumIter2 += validation2(annTrain2, annVal);
+        }
+
+        final RawExampleList reducedTrain1 =
+                new ENN().reduce(rawTrainWithNoise, rawAttr);
+        final AnnExList annTrain1 = new AnnExList(reducedTrain1, rawAttr);
+        final RawExampleList reducedTrain2 =
+                new ENN2().reduce(rawTrainWithNoise, rawAttr);
+        final AnnExList annTrain2 = new AnnExList(reducedTrain2, rawAttr);
+        
+        final int meanIter1 = sumIter1 / exArray.length;
+        final NeuralNetwork net1 = iter(annTrain1, meanIter1);
+        final double accur1 = evalTest(net1);
+        
+        final int meanIter2 = sumIter2 / exArray.length;
+        final NeuralNetwork net2 = iter(annTrain2, meanIter2);
+        final double accur2 = evalTest(net2);
+        
+        AcSizeItTime[] ret = new AcSizeItTime[2];
+        ret[0] = new AcSizeItTime(accur1, reducedTrain1.size(), meanIter1, 0,
+                0);
+        ret[1] = new AcSizeItTime(accur2, reducedTrain2.size(), meanIter2, 0,
+                0);
+        return ret;
     }
 
     public static class AccurAndIter {
