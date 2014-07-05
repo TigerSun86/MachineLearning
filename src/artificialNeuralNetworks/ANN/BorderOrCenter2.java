@@ -12,7 +12,7 @@ import java.util.Collections;
 import util.MyMath;
 import artificialNeuralNetworks.ANN.AnnLearner.AcSizeItTime;
 import artificialNeuralNetworks.ANN.AnnLearner.AccurAndIter;
-
+import common.DataGenerator;
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -35,7 +35,7 @@ public class BorderOrCenter2 {
     private static final double K = 1.0;
 
     private static final int PAIR = 20;
-    private static final int TIMES = 5;
+    private static final int TIMES = 20;
     // 0, class 1. 1, class 2.
     private static final double[][] B_FOR_CIRCLE;
     static {
@@ -90,27 +90,30 @@ public class BorderOrCenter2 {
     }
 
     private static final String ATTR_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-attr.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyD.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor400-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor400-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
-         RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
-        final RawExampleList cTrain = new RawExampleList("http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
-         RawExampleList test = new RawExampleList(TEST_FILE_URL);
+        testClass();
+/*        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+        final RawExampleList cTrain =
+                new RawExampleList(
+                        "http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
+        RawExampleList test = new RawExampleList(TEST_FILE_URL);
 
         System.out.println("RCI");
         testDense(train, test, new RCI(), TIMES);
-        
+
         System.out.println("Clean data set");
         testDense(cTrain, test, new FDS(), TIMES);
-        
+
         System.out.println("Random");
-        testDense(train, test, new RanR(2.0/3), TIMES);
+        testDense(train, test, new RanR(2.0 / 3), TIMES);
 
         System.out.println("Full data set");
         testDense(train, test, new FDS(), TIMES);
@@ -121,7 +124,7 @@ public class BorderOrCenter2 {
             if (s.contains(e)) {
                 System.out.println(e);
             }
-        }
+        }*/
 
         /* Region[][] regs = new Region[1][REGB4[0].length * 2];
          * regs[0] = new Region[REGB4[0].length];
@@ -149,19 +152,18 @@ public class BorderOrCenter2 {
         final AcSizeItTime accurAndInst = new AcSizeItTime();
         for (int t = 0; t < times; t++) {
             Collections.shuffle(annLearner.rawTrainWithNoise);
-            final AcSizeItTime aai =
-                    annLearner.reductionLearningWith3Fold(met);
-            System.out.println( aai.accur + " " + aai.size + " " + aai.iter);
+            final AcSizeItTime aai = annLearner.reductionLearningWith3Fold(met);
+            System.out.println(aai.accur + " " + aai.size + " " + aai.iter);
             accurAndInst.accur += aai.accur;
             accurAndInst.size += aai.size;
             accurAndInst.iter += aai.iter;
         }
 
-        accurAndInst.accur /=times;
-        accurAndInst.size /=times;
-        accurAndInst.iter /=times;
+        accurAndInst.accur /= times;
+        accurAndInst.size /= times;
+        accurAndInst.iter /= times;
         System.out.println("Average accur " + accurAndInst.accur + " size "
-                + accurAndInst.size+" iter "+ accurAndInst.iter);
+                + accurAndInst.size + " iter " + accurAndInst.iter);
     }
 
     private static void test1PairPoints (RawExampleList train,
@@ -299,7 +301,7 @@ public class BorderOrCenter2 {
         return accurAndIter;
     }
 
-    private static final int XOR_COUNT = 3;
+    private static final int XOR_COUNT = 1;
     private static final double XOR_WIDTH = 0.5 / XOR_COUNT;
     // 1st dimension. border, center and far
     // 2nd dimension. square a, b, c and d.
@@ -394,6 +396,65 @@ public class BorderOrCenter2 {
         for (int t = 0; t < times; t++) {
             final RawExampleList trainSet = new RawExampleList();
             for (RawExampleList s : sets) {
+                final int[] selected = MyMath.mOutofN(numOfPairs, s.size());
+                for (int i : selected) {
+                    trainSet.add(s.get(i));
+                }
+            }
+            Collections.shuffle(trainSet);
+            // Set data set for ANN learning.
+            annLearner.setRawTrainWithNoise(trainSet);
+            final AccurAndIter aai = annLearner.kFoldLearning2(3);
+            System.out.println("acc" + aai.accur + " iter" + aai.iter);
+            accurAndIter[0] += aai.accur;
+            accurAndIter[1] += aai.iter;
+        }
+
+        accurAndIter[0] /= times;
+        accurAndIter[1] /= times;
+
+        return accurAndIter;
+    }
+
+    private static void testClass () {
+        final RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+
+        final RawExampleList test = new RawExampleList(TEST_FILE_URL);
+
+        final RawExampleList[][] exReg = splitSetByRegions(train, REG_XOR);
+
+        //printExReg(exReg);
+        System.out.println("Class checkerboard test " + " Times " + TIMES);
+        System.out.println("Rate Accuracy Iteration");
+        double[] accurAndIter;
+        
+        accurAndIter = testClassOfXor(exReg[0], test, 0.6, 0.6, TIMES);
+        /*
+        accurAndIter = testClassOfXor(exReg[0], test, 0.8, 0.4, TIMES);
+        System.out.println("2:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+   
+        accurAndIter = testClassOfXor(exReg[0], test, 1.0, 0.2, TIMES);
+        System.out.println("5:1 " + accurAndIter[0] + " " + accurAndIter[1]);*/
+
+    }
+
+    private static double[] testClassOfXor (RawExampleList[] sets,
+            RawExampleList test, double c1r, double c2r, int times) {
+        final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
+        annLearner.setNumOfHiddenNodes(5);
+        annLearner.setRawTest(test);
+
+        final double[] accurAndIter = new double[2];
+        for (int t = 0; t < times; t++) {
+            final RawExampleList trainSet = new RawExampleList();
+            for (RawExampleList s : sets) {
+                final int numOfPairs;
+                if (s.get(0).t.equals(DataGenerator.CLASS[0])) {
+                    numOfPairs = (int) Math.round((s.size() * c1r));
+                } else {
+                    numOfPairs = (int) Math.round((s.size() * c2r));
+                }
+
                 final int[] selected = MyMath.mOutofN(numOfPairs, s.size());
                 for (int i : selected) {
                     trainSet.add(s.get(i));
