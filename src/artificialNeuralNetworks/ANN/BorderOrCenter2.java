@@ -92,14 +92,15 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor400-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor400-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
-        testClass();
+        mainDense();
+
 /*        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList cTrain =
                 new RawExampleList(
@@ -137,7 +138,27 @@ public class BorderOrCenter2 {
          * // testXor(train, test, REG_XOR);
          * testByMod3Fold(train, test, regs, PAIR, TIMES); */
     }
+    
+    private static void mainDense(){
+        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+        final RawExampleList cTrain =
+                new RawExampleList(
+                        "http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
+        RawExampleList test = new RawExampleList(TEST_FILE_URL);
 
+/*        System.out.println("RCI");
+        testDense(train, test, new RCI(), TIMES);
+
+        System.out.println("Clean data set");
+        testDense(cTrain, test, new FDS(), TIMES);*/
+
+        System.out.println("Random");
+        testDense(train, test, new RanR(0.5 / 3), TIMES);
+/*
+        System.out.println("Full data set");
+        testDense(train, test, new FDS(), TIMES);*/
+    }
+    
     private static void testDense (final RawExampleList train,
             final RawExampleList test, final Reducible met, final int times) {
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);

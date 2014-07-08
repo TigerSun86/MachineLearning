@@ -33,4 +33,17 @@ public class AnnVisualizer {
         }
         System.out.println(s);
     }
+
+    public static void show (NeuralNetwork nn, RawExampleList test) {
+        final RawExampleList s = new RawExampleList();
+        for (RawExample e : test) {
+            final RawExample ex = new RawExample();
+            ex.xList.add(e.xList.get(0));
+            ex.xList.add(e.xList.get(1));
+            final String predict = nn.predict(e.xList);
+            ex.t = predict;
+            s.add(ex);
+        }
+        System.out.println(s);
+    }
 }
