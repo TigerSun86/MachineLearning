@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 import util.Dbg;
 
@@ -12,12 +15,12 @@ import common.RawExample;
 import common.RawExampleList;
 
 /**
- * FileName:     RDI.java
- * @Description: 
- *
+ * FileName: RDI.java
+ * @Description:
+ * 
  * @author Xunhu(Tiger) Sun
  *         email: sunx2013@my.fit.edu
- * @date Jul 5, 2014 12:11:42 AM 
+ * @date Jul 5, 2014 12:11:42 AM
  */
 public class RDI implements Reducible {
     public static final String MODULE = "RDI";
@@ -48,12 +51,15 @@ public class RDI implements Reducible {
         Dbg.print(DBG, MODULE, "Reduced size: " + ret.size());
         return ret;
     }
-    
-    public static BitSet reduceByRDI(final RawExampleList exs,
+
+    public static BitSet reduceByRDI (final RawExampleList exs,
             final RawAttrList attrs, final int k) {
         assert !attrs.t.isContinuous;
 
-        final BitSet reduced = new BitSet(exs.size());
+        final int[] size = new int[attrs.t.valueList.size()];
+        final ArrayList<Queue<Integer>> red = new ArrayList<Queue<Integer>>();
+        final ArrayList<HashMap<Integer, Integer>> indexMaps =
+                new ArrayList<HashMap<Integer, Integer>>();
         // Reduce instances of each class seperately.
         for (int classi = 0; classi < attrs.t.valueList.size(); classi++) {
             final String classv = attrs.t.valueList.get(classi);
@@ -69,11 +75,34 @@ public class RDI implements Reducible {
                     newExs.add(ex);
                 }
             }
-
+            indexMaps.add(indexMap);
+            size[classi] = newExs.size();
             // Measure distances between each examples.
             final double[][] diss = ENN.getDistances(newExs, attrs);
-            final int[] reducedTemp = reduceCentral(diss, k);
-            for (int newIndex : reducedTemp) {
+            final Queue<Integer> que = reduceCentral(diss, k);
+            red.add(que);
+        }
+
+        
+        double min = Double.POSITIVE_INFINITY;
+        for (int classi = 0; classi < attrs.t.valueList.size(); classi++) {
+            final double rate =
+                    ((double) red.get(classi).size()) / size[classi];
+            
+            if (Double.compare(min, rate) > 0) {
+                min = rate;
+            }
+        }
+
+        // Reduce instances of each class seperately.
+        final BitSet reduced = new BitSet(exs.size());
+        for (int classi = 0; classi < attrs.t.valueList.size(); classi++) {
+            final int numToReduce = (int) Math.round(min * size[classi]);
+            final Queue<Integer> que = red.get(classi);
+            // Map from new index to old index.
+            final HashMap<Integer, Integer> indexMap = indexMaps.get(classi);
+            for (int j = 0; j < numToReduce; j++) {
+                final int newIndex = que.remove();
                 final Integer oldIndex = indexMap.get(newIndex);
                 assert oldIndex != null;
                 reduced.set(oldIndex);
@@ -82,10 +111,11 @@ public class RDI implements Reducible {
         reduced.flip(0, exs.size()); // Become kept.
         return reduced;
     }
-    private static int[] reduceCentral (double[][] diss, int k) {
+
+    private static Queue<Integer> reduceCentral (double[][] diss, int k) {
         final int numOfNodes = diss.length;
         if (numOfNodes < k + 1) {
-            return new int[0];
+            return new LinkedList<Integer>(); // don't reduce anything.
         }
         // For each node, store its distances to neighbors (neighbor list).
         final NodeTableAndAverDis naa = initNeighborLists(diss, k);
@@ -93,6 +123,7 @@ public class RDI implements Reducible {
         final double averKDis = naa.averKDis;
 
         final BitSet reduced = new BitSet(numOfNodes);
+        final LinkedList<Integer> redQue = new LinkedList<Integer>();
         while (true) {
             if (numOfNodes - reduced.cardinality() < k + 1) {
                 // Remain nodes is less than k + 1.
@@ -106,23 +137,14 @@ public class RDI implements Reducible {
             if (Double.compare(kDis, averKDis) < 0) {
                 // Delete the node.
                 reduced.set(idToReduce);
+                redQue.add(idToReduce);
                 // Remove the node from neighbor lists of all other nodes.
                 removeFromNeighborLists(idToReduce, nodesTable, reduced);
             } else {
                 break;
             }
         }
-
-        // Get the id of nodes to be reduced.
-        final int[] ret = new int[reduced.cardinality()];
-        int index = 0;
-        for (int idToReduce = reduced.nextSetBit(0); idToReduce >= 0; idToReduce =
-                reduced.nextSetBit(idToReduce + 1)) {
-            ret[index] = idToReduce;
-            index++;
-        }
-        assert reduced.cardinality() == index;
-        return ret;
+        return redQue;
     }
 
     private static class Node implements Comparable<Node> {
@@ -158,7 +180,8 @@ public class RDI implements Reducible {
         }
     }
 
-    private static NodeTableAndAverDis initNeighborLists (double[][] diss, int k) {
+    private static NodeTableAndAverDis
+            initNeighborLists (double[][] diss, int k) {
         final int numOfNodes = diss.length;
         // For each node, store its distances to neighbors (neighbor list).
         final ArrayList<ArrayList<Node>> nodesTable =
@@ -200,7 +223,8 @@ public class RDI implements Reducible {
     }
 
     private static int indexOfNodeWithNearestKthNeihbor (
-            final ArrayList<ArrayList<Node>> nodesTable, final BitSet reduced, final int k) {
+            final ArrayList<ArrayList<Node>> nodesTable, final BitSet reduced,
+            final int k) {
         // Find the node with shortest distance to its kth neighbor.
         double min = Double.POSITIVE_INFINITY;
         int minId = -1;
