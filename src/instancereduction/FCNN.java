@@ -1,6 +1,7 @@
 package instancereduction;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Vector;
 
 import keel.Algorithms.Preprocess.Basic.KNN;
@@ -47,7 +48,28 @@ public class FCNN implements Reducible {
         }
         return ret;
     }
-
+    
+    public static BitSet reduceByFCNN(RawExampleList exs, RawAttrList attrs){
+        final double datosTrain[][] = new double[exs.size()][attrs.xList.size()];
+        final int clasesTrain[] = new int[exs.size()];
+        
+        for (int i = 0; i < exs.size();i++){
+            final RawExample e = exs.get(i);
+            datosTrain[i] = new double[e.xList.size()];
+            for (int j = 0; j < e.xList.size(); j++){
+                datosTrain[i][j] = Double.parseDouble(e.xList.get(j));
+            }
+            clasesTrain[i] = attrs.t.valueList.indexOf(e.t);
+        }
+        
+        final int[] s = ejecutar(datosTrain, clasesTrain, 1);
+        final BitSet kept = new BitSet(exs.size());
+        for (int i : s){
+            kept.set(i);
+        }
+        return kept;
+    }
+    
     private static int[] ejecutar (double datosTrain[][], int clasesTrain[], int k) { 
         int S[];
         int i, j, l, m;

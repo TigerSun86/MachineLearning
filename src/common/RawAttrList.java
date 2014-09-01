@@ -13,7 +13,7 @@ import java.util.ArrayList;
 public class RawAttrList {
     public final ArrayList<RawAttr> xList;
     public RawAttr t;
-    
+
     public RawAttrList(final String fileName) {
         this.xList = new ArrayList<RawAttr>();
         this.t = null;
@@ -52,12 +52,29 @@ public class RawAttrList {
         assert this.t != null;
         in.close();
     }
-    
-    public RawAttrList(){
+
+    public RawAttrList() {
         this.xList = new ArrayList<RawAttr>();
         this.t = null;
     }
-    
+
+    public int indexOf (final String name) {
+        if (name == null) {
+            for (int i = 0; i < xList.size(); i++) {
+                if (xList.get(i).name == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < xList.size(); i++) {
+                if (xList.get(i).name.equals(name)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
