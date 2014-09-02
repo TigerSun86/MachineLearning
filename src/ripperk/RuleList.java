@@ -24,6 +24,11 @@ public class RuleList extends LinkedList<Rule> implements Hypothesis {
     public RuleList(final RawAttrList attrs) {
         this.attrs = attrs;
     }
+    
+    public void setDefault(final String def){
+        assert attrs.t.valueList.contains(def);
+        this.defaultPrediction = def;
+    }
 
     @Override
     public String predict (ArrayList<String> in) {

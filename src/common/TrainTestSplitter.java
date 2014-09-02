@@ -247,7 +247,7 @@ public class TrainTestSplitter {
         return exArray;
     }
 
-    private static RawExampleList[] splitSetbyClass (final RawExampleList s,
+    public static RawExampleList[] splitSetbyClass (final RawExampleList s,
             final RawAttrList attrs) {
         final ArrayList<String> classes = attrs.t.valueList;
         final RawExampleList[] subS = new RawExampleList[classes.size()];
