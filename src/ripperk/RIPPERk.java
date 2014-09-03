@@ -1,8 +1,11 @@
 package ripperk;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
+import common.RawAttr;
 import common.RawAttrList;
+import common.RawExample;
 import common.RawExampleList;
 import common.TrainTestSplitter;
 
@@ -64,8 +67,8 @@ public class RIPPERk {
     /**
      * Assume # of pos is less than # of neg.
      */
-    private static RuleList learnTwoClass (RawExampleList posIn,
-            RawExampleList negIn, final RawAttrList attrs) {
+    private static RuleList learnTwoClass (final RawExampleList posIn,
+            final RawExampleList negIn, final RawAttrList attrs) {
         RawExampleList pos = new RawExampleList();
         pos.addAll(posIn);
         RawExampleList neg = new RawExampleList();
@@ -85,7 +88,7 @@ public class RIPPERk {
             final RawExampleList growNeg = subNeg[0];
             final RawExampleList pruneNeg = subNeg[1];
 
-            Rule r = growRule(growPos, growNeg);
+            Rule r = growRule(growPos, growNeg, attrs);
             r = pruneRule(r, prunePos, pruneNeg);
 
             if (needQuit(r, prunePos, pruneNeg)) {
@@ -131,9 +134,50 @@ public class RIPPERk {
         return null;
     }
 
-    private static Rule
-            growRule (RawExampleList growPos, RawExampleList growNeg) {
-        // TODO Auto-generated method stub
+    private static Rule growRule (final RawExampleList growPos,
+            final RawExampleList growNeg, final RawAttrList attrs) {
+
+        // Get all possible conditions.
+        final RuleCondition[][] conds = new RuleCondition[attrs.xList.size()][];
+        for (int i = 0; i < attrs.xList.size(); i++) {
+            final RawAttr attr = attrs.xList.get(i);
+            if (attr.isContinuous) {
+                final HashSet<String> valueSet = new HashSet<String>();
+                for (RawExample e : growPos){
+                    final String value = e.xList.get(i);
+                    valueSet.add(value);
+                }
+                for (RawExample e : growNeg){
+                    final String value = e.xList.get(i);
+                    valueSet.add(value);
+                }
+                conds[i] = new RuleCondition[valueSet.size() * 2];
+                int j = 0;
+                for (String value: valueSet){
+                    conds[i][j * 2] =
+                            new RuleCondition(attr.name, value,
+                                    RuleCondition.OPT_LE);
+                    conds[i][j * 2 + 1] =
+                            new RuleCondition(attr.name, value,
+                                    RuleCondition.OPT_GE);
+                    j++;
+                }
+            } else { // Discrete attribute.
+                conds[i] = new RuleCondition[attr.valueList.size()];
+                // All possible conditions for this discrete attribute.
+                for (int j = 0; j < attr.valueList.size(); j++) {
+                    conds[i][j] =
+                            new RuleCondition(attr.name, attr.valueList.get(j),
+                                    RuleCondition.OPT_EQ);
+                }
+            }
+
+        }
+        // Loop until
+        // Measure FOIL for each condition.
+        // Pick the max one, add to rule.
+        // Loop end
+        // Return rule.
         return null;
     }
 }
