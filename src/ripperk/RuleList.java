@@ -3,6 +3,7 @@ package ripperk;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import util.Dbg;
 import common.Hypothesis;
 import common.RawAttrList;
 
@@ -43,5 +44,14 @@ public class RuleList extends LinkedList<Rule> implements Hypothesis {
 
         return (ret != null) ? ret : defaultPrediction;
     }
-
+    
+    @Override
+    public String toString () {
+        final StringBuffer sb = new StringBuffer();
+        for (Rule r : this) {
+            sb.append(r.toString());
+            sb.append(Dbg.NEW_LINE);
+        }
+        return sb.toString();
+    }
 }

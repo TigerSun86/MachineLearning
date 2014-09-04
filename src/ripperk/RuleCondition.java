@@ -32,7 +32,7 @@ public class RuleCondition {
         
         switch (opt) {
             case OPT_EQ: // value == v.
-                ret = name.equals(v);
+                ret = value.equals(v);
                 break;
             case OPT_LE: // value <= v.
                 v1 = Double.parseDouble(value);
@@ -46,6 +46,22 @@ public class RuleCondition {
                 break;
         }
 
+        return ret;
+    }
+    @Override
+    public String toString(){
+        final String ret;
+        switch (opt) {
+            case OPT_EQ: // value == v.
+                ret = name +"=="+value;
+                break;
+            case OPT_LE: // value <= v.
+                ret = name +"<="+value;
+                break;
+            default: // value >= v.
+                ret = name +">="+value;
+                break;
+        }
         return ret;
     }
 }

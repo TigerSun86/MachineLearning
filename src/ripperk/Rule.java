@@ -22,6 +22,14 @@ public class Rule extends LinkedList<RuleCondition> {
     }
 
     /**
+     * For clone rule.
+     */
+    public Rule(final Rule r) {
+        super(r);
+        this.prediction = r.prediction;
+    }
+
+    /**
      * @return Prediction of rule, if all conditions are satisfied; null,
      *         otherwise.
      * */
@@ -39,5 +47,28 @@ public class Rule extends LinkedList<RuleCondition> {
         }
 
         return ret;
+    }
+    
+    @Override
+    public String toString(){
+        final StringBuilder sb = new StringBuilder();
+        sb.append("IF ");
+        for (RuleCondition p : this) {
+            sb.append("(");
+            sb.append(p.toString());
+            sb.append(")");
+            sb.append("&&");
+        }
+        if (!this.isEmpty()) { // Delete redundant "&&" at the end.
+            sb.deleteCharAt(sb.length() - 1);
+            sb.deleteCharAt(sb.length() - 1);
+        } else {
+            sb.append("anything");
+        }
+        sb.append(" THEN ");
+        sb.append("Class=");
+        sb.append(prediction);
+
+        return sb.toString();
     }
 }
