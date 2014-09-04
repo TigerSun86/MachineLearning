@@ -63,7 +63,7 @@ public class DataGenerator {
             s.add(e);
         }
         final RawExampleList[] sub =
-                TrainTestSplitter.splitSetWithConsistentClassRatio(s, ATTRS,
+                TrainTestSplitter.split(s, ATTRS,
                         RATIO);
         System.out.println("Sub 1 size: " + sub[0].size());
         System.out.println(sub[0]);
@@ -100,7 +100,7 @@ public class DataGenerator {
             s.add(e);
         }
         final RawExampleList[] sub =
-                TrainTestSplitter.splitSetWithConsistentClassRatio(s, ATTRS,
+                TrainTestSplitter.split(s, ATTRS,
                         RATIO);
         System.out.println("Sub 1 size: " + sub[0].size());
         System.out.println(sub[0]);
@@ -288,7 +288,7 @@ public class DataGenerator {
             s.add(e);
         }
 
-        RawExampleList[] sub = TrainTestSplitter.split(s, ratio);
+        RawExampleList[] sub = TrainTestSplitter.split(s, ATTRS, ratio);
         return sub;
     }
 

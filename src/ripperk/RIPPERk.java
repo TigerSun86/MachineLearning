@@ -81,13 +81,11 @@ public class RIPPERk {
         boolean isRunning = true;
         while (!pos.isEmpty() && isRunning) {
             final RawExampleList[] subPos =
-                    TrainTestSplitter.splitSetWithConsistentClassRatio(pos,
-                            attrs, GROW_RATE);
+                    TrainTestSplitter.split(pos, attrs, GROW_RATE);
             final RawExampleList growPos = subPos[0];
             final RawExampleList prunePos = subPos[1];
             final RawExampleList[] subNeg =
-                    TrainTestSplitter.splitSetWithConsistentClassRatio(neg,
-                            attrs, GROW_RATE);
+                    TrainTestSplitter.split(neg, attrs, GROW_RATE);
             final RawExampleList growNeg = subNeg[0];
             final RawExampleList pruneNeg = subNeg[1];
 

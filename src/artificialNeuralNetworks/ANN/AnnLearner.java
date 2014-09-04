@@ -176,7 +176,7 @@ public class AnnLearner {
         final long trainStartTime = SysUtil.getCpuTime();
 
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                TrainTestSplitter.splitSetInto3Fold(
                         rawTrainWithNoise, rawAttr);
 
         long editTime = 0;
@@ -227,7 +227,7 @@ public class AnnLearner {
         final long editTime = (endTime - startTime);
 
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                TrainTestSplitter.splitSetInto3Fold(
                         reducedTrain, rawAttr);
 
         int sumIter = 0;
@@ -257,7 +257,7 @@ public class AnnLearner {
 
     public AcSizeItTime[]  testENN () {
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3FoldWithConsistentClassRatio(
+                TrainTestSplitter.splitSetInto3Fold(
                         rawTrainWithNoise, rawAttr);
         int sumIter1 = 0;
         int sumIter2 = 0;

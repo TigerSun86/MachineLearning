@@ -1,8 +1,12 @@
 package common;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Random;
+
+import util.MyMath;
 
 /**
  * FileName: TrainTestSplitter.java
@@ -20,10 +24,12 @@ public class TrainTestSplitter {
      * ; */
     private static final String FILE =
             "http://my.fit.edu/~sunx2013/MachineLearning/car.txt";
+    private static final String ATTR =
+            "http://my.fit.edu/~sunx2013/MachineLearning/car-attr.txt";
 
     public static void main (String[] args) {
         // final String fName = deleteCommaAndPutClassBack(FILE);
-        generateTrainTest(FILE);
+        generateTrainTest(FILE, ATTR);
     }
 
     private static String
@@ -115,10 +121,11 @@ public class TrainTestSplitter {
         return newName;
     }
 
-    private static void generateTrainTest (final String fileName) {
+    private static void generateTrainTest (final String fileName, final String attrFile) {
+        final RawAttrList rawAttr = new RawAttrList(attrFile);
         final RawExampleList exs = new RawExampleList(fileName);
         Collections.shuffle(exs); // Shuffle examples.
-        final RawExampleList[] exs2 = split(exs, DEFAULT_RATIO);
+        final RawExampleList[] exs2 = split(exs, rawAttr, DEFAULT_RATIO);
         final RawExampleList train = exs2[0];
         final RawExampleList test = exs2[1];
 
@@ -146,60 +153,52 @@ public class TrainTestSplitter {
         }
     }
 
-    /**
-     * public static RawExampleList[] split(RawExampleList exs, double ratio)
-     * 
-     * Splits given RawExampleList into 2 lists by given ratio in percentage.
-     * The first output RawExampleList has the number of examples of the ratio,
-     * the second one has remaining examples. Splits examples randomly.
-     * 
-     * @return: An array with 2 ExampleSets.
-     */
-    public static RawExampleList[] split (final RawExampleList exs,
-            final double ratio) {
-        final RawExampleList[] exArray = new RawExampleList[2];
-        if (Double.compare(ratio, 1) >= 0) { // Special case.
-            exArray[0] = exs;
-            exArray[1] = new RawExampleList();
-            return exArray;
-        } else if (Double.compare(ratio, 0) <= 0) { // Special case.
-            exArray[0] = new RawExampleList();
-            exArray[1] = exs;
-            return exArray;
-        }
+    public static BitSet keptByRandom (RawExampleList exs, RawAttrList attrs,
+            double ratioKeeping) {
+        final ArrayList<String> classList = attrs.t.valueList;
 
-        exArray[0] = new RawExampleList();
-        exArray[1] = new RawExampleList();
-
-        final Random ran = new Random(); // Randomly split example set.
-        final int numOfFirst = (int) Math.round(exs.size() * ratio);
-        final int numOfSecond = exs.size() - numOfFirst;
+        // Count number of instances for each class.
+        final int[] numForEachClass = new int[classList.size()];
         for (RawExample e : exs) {
-            if (exArray[0].size() >= numOfFirst) {
-                // Already added enough examples into exArray[0].
-                exArray[1].add(e);
-            } else if (exArray[1].size() >= numOfSecond) {
-                // Already added enough examples into exArray[1].
-                exArray[0].add(e);
-            } else {
-                if (Double.compare(ran.nextDouble(), ratio) < 0) {
-                    // Probability of ratio to add example into exArray[0].
-                    exArray[0].add(e);
-                } else { // Remain probability for exArray[1].
-                    exArray[1].add(e);
-                }
-            }
+            final int classI = classList.indexOf(e.t);
+            numForEachClass[classI]++;
         }
 
-        return exArray;
+        // Get selected indexes for each class.
+        final int[][] selectedOfEachClass = new int[classList.size()][];
+        for (int i = 0; i < classList.size(); i++) {
+            selectedOfEachClass[i] =
+                    MyMath.mOutofN(
+                            (int) Math.round(numForEachClass[i] * ratioKeeping),
+                            numForEachClass[i]);
+            // Sort it ascendingly to make the picking later easier.
+            Arrays.sort(selectedOfEachClass[i]);
+        }
+
+        // Get the final kept indexes by selected of class.
+        final BitSet kept = new BitSet(exs.size());
+        final int[] counterForEachClass = new int[classList.size()];
+        final int[] counterForSelected = new int[classList.size()];
+        for (int i = 0; i < exs.size(); i++) {
+            final RawExample e = exs.get(i);
+            final int classI = classList.indexOf(e.t);
+            // This e is in selectedOfEachClass[classI].
+            if ((selectedOfEachClass[classI].length != 0)
+                    && (selectedOfEachClass[classI].length != counterForSelected[classI])
+                    && (selectedOfEachClass[classI][counterForSelected[classI]] == counterForEachClass[classI])) {
+                kept.set(i);
+                counterForSelected[classI]++;
+            }
+            counterForEachClass[classI]++;
+        }
+
+        return kept;
     }
 
-    public static RawExampleList[] splitSetInto3FoldWithConsistentClassRatio (
+    public static RawExampleList[] splitSetInto3Fold (
             final RawExampleList exs, final RawAttrList attrs) {
-        final RawExampleList[] set1 =
-                splitSetWithConsistentClassRatio(exs, attrs, 1.0 / 3);
-        final RawExampleList[] set2 =
-                splitSetWithConsistentClassRatio(set1[1], attrs, 0.5);
+        final RawExampleList[] set1 = split(exs, attrs, 1.0 / 3);
+        final RawExampleList[] set2 = split(set1[1], attrs, 0.5);
         final RawExampleList[] exArray = new RawExampleList[3];
         exArray[0] = set1[0];
         exArray[1] = set2[0];
@@ -219,9 +218,8 @@ public class TrainTestSplitter {
      * 
      * @return: An array with 2 ExampleSets.
      */
-    public static RawExampleList[] splitSetWithConsistentClassRatio (
-            final RawExampleList exs, final RawAttrList attrs,
-            final double ratio) {
+    public static RawExampleList[] split (final RawExampleList exs,
+            final RawAttrList attrs, final double ratio) {
         final RawExampleList[] exArray = new RawExampleList[2];
         if (Double.compare(ratio, 1) >= 0) { // Special case.
             exArray[0] = exs;
@@ -235,15 +233,16 @@ public class TrainTestSplitter {
         exArray[0] = new RawExampleList();
         exArray[1] = new RawExampleList();
 
-        final RawExampleList[] setsByClass = splitSetbyClass(exs, attrs);
-        for (RawExampleList s : setsByClass) {
-            final RawExampleList[] newS = split(s, ratio);
-            exArray[0].addAll(newS[0]);
-            exArray[1].addAll(newS[1]);
+        // Guarantee each class getting the same ratioKeeping.
+        final BitSet kept = keptByRandom(exs, attrs, ratio);
+
+        for (int i = 0; i < exs.size(); i++) {
+            if (kept.get(i)) {
+                exArray[0].add(exs.get(i));
+            } else {
+                exArray[1].add(exs.get(i));
+            }
         }
-        // Shuffle examples to avoid examples of same class get together.
-        Collections.shuffle(exArray[0]);
-        Collections.shuffle(exArray[1]);
         return exArray;
     }
 

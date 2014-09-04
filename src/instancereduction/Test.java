@@ -166,7 +166,7 @@ public class Test {
 
             Collections.shuffle(exs); // Shuffle examples.
             final RawExampleList[] exs2 =
-                    TrainTestSplitter.splitSetWithConsistentClassRatio(exs,
+                    TrainTestSplitter.split(exs,
                             rawAttr, TrainTestSplitter.DEFAULT_RATIO);
             final RawExampleList train = exs2[0];
             final RawExampleList test = exs2[1];
