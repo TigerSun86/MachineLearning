@@ -18,17 +18,14 @@ import common.RawAttrList;
 public class RuleList extends LinkedList<Rule> implements Hypothesis {
     private static final long serialVersionUID = 1L;
 
-    public String defaultPrediction = null;
+    public final String defaultPrediction;
 
     private final RawAttrList attrs;
 
-    public RuleList(final RawAttrList attrs) {
-        this.attrs = attrs;
-    }
-
-    public void setDefault (final String def) {
-        assert attrs.t.valueList.contains(def);
+    public RuleList(final String def, final RawAttrList attrs) {
         this.defaultPrediction = def;
+        this.attrs = attrs;
+        assert attrs.t.valueList.contains(def);
     }
 
     @Override

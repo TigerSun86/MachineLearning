@@ -36,6 +36,11 @@ public class RIPPERk {
     }
 
     public static RuleList learn (RawExampleList exs, final RawAttrList attrs) {
+        return learn(exs, attrs, 0);
+    }
+
+    public static RuleList learn (RawExampleList exs, final RawAttrList attrs,
+            final int k) {
         final RawExampleList[] subSets =
                 TrainTestSplitter.splitSetbyClass(exs, attrs);
         final Node[] ascendingSets = new Node[subSets.length];
@@ -43,8 +48,10 @@ public class RIPPERk {
             ascendingSets[i] = new Node(subSets[i]);
         }
         Arrays.sort(ascendingSets);
-
-        final RuleList ruleList = new RuleList(attrs);
+        
+        // The class has highest # of instances is the default class.
+        final String def = ascendingSets[ascendingSets.length - 1].exs.get(0).t;
+        final RuleList ruleList = new RuleList(def, attrs);
 
         // Create rule set for each class, except for last class (default).
         for (int i = 0; i < ascendingSets.length - 1; i++) {
@@ -55,14 +62,47 @@ public class RIPPERk {
             for (int j = i + 1; j < ascendingSets.length; j++) {
                 neg.addAll(ascendingSets[j].exs);
             }
-            final RuleList subRuleList = learnTwoClass(pos, neg, attrs);
+            RuleList subRuleList = learnTwoClass(pos, neg, attrs);
+            for (int j = 0; j < k; j++) {
+                // Optimize.
+                subRuleList = optimize(subRuleList, pos, neg, attrs);
+            }
+
             ruleList.addAll(subRuleList); // Add result to total rule list.
         }
-        // The class has highest # of instances is the default class.
-        final String def = ascendingSets[ascendingSets.length - 1].exs.get(0).t;
-        ruleList.setDefault(def);
 
         return ruleList;
+    }
+
+    private static RuleList optimize (RuleList ruleList, RawExampleList pos,
+            RawExampleList neg, RawAttrList attrs) {
+        // final RuleList ruleList = new RuleList(ruleListIn);
+        for (int i = 0; i < ruleList.size(); i++) {
+            final Rule original = ruleList.get(i);
+            final double dl0 = getDl(ruleList, pos, neg, attrs);
+            ruleList.set(i, new Rule(original.prediction));
+            final Rule replacement =
+                    learnRuleInWholeSet(ruleList, pos, neg, attrs);
+            final double dl1 = getDl(ruleList, pos, neg, attrs);
+            ruleList.set(i, original);
+            final Rule revision =
+                    learnRuleInWholeSet(ruleList, pos, neg, attrs);
+            final double dl2 = getDl(ruleList, pos, neg, attrs);
+            final double minDl = Math.min(Math.min(dl0, dl1), dl2);
+            if (Double.compare(dl0, minDl) == 0) {
+                ruleList.set(i, original);
+            } else if (Double.compare(dl1, minDl) == 0) {
+                ruleList.set(i, replacement);
+            } // else ruleList is already revision one.
+        }
+        return ruleList;
+    }
+
+    private static Rule learnRuleInWholeSet (RuleList ruleList,
+            RawExampleList posIn, RawExampleList negIn, RawAttrList attrs) {
+        RawExampleList pos = getUncoveredExs(ruleList, posIn, attrs);
+        RawExampleList neg = getUncoveredExs(ruleList, negIn, attrs);
+        return null;
     }
 
     private static final double GROW_RATE = 2.0 / 3;
@@ -77,8 +117,13 @@ public class RIPPERk {
         RawExampleList neg = new RawExampleList();
         neg.addAll(negIn);
 
+        // The default class setting here is useless, just for format. The upper
+        // method will assign default class. Here just using the class of first
+        // example in neg set.
+        final String def = negIn.get(0).t;
+        final RuleList ruleList = new RuleList(def, attrs);
+        
         double minMdl = Double.POSITIVE_INFINITY;
-        final RuleList ruleList = new RuleList(attrs);
         boolean isRunning = true;
         while (!pos.isEmpty() && isRunning) {
             final RawExampleList[] subPos =
@@ -109,12 +154,6 @@ public class RIPPERk {
                 neg = getUncoveredExs(r, neg, attrs);
             }
         }
-
-        // The default class setting here is useless, just for format. The upper
-        // method will assign default class. Here just using the class of first
-        // example in neg set.
-        final String def = negIn.get(0).t;
-        ruleList.setDefault(def);
 
         return ruleList;
     }
@@ -152,8 +191,20 @@ public class RIPPERk {
         final RawExampleList newExs = new RawExampleList();
         for (int i = 0; i < exs.size(); i++) {
             final String prediction = r.rulePredict(exs.get(i).xList, attrs);
-            if (prediction == null) { // Not covered by rule.
+            if (prediction == null) {
                 newExs.add(exs.get(i));
+            }
+        }
+        return newExs;
+    }
+
+    private static RawExampleList getUncoveredExs (RuleList ruleList,
+            RawExampleList exs, RawAttrList attrs) {
+        final RawExampleList newExs = new RawExampleList();
+        for (int i = 0; i < exs.size(); i++) {
+            final String prediction = ruleList.predict(exs.get(i).xList);
+            if (prediction.equals(ruleList.defaultPrediction)) {
+                newExs.add(exs.get(i)); // Not covered by rule.
             }
         }
         return newExs;
@@ -165,6 +216,45 @@ public class RIPPERk {
         double lastV = ruleValueMetric(lastR, prunePos, pruneNeg, attrs);
         if (Double.isNaN(lastV)) { // Cover neither pos nor neg examples.
             return rIn; // It should not be pruned.
+        }
+
+        boolean isRunning = true;
+        while (isRunning) { // Repeat until no deletion improves the value of v.
+            // Delete any final condition sequences.
+            // To find the rule with the best value.
+            final Rule r = new Rule(lastR);
+            double maxV = Double.NEGATIVE_INFINITY;
+            Rule bestR = null;
+            while (r.size() > 0) { // Do not allow empty rule.
+                final double value =
+                        ruleValueMetric(r, prunePos, pruneNeg, attrs);
+                if (Double.compare(maxV, value) < 0) {
+                    maxV = value;
+                    bestR = new Rule(lastR);
+                }
+                r.removeLast();
+            }
+            assert !Double.isInfinite(maxV);
+            if (Double.compare(maxV, lastV) > 0) {
+                // The rule after this run has higher value than the rule after
+                // last run.
+                lastV = maxV;
+                lastR = bestR;
+            } else { // No improvement in this run.
+                isRunning = false;
+            }
+        }
+
+        return lastR;
+    }
+
+    private static Rule pruneRule2 (RuleList ruleList, int index,
+            RawExampleList prunePos, RawExampleList pruneNeg,
+            final RawAttrList attrs) {
+        Rule lastR = ruleList.get(index);
+        double lastV = ruleValueMetric(lastR, prunePos, pruneNeg, attrs);
+        if (Double.isNaN(lastV)) { // Cover neither pos nor neg examples.
+            return lastR; // It should not be pruned.
         }
 
         boolean isRunning = true;
@@ -422,7 +512,7 @@ public class RIPPERk {
         Double logX = LOG_CACHE.get(x);
         if (logX == null) {
             logX = Math.log(x);
-            LOG_CACHE.put(x, logX);
+            LOG_CACHE.put(new Double(x), logX);
         }
 
         return -logX / LOG_2;
