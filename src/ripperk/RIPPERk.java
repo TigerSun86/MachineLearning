@@ -48,7 +48,7 @@ public class RIPPERk {
             ascendingSets[i] = new Node(subSets[i]);
         }
         Arrays.sort(ascendingSets);
-        
+
         // The class has highest # of instances is the default class.
         final String def = ascendingSets[ascendingSets.length - 1].exs.get(0).t;
         final RuleList ruleList = new RuleList(def, attrs);
@@ -65,7 +65,7 @@ public class RIPPERk {
             RuleList subRuleList = learnTwoClass(pos, neg, attrs);
             for (int j = 0; j < k; j++) {
                 // Optimize.
-                subRuleList = optimize(subRuleList, pos, neg, attrs);
+                optimize(subRuleList, pos, neg, attrs);
             }
 
             ruleList.addAll(subRuleList); // Add result to total rule list.
@@ -74,55 +74,121 @@ public class RIPPERk {
         return ruleList;
     }
 
-    private static RuleList optimize (RuleList ruleList, RawExampleList pos,
+    /**
+     * ruleList is changed as an output parameter.
+     * */
+    private static void optimize (RuleList ruleList, RawExampleList pos,
             RawExampleList neg, RawAttrList attrs) {
         // final RuleList ruleList = new RuleList(ruleListIn);
         for (int i = 0; i < ruleList.size(); i++) {
             final Rule original = ruleList.get(i);
             final double dl0 = getDl(ruleList, pos, neg, attrs);
-            ruleList.set(i, new Rule(original.prediction));
-            final Rule replacement =
-                    learnRuleInWholeSet(ruleList, pos, neg, attrs);
+
+            learnRuleInWholeSet(ruleList, i, REPLACEMENT, pos, neg, attrs);
+            final Rule replacement = ruleList.get(i);
             final double dl1 = getDl(ruleList, pos, neg, attrs);
+
             ruleList.set(i, original);
-            final Rule revision =
-                    learnRuleInWholeSet(ruleList, pos, neg, attrs);
+            learnRuleInWholeSet(ruleList, i, REVISION, pos, neg, attrs);
             final double dl2 = getDl(ruleList, pos, neg, attrs);
+
             final double minDl = Math.min(Math.min(dl0, dl1), dl2);
             if (Double.compare(dl0, minDl) == 0) {
                 ruleList.set(i, original);
             } else if (Double.compare(dl1, minDl) == 0) {
                 ruleList.set(i, replacement);
-            } // else ruleList is already revision one.
+            } // else {ruleList is already revision one.}
         }
-        return ruleList;
+
+        // Remove examples covered by rule set from pos/neg.
+        final RawExampleList posUncovered =
+                getUncoveredExs(ruleList, pos, attrs);
+        final RawExampleList negUncovered =
+                getUncoveredExs(ruleList, neg, attrs);
+        // Learn new rules for uncovered examples.
+        learnTwoClass(ruleList, posUncovered, negUncovered, attrs);
+
+        // Delete any rule if deletion can decrease DL of rule set.
+        double dl = getDl(ruleList, pos, neg, attrs);
+        for (int i = ruleList.size() - 1; i >= 0; i--) {
+            if (ruleList.size() >= 2) {
+                final Rule r = ruleList.remove(i);
+                double newDl = getDl(ruleList, pos, neg, attrs);
+                if (Double.compare(newDl, dl) >= 0) { // No improvement.
+                    ruleList.add(i, r); // Recover it.
+                } // else {keep the deletion}.
+            }
+        }
     }
 
-    private static Rule learnRuleInWholeSet (RuleList ruleList,
-            RawExampleList posIn, RawExampleList negIn, RawAttrList attrs) {
+    private static final int REPLACEMENT = 1;
+    private static final int REVISION = 2;
+
+    /**
+     * ruleList is changed as an output parameter.
+     * */
+    private static void learnRuleInWholeSet (RuleList ruleList, final int i,
+            final int mode, RawExampleList posIn, RawExampleList negIn,
+            RawAttrList attrs) {
+        final Rule original = ruleList.get(i);
+        if (mode == REPLACEMENT) {
+            ruleList.remove(i);
+        }
+
         RawExampleList pos = getUncoveredExs(ruleList, posIn, attrs);
         RawExampleList neg = getUncoveredExs(ruleList, negIn, attrs);
-        return null;
+
+        if (mode == REPLACEMENT) {
+            ruleList.add(i, original);
+        }
+
+        if (!pos.isEmpty()) {
+            final RawExampleList[] subPos =
+                    TrainTestSplitter.split(pos, attrs, GROW_RATE);
+            final RawExampleList growPos = subPos[0];
+            final RawExampleList prunePos = subPos[1];
+            final RawExampleList[] subNeg =
+                    TrainTestSplitter.split(neg, attrs, GROW_RATE);
+            final RawExampleList growNeg = subNeg[0];
+            final RawExampleList pruneNeg = subNeg[1];
+
+            Rule r;
+            if (mode == REPLACEMENT) {
+                r = new Rule(original.prediction); // Empty rule.
+            } else {
+                r = original;
+            }
+
+            r = growRule(r, growPos, growNeg, attrs);
+            ruleList.set(i, r); // Set it back for pruning.
+            pruneRule2(ruleList, i, prunePos, pruneNeg, attrs);
+        }
     }
 
     private static final double GROW_RATE = 2.0 / 3;
 
-    /**
-     * Assume # of pos is less than # of neg.
-     */
     private static RuleList learnTwoClass (final RawExampleList posIn,
             final RawExampleList negIn, final RawAttrList attrs) {
-        RawExampleList pos = new RawExampleList();
-        pos.addAll(posIn);
-        RawExampleList neg = new RawExampleList();
-        neg.addAll(negIn);
-
         // The default class setting here is useless, just for format. The upper
         // method will assign default class. Here just using the class of first
         // example in neg set.
         final String def = negIn.get(0).t;
         final RuleList ruleList = new RuleList(def, attrs);
-        
+        return learnTwoClass(ruleList, posIn, negIn, attrs);
+    }
+
+    /**
+     * Assume # of pos is less than # of neg.
+     * ruleList is changed.
+     */
+    private static RuleList learnTwoClass (final RuleList ruleList,
+            final RawExampleList posIn, final RawExampleList negIn,
+            final RawAttrList attrs) {
+        RawExampleList pos = new RawExampleList();
+        pos.addAll(posIn);
+        RawExampleList neg = new RawExampleList();
+        neg.addAll(negIn);
+
         double minMdl = Double.POSITIVE_INFINITY;
         boolean isRunning = true;
         while (!pos.isEmpty() && isRunning) {
@@ -248,25 +314,30 @@ public class RIPPERk {
         return lastR;
     }
 
-    private static Rule pruneRule2 (RuleList ruleList, int index,
+    /**
+     * ruleList is changed as an output parameter.
+     * */
+    private static void pruneRule2 (RuleList ruleList, int index,
             RawExampleList prunePos, RawExampleList pruneNeg,
             final RawAttrList attrs) {
         Rule lastR = ruleList.get(index);
-        double lastV = ruleValueMetric(lastR, prunePos, pruneNeg, attrs);
-        if (Double.isNaN(lastV)) { // Cover neither pos nor neg examples.
-            return lastR; // It should not be pruned.
+        if (prunePos.size() == 0 && pruneNeg.size() == 0) {
+            return;
         }
+        double lastV = ruleValueMetric(ruleList, prunePos, pruneNeg, attrs);
 
         boolean isRunning = true;
         while (isRunning) { // Repeat until no deletion improves the value of v.
             // Delete any final condition sequences.
             // To find the rule with the best value.
             final Rule r = new Rule(lastR);
+            // Will evaluate whole rule set containing this r.
+            ruleList.set(index, r);
             double maxV = Double.NEGATIVE_INFINITY;
             Rule bestR = null;
             while (r.size() > 0) { // Do not allow empty rule.
                 final double value =
-                        ruleValueMetric(r, prunePos, pruneNeg, attrs);
+                        ruleValueMetric(ruleList, prunePos, pruneNeg, attrs);
                 if (Double.compare(maxV, value) < 0) {
                     maxV = value;
                     bestR = new Rule(lastR);
@@ -284,7 +355,7 @@ public class RIPPERk {
             }
         }
 
-        return lastR;
+        ruleList.set(index, lastR);
     }
 
     private static double ruleValueMetric (Rule r, RawExampleList pos,
@@ -292,6 +363,13 @@ public class RIPPERk {
         final int p = getNumOfCovered(pos, attrs, r);
         final int n = getNumOfCovered(neg, attrs, r);
         return ((double) (p - n)) / (p + n);
+    }
+
+    private static double ruleValueMetric (RuleList ruleList,
+            RawExampleList pos, RawExampleList neg, final RawAttrList attrs) {
+        final int tp = getNumOfCovered(pos, attrs, ruleList);
+        final int fn = getNumOfCovered(neg, attrs, ruleList);
+        return ((double) (tp + neg.size() - fn)) / (pos.size() + neg.size());
     }
 
     /**
@@ -387,6 +465,14 @@ public class RIPPERk {
 
     private static Rule growRule (final RawExampleList growPos,
             final RawExampleList growNeg, final RawAttrList attrs) {
+        // If anything => Positive.
+        final Rule rule = new Rule(growPos.get(0).t);
+        return growRule(rule, growPos, growNeg, attrs);
+    }
+
+    private static Rule growRule (final Rule rule,
+            final RawExampleList growPos, final RawExampleList growNeg,
+            final RawAttrList attrs) {
         // Get all possible conditions.
         final RuleCondition[][] conds =
                 getAllConditions(growPos, growNeg, attrs);
@@ -398,8 +484,6 @@ public class RIPPERk {
                 ((double) growPos.size()) / (growPos.size() + growNeg.size());
         assert priorProb != 0;
 
-        // If anything => Positive.
-        final Rule rule = new Rule(growPos.get(0).t);
         int numOfNegCovered = getNumOfCovered(growNeg, attrs, rule);
         // Loop until rule covers no negative examples.
         while (numOfNegCovered > 0) {
@@ -485,6 +569,17 @@ public class RIPPERk {
         int count = 0;
         for (RawExample e : exs) {
             if (rule.rulePredict(e.xList, attrs) != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int getNumOfCovered (final RawExampleList exs,
+            final RawAttrList attrs, final RuleList ruleList) {
+        int count = 0;
+        for (RawExample e : exs) {
+            if (!ruleList.predict(e.xList).equals(ruleList.defaultPrediction)) {
                 count++;
             }
         }
