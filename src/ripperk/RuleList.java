@@ -25,8 +25,8 @@ public class RuleList extends LinkedList<Rule> implements Hypothesis {
     public RuleList(final RawAttrList attrs) {
         this.attrs = attrs;
     }
-    
-    public void setDefault(final String def){
+
+    public void setDefault (final String def) {
         assert attrs.t.valueList.contains(def);
         this.defaultPrediction = def;
     }
@@ -44,10 +44,11 @@ public class RuleList extends LinkedList<Rule> implements Hypothesis {
 
         return (ret != null) ? ret : defaultPrediction;
     }
-    
+
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
+        sb.append("Default: " + defaultPrediction + Dbg.NEW_LINE);
         for (Rule r : this) {
             sb.append(r.toString());
             sb.append(Dbg.NEW_LINE);

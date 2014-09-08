@@ -15,20 +15,20 @@ import common.RawExampleList;
  */
 public class Test {
     private static final String ATTR_FILE_URL =
-            "http://my.fit.edu/~sunx2013/DataMining/restaurant-attr.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/DataMining/restaurant-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/DataMining/restaurant-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/iris-test.txt";
 
     public static void main (String[] args) {
         // Read data from files.
         final RawAttrList rawAttr = new RawAttrList(ATTR_FILE_URL);
         final RawExampleList rawTrain = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList rawTest = new RawExampleList(TEST_FILE_URL);
-        System.out.println(rawAttr);
-        System.out.println(rawTrain);
-        System.out.println(rawTest);
+       // System.out.println(rawAttr);
+       // System.out.println(rawTrain);
+       // System.out.println(rawTest);
         
         // Normalize data.
         // Split data set into train and test.
@@ -36,6 +36,7 @@ public class Test {
         
         // Predictor = RIPPERK_learner(training set)
         final Hypothesis h =RIPPERk.learn(rawTrain, rawAttr);
+        System.out.println(h);
         final double accur = Evaluator.evaluate(h, rawTest);
         // Get accuracy of predictor on test set.
         System.out.println(accur);

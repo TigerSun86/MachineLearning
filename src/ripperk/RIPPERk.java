@@ -77,6 +77,7 @@ public class RIPPERk {
         RawExampleList neg = new RawExampleList();
         neg.addAll(negIn);
 
+        double minMdl = Double.POSITIVE_INFINITY;
         final RuleList ruleList = new RuleList(attrs);
         boolean isRunning = true;
         while (!pos.isEmpty() && isRunning) {
@@ -90,12 +91,19 @@ public class RIPPERk {
             final RawExampleList pruneNeg = subNeg[1];
 
             Rule r = growRule(growPos, growNeg, attrs);
-            r = pruneRule(r, prunePos, pruneNeg);
+            r = pruneRule(r, prunePos, pruneNeg, attrs);
+            ruleList.add(r);
 
-            if (needQuit(r, prunePos, pruneNeg)) {
+            final double dl = getDl(ruleList, posIn, negIn, attrs);
+
+            if (Double.compare(dl, minMdl) < 0) {
+                minMdl = dl;
+            }
+
+            if (Double.compare(dl, minMdl + 64) > 0) {
                 isRunning = false;
+                ruleList.removeLast(); // Remove last rule which has high dl.
             } else {
-                ruleList.add(r);
                 // Remove examples covered by rule from pos/neg.
                 pos = getUncoveredExs(r, pos, attrs);
                 neg = getUncoveredExs(r, neg, attrs);
@@ -111,6 +119,34 @@ public class RIPPERk {
         return ruleList;
     }
 
+    private static double getDl (RuleList ruleList, RawExampleList pos,
+            RawExampleList neg, final RawAttrList attrs) {
+        // Get all possible conditions.
+        final RuleCondition[][] conds = getAllConditions(pos, neg, attrs);
+        int n = 0;
+        for (RuleCondition[] rc : conds) {
+            n += rc.length;
+        }
+
+        double dl = 0;
+        for (Rule r : ruleList) {
+            dl += getMdl(r, n);
+        }
+
+        return dl;
+    }
+
+    private static double getMdl (Rule r, int n) {
+        final int k = r.size();
+        final double s = s(n, k, ((double) k) / n);
+        return (Math.log(k) / LOG_2) + s;
+    }
+
+    private static double s (int n, int k, double p) {
+        return k * (Math.log(1 / p) / LOG_2) + (n - k)
+                * (Math.log(1 / (1 - p)) / LOG_2);
+    }
+
     private static RawExampleList getUncoveredExs (final Rule r,
             final RawExampleList exs, final RawAttrList attrs) {
         final RawExampleList newExs = new RawExampleList();
@@ -123,16 +159,49 @@ public class RIPPERk {
         return newExs;
     }
 
-    private static boolean needQuit (Rule r, RawExampleList prunePos,
-            RawExampleList pruneNeg) {
-        // TODO Auto-generated method stub
-        return false;
+    private static Rule pruneRule (Rule rIn, RawExampleList prunePos,
+            RawExampleList pruneNeg, final RawAttrList attrs) {
+        Rule lastR = new Rule(rIn);
+        double lastV = ruleValueMetric(lastR, prunePos, pruneNeg, attrs);
+        if (Double.isNaN(lastV)) { // Cover neither pos nor neg examples.
+            return rIn; // It should not be pruned.
+        }
+
+        boolean isRunning = true;
+        while (isRunning) { // Repeat until no deletion improves the value of v.
+            // Delete any final condition sequences.
+            // To find the rule with the best value.
+            final Rule r = new Rule(lastR);
+            double maxV = Double.NEGATIVE_INFINITY;
+            Rule bestR = null;
+            while (r.size() > 0) { // Do not allow empty rule.
+                final double value =
+                        ruleValueMetric(r, prunePos, pruneNeg, attrs);
+                if (Double.compare(maxV, value) < 0) {
+                    maxV = value;
+                    bestR = new Rule(lastR);
+                }
+                r.removeLast();
+            }
+            assert !Double.isInfinite(maxV);
+            if (Double.compare(maxV, lastV) > 0) {
+                // The rule after this run has higher value than the rule after
+                // last run.
+                lastV = maxV;
+                lastR = bestR;
+            } else { // No improvement in this run.
+                isRunning = false;
+            }
+        }
+
+        return lastR;
     }
 
-    private static Rule pruneRule (Rule r, RawExampleList prunePos,
-            RawExampleList pruneNeg) {
-        // TODO Auto-generated method stub
-        return null;
+    private static double ruleValueMetric (Rule r, RawExampleList pos,
+            RawExampleList neg, final RawAttrList attrs) {
+        final int p = getNumOfCovered(pos, attrs, r);
+        final int n = getNumOfCovered(neg, attrs, r);
+        return ((double) (p - n)) / (p + n);
     }
 
     /**
@@ -251,7 +320,6 @@ public class RIPPERk {
             rule.add(bestCond); // Add condition to rule.
             numOfNegCovered = getNumOfCovered(growNeg, attrs, rule);
         }
-
         return rule;
     }
 
