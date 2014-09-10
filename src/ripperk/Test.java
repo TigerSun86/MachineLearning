@@ -3,6 +3,7 @@ package ripperk;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
+import util.Dbg;
 import util.DisplayChart;
 import util.MyMath;
 import common.DataCorrupter;
@@ -24,7 +25,7 @@ import dataset.Restaurant;
  * @date Sep 1, 2014 1:36:40 PM
  */
 public class Test {
-
+    private static final int TIMES = 1;
     private static final DataSet[] DATA_SOURCE = { new Restaurant(),
             new Ids_mixed(), new Iris() };
 
@@ -44,7 +45,7 @@ public class Test {
                 .println("0 simple test 1 train_test test 2 prune test 3 optimazation test");
         final int testmode = getInt(sc);
         if (testmode == 0) {
-            simpleTest(dsetindex);
+            simpleTest(dsetindex, sc);
         } else if (testmode == 1) {
             trainTestTest(dsetindex);
         } else if (testmode == 2) {
@@ -54,10 +55,12 @@ public class Test {
         } else {
             return;
         }
+        sc.close();
     }
 
-
-    private static void simpleTest (final int dsetindex) {
+    private static void simpleTest (final int dsetindex, final Scanner sc) {
+        Dbg.dbgSwitch = true;
+        Dbg.defaultSwitch = true;
         // Read data from files.
         final RawAttrList rawAttr =
                 new RawAttrList(DATA_SOURCE[dsetindex].getAttrFileUrl());
@@ -65,18 +68,31 @@ public class Test {
                 new RawExampleList(DATA_SOURCE[dsetindex].getTrainFileUrl());
         final RawExampleList rawTest =
                 new RawExampleList(DATA_SOURCE[dsetindex].getTestFileUrl());
-
+        System.out
+                .println("Please input the noise rate, need pruning or not, and k. "
+                        + "Eg: \"0.2 1 1\" means 0.2 noise rate, need pruning, and k = 1.");
+        final double noiseRate = sc.nextDouble();
+        final boolean needPruning = (sc.nextInt() == 1);
+        final int k = sc.nextInt();
+        System.out
+                .printf("Data set is %s, noise rate is %.2f, needPruning = %s k = %d%n",
+                        DATA_SOURCE[dsetindex].getName(), noiseRate,
+                        Boolean.toString(needPruning), k);
+        
         final RawExampleList noiseTrain =
-                DataCorrupter.corrupt(rawTrain, rawAttr, 0);
-        final Hypothesis h = RIPPERk.learn(noiseTrain, rawAttr, true, 1);
+                DataCorrupter.corrupt(rawTrain, rawAttr, noiseRate);
+        final Hypothesis h = RIPPERk.learn(noiseTrain, rawAttr, needPruning, k);
+        System.out.println("Learnt hypothesis: ");
         System.out.println(h);
         double accur = Evaluator.evaluate(h, noiseTrain);
         System.out.println("train" + accur);
         accur = Evaluator.evaluate(h, rawTest);
         // Get accuracy of predictor on test set.
         System.out.println("test" + accur);
+        Dbg.dbgSwitch = false;
+        Dbg.defaultSwitch = false;
     }
-    private static final int TIMES = 5;
+
     private static void trainTestTest (final int dsetindex) {
         // Read data from files.
         final RawAttrList rawAttr =

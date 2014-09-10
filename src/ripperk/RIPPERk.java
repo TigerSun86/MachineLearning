@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import util.Dbg;
+
 import common.RawAttr;
 import common.RawAttrList;
 import common.RawExample;
@@ -21,6 +23,9 @@ import common.TrainTestSplitter;
  * @date Sep 1, 2014 2:23:04 PM
  */
 public class RIPPERk {
+    public static final String MODULE = "RIP";
+    public static final boolean DBG = true;
+
     private static class Node implements Comparable<Node> {
         public final RawExampleList exs;
 
@@ -64,6 +69,7 @@ public class RIPPERk {
             }
             RuleList subRuleList = learnTwoClass(pos, neg, attrs, needPrune);
             for (int j = 0; j < k; j++) {
+                Dbg.print(DBG, MODULE, "Optimization stage " + j);
                 // Optimize.
                 optimize(subRuleList, pos, neg, attrs, needPrune);
             }
@@ -83,16 +89,18 @@ public class RIPPERk {
         for (int i = 0; i < ruleList.size(); i++) {
             final Rule original = ruleList.get(i);
             final double dl0 = getDl(ruleList, pos, neg, attrs);
-
+            Dbg.print(DBG, MODULE, "Original is " + original + ", DL:" + dl0);
             learnRuleInWholeSet(ruleList, i, REPLACEMENT, pos, neg, attrs,
                     needPrune);
             final Rule replacement = ruleList.get(i);
             final double dl1 = getDl(ruleList, pos, neg, attrs);
-
+            Dbg.print(DBG, MODULE, "Replacement is " + replacement + ", DL:" + dl1);
             ruleList.set(i, original);
             learnRuleInWholeSet(ruleList, i, REVISION, pos, neg, attrs,
                     needPrune);
+            final Rule revision = ruleList.get(i);
             final double dl2 = getDl(ruleList, pos, neg, attrs);
+            Dbg.print(DBG, MODULE, "Revision is " + revision + ", DL:" + dl2);
 
             final double minDl = Math.min(Math.min(dl0, dl1), dl2);
             if (Double.compare(dl0, minDl) == 0) {
@@ -247,6 +255,9 @@ public class RIPPERk {
         final double log = Math.log(cover + uncover + 1) / LOG_2;
         final double dl = log + s1 + s2;
         assert !Double.isNaN(dl);
+        Dbg.print(DBG, MODULE, "DL is " + dl);
+        Dbg.print(DBG, MODULE, "For rule set: " + ruleList);
+
         return dl;
     }
 
@@ -335,7 +346,7 @@ public class RIPPERk {
                 isRunning = false;
             }
         }
-
+        Dbg.print(DBG, MODULE, "Rule after pruning " + lastR);
         return lastR;
     }
 
@@ -379,7 +390,7 @@ public class RIPPERk {
                 isRunning = false;
             }
         }
-
+        Dbg.print(DBG, MODULE, "Rule after pruning " + lastR);
         ruleList.set(index, lastR);
     }
 
@@ -498,6 +509,7 @@ public class RIPPERk {
     private static Rule growRule (final Rule rule,
             final RawExampleList growPos, final RawExampleList growNeg,
             final RawAttrList attrs) {
+        Dbg.print(DBG, MODULE, "Growing rule based on: " + rule);
         // Get all possible conditions.
         final RuleCondition[][] conds =
                 getAllConditions(growPos, growNeg, attrs);
@@ -516,9 +528,13 @@ public class RIPPERk {
             final RuleCondition bestCond =
                     getBestCondition(growPos, growNeg, attrs, conds,
                             availConds, rule, priorProb);
+
             rule.add(bestCond); // Add condition to rule.
             numOfNegCovered = getNumOfCovered(growNeg, attrs, rule);
+            Dbg.print(DBG, MODULE, "Uncovered # of neg-examples is "
+                    + numOfNegCovered);
         }
+        Dbg.print(DBG, MODULE, "Grew a rule: " + rule.toString());
         return rule;
     }
 
@@ -587,6 +603,9 @@ public class RIPPERk {
             availConds[bestI].clear();
         }
 
+        Dbg.print(DBG, MODULE,
+                "Best condition: " + conds[bestI][bestJ].toString()
+                        + ", max foil gain is: " + maxFoilGain);
         return conds[bestI][bestJ];
     }
 

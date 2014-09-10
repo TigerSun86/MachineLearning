@@ -1,2 +1,2 @@
-Main-Class: instancereduction.Test
+Main-Class: ripperk.Test
 Class-Path: ../lib/jcommon-1.0.21.jar ../lib/jfreechart-1.0.17.jar
