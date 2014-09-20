@@ -1,10 +1,6 @@
 package artificialNeuralNetworks.ANN;
 
-import instancereduction.FDS;
-import instancereduction.RCI;
-import instancereduction.RanENNRF;
-import instancereduction.RanR;
-import instancereduction.Reducible;
+import instancereduction.*;
 
 import java.awt.geom.Point2D;
 import java.util.Collections;
@@ -92,40 +88,37 @@ public class BorderOrCenter2 {
     private static final String ATTR_FILE_URL =
             "http://my.fit.edu/~sunx2013/MachineLearning/toy-attr.txt";
     private static final String TRAIN_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-train.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-train.txt";
     private static final String TEST_FILE_URL =
-            "http://my.fit.edu/~sunx2013/MachineLearning/toyD-test.txt";
+            "http://my.fit.edu/~sunx2013/MachineLearning/toyXor2000-test.txt";
 
     private static final RawAttrList RATTR = new RawAttrList(ATTR_FILE_URL);
 
     public static void main (String[] args) {
-        mainDense();
-
-/*        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
-        final RawExampleList cTrain =
-                new RawExampleList(
-                        "http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
-        RawExampleList test = new RawExampleList(TEST_FILE_URL);
-
-        System.out.println("RCI");
-        testDense(train, test, new RCI(), TIMES);
-
-        System.out.println("Clean data set");
-        testDense(cTrain, test, new FDS(), TIMES);
-
-        System.out.println("Random");
-        testDense(train, test, new RanR(2.0 / 3), TIMES);
-
-        System.out.println("Full data set");
-        testDense(train, test, new FDS(), TIMES);
-        Reducible red = new RanENNRF();
-        RawExampleList s = red.reduce(train, RATTR);
-        System.out.println(s.size());
-        for (RawExample e : train) {
-            if (s.contains(e)) {
-                System.out.println(e);
-            }
-        }*/
+        testClassEven2();
+        /* RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+         * final RawExampleList cTrain =
+         * new RawExampleList(
+         * "http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
+         * RawExampleList test = new RawExampleList(TEST_FILE_URL);
+         * 
+         * Reducible red = new RanR();
+         * RawExampleList s = red.reduce(train, RATTR);
+         * System.out.println(s.size());
+         * for (RawExample e : test) {
+         * if (s.contains(e)) {
+         * System.out.println(e);
+         * }
+         * }
+         * Reducible red1 = new PureRCI();
+         * RawExampleList s1 = red1.reduce(test, RATTR);
+         * System.out.println(s.size());
+         * for (RawExample e : test) {
+         * if ((s.contains(e)&&!s1.contains(e)) ||
+         * (!s.contains(e)&&s1.contains(e)) ) {
+         * System.out.println(e);
+         * }
+         * } */
 
         /* Region[][] regs = new Region[1][REGB4[0].length * 2];
          * regs[0] = new Region[REGB4[0].length];
@@ -138,27 +131,26 @@ public class BorderOrCenter2 {
          * // testXor(train, test, REG_XOR);
          * testByMod3Fold(train, test, regs, PAIR, TIMES); */
     }
-    
-    private static void mainDense(){
+
+    private static void mainDense () {
         RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
         final RawExampleList cTrain =
                 new RawExampleList(
                         "http://my.fit.edu/~sunx2013/MachineLearning/toyDC-train.txt");
         RawExampleList test = new RawExampleList(TEST_FILE_URL);
 
-/*        System.out.println("RCI");
-        testDense(train, test, new RCI(), TIMES);
-
-        System.out.println("Clean data set");
-        testDense(cTrain, test, new FDS(), TIMES);*/
+        /* System.out.println("RCI");
+         * testDense(train, test, new RCI(), TIMES);
+         * 
+         * System.out.println("Clean data set");
+         * testDense(cTrain, test, new FDS(), TIMES); */
 
         System.out.println("Random");
         testDense(train, test, new RanR(0.5 / 3), TIMES);
-/*
-        System.out.println("Full data set");
-        testDense(train, test, new FDS(), TIMES);*/
+        /* System.out.println("Full data set");
+         * testDense(train, test, new FDS(), TIMES); */
     }
-    
+
     private static void testDense (final RawExampleList train,
             final RawExampleList test, final Reducible met, final int times) {
         final AnnLearner annLearner = new AnnLearner(RATTR, 0.1, 0.1);
@@ -444,18 +436,18 @@ public class BorderOrCenter2 {
 
         final RawExampleList[][] exReg = splitSetByRegions(train, REG_XOR);
 
-        //printExReg(exReg);
+        // printExReg(exReg);
         System.out.println("Class checkerboard test " + " Times " + TIMES);
         System.out.println("Rate Accuracy Iteration");
         double[] accurAndIter;
-        
+
         accurAndIter = testClassOfXor(exReg[0], test, 0.6, 0.6, TIMES);
-        /*
-        accurAndIter = testClassOfXor(exReg[0], test, 0.8, 0.4, TIMES);
-        System.out.println("2:1 " + accurAndIter[0] + " " + accurAndIter[1]);
-   
-        accurAndIter = testClassOfXor(exReg[0], test, 1.0, 0.2, TIMES);
-        System.out.println("5:1 " + accurAndIter[0] + " " + accurAndIter[1]);*/
+        /* accurAndIter = testClassOfXor(exReg[0], test, 0.8, 0.4, TIMES);
+         * System.out.println("2:1 " + accurAndIter[0] + " " +
+         * accurAndIter[1]);
+         * 
+         * accurAndIter = testClassOfXor(exReg[0], test, 1.0, 0.2, TIMES);
+         * System.out.println("5:1 " + accurAndIter[0] + " " + accurAndIter[1]); */
 
     }
 
@@ -494,6 +486,120 @@ public class BorderOrCenter2 {
         accurAndIter[1] /= times;
 
         return accurAndIter;
+    }
+
+    private static RawExampleList getUnevenSet (RawExampleList[] sets,
+            double c1r, double c2r) {
+        final RawExampleList unevenSet = new RawExampleList();
+        for (RawExampleList s : sets) {
+            final int numOfPairs;
+            if (s.get(0).t.equals(DataGenerator.CLASS[0])) {
+                numOfPairs = (int) Math.round((s.size() * c1r));
+            } else {
+                numOfPairs = (int) Math.round((s.size() * c2r));
+            }
+
+            final int[] selected = MyMath.mOutofN(numOfPairs, s.size());
+            for (int i : selected) {
+                unevenSet.add(s.get(i));
+            }
+        }
+        Collections.shuffle(unevenSet);
+        return unevenSet;
+    }
+
+    private static void testClassEven () {
+        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+        RawExampleList test = new RawExampleList(TEST_FILE_URL);
+
+        RawExampleList[][] exReg = splitSetByRegions(train, REG_XOR);
+        train = getUnevenSet(exReg[0], 0.36, 0.12);
+        exReg = splitSetByRegions(test, REG_XOR);
+        test = getUnevenSet(exReg[0], 0.36, 0.12);
+
+        exReg = splitSetByRegions(train, REG_XOR);
+        System.out.println(test);
+        // printExReg(exReg);
+        /* System.out.println("Uneven Class checkerboard test " + " Times " +
+         * TIMES);
+         * System.out.println("Rate Accuracy Iteration"); */
+        double[] accurAndIter;
+
+        /* accurAndIter = testClassOfXor(exReg[0], test, 1.0/9, 1.0/3, TIMES);
+         * System.out.println("1:1 " + accurAndIter[0] + " " +
+         * accurAndIter[1]);
+         * 
+         * 
+         * accurAndIter = testClassOfXor(exReg[0], test, 2.0/9, 1.0/3, TIMES);
+         * System.out.println("2:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+         * 
+         * accurAndIter = testClassOfXor(exReg[0], test, 1.0/3, 1.0/3, TIMES);
+         * System.out.println("3:1 " + accurAndIter[0] + " " + accurAndIter[1]); */
+
+        System.out.println("Uneven Class checkerboard test 2" + " Times "
+                + TIMES);
+        System.out.println("Rate Accuracy Iteration");
+        /* accurAndIter = testClassOfXor(exReg[0], test, 1.0/3, 1.0/1, TIMES);
+         * System.out.println("1:1 " + accurAndIter[0] + " " +
+         * accurAndIter[1]);
+         * 
+         * 
+         * accurAndIter = testClassOfXor(exReg[0], test, 4.0/9, 2.0/3, TIMES);
+         * System.out.println("2:1 " + accurAndIter[0] + " " + accurAndIter[1]); */
+
+        accurAndIter = testClassOfXor(exReg[0], test, 1.0 / 2, 1.0 / 2, TIMES);
+        System.out.println("3:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+
+    }
+
+    private static RawExampleList changeClass (RawExampleList set, Region reg) {
+        final RawExampleList changedSet = new RawExampleList();
+        for (RawExample e : set) {
+            final Point2D.Double p =
+                    new Point2D.Double(Double.parseDouble(e.xList.get(0)),
+                            Double.parseDouble(e.xList.get(1)));
+            if (reg.isInside(p)) {
+                final RawExample newE = new RawExample();
+                newE.xList = e.xList;
+                newE.t =
+                        e.t.equals(DataGenerator.CLASS[0]) ? DataGenerator.CLASS[1]
+                                : DataGenerator.CLASS[0];
+                changedSet.add(newE);
+            } else {
+                changedSet.add(e);
+            }
+        }
+
+        return changedSet;
+    }
+
+    private static void testClassEven2 () {
+        RawExampleList train = new RawExampleList(TRAIN_FILE_URL);
+        RawExampleList test = new RawExampleList(TEST_FILE_URL);
+
+        RawExampleList[][] exReg = splitSetByRegions(train, REG_XOR);
+        train = getUnevenSet(exReg[0], 0.24, 0.24);
+        train = changeClass(train, REG_XOR[0][1]);
+        exReg = splitSetByRegions(test, REG_XOR);
+        test = getUnevenSet(exReg[0], 0.24, 0.24);
+        test = changeClass(test, REG_XOR[0][1]);
+
+        exReg = splitSetByRegions(train, REG_XOR);
+
+        System.out.println("Uneven Class checkerboard test " + " Times "
+                + TIMES);
+        System.out.println("Rate Accuracy Iteration");
+        double[] accurAndIter;
+/*
+        accurAndIter = testClassOfXor(exReg[0], test, 1.0 / 4, 3.0 / 4, TIMES);
+        System.out.println("1:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+
+        accurAndIter = testClassOfXor(exReg[0], test, 1.0 / 3, 1.0 / 2, TIMES);
+        System.out.println("2:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+  */      
+        accurAndIter = testClassOfXor(exReg[0], test, 3.0 / 8, 3.0 / 8, TIMES);
+        System.out.println("3:1 " + accurAndIter[0] + " " + accurAndIter[1]);
+
     }
 
     private static void testByMod3Fold (RawExampleList trainSet,
