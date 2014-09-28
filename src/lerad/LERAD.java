@@ -30,6 +30,8 @@ public class LERAD {
     private static final int S = 100;
     private static final double TRAIN_VAL_RATE = 9.0 / 10;
 
+    private static final boolean NO_NEED_WILD_CARD = true;
+
     private static class ExAndScore implements Comparable<ExAndScore> {
         public final RawExample e;
         public final double score;
@@ -66,16 +68,56 @@ public class LERAD {
                 TrainTestSplitter.splitSetbyClass(dataSet, attrs)[0].size();
         final int numOfNeg = (dataSet.size() - numOfPos);
 
-        final double falseAlarmThreshold = 0.01;
+        final DetectAndFalsePos[] dafs = new DetectAndFalsePos[10];
+        double fprth = 0.1;
+        for (int i = 0; i < 10; i++) {
+            final DetectAndFalsePos daf =
+                    getDAF(exs, attrs, numOfPos, numOfNeg, fprth);
+            dafs[i] = daf;
+            System.out.println("detection rate is " + daf.detect);
+            System.out.println("false alarm rate is " + daf.falsePos);
+            fprth += 0.1;
+        }
+
+        final double[][] auc = new double[10][2];
+        for (int i = 0; i < 10; i++) {
+            auc[i] = new double[2];
+            auc[i][0] = dafs[i].falsePos;
+            if (i == 0) {
+                auc[i][1] = dafs[i].falsePos * dafs[i].detect / 2;
+            } else {
+                final double h = dafs[i].falsePos - dafs[i - 1].falsePos;
+                auc[i][1] =
+                        auc[i - 1][1]
+                                + ((dafs[i].detect + dafs[i - 1].detect) * h / 2);
+            }
+            System.out.printf("fp %.4f auc %.4f%n", auc[i][0], auc[i][1]);
+        }
+
+    }
+
+    private static class DetectAndFalsePos {
+        public final double detect;
+        public final double falsePos;
+
+        public DetectAndFalsePos(final double detect, final double falsePos) {
+            this.detect = detect;
+            this.falsePos = falsePos;
+        }
+    }
+
+    private static DetectAndFalsePos getDAF (ArrayList<ExAndScore> exs,
+            RawAttrList attrs, int numOfPos, int numOfNeg,
+            double falsePosThreshold) {
         int tp = 0;
         int tn = 0;
         int fp = 0;
         int fn = 0;
         final String posClass = attrs.t.valueList.get(0);
         for (int i = 0; i < exs.size(); i++) {
-            final double falsePos = ((double) fp) / numOfNeg;
+            final double falsePosRate = ((double) fp) / numOfNeg;
             final boolean isPosPrediction =
-                    (Double.compare(falsePos, falseAlarmThreshold) < 0) ? true
+                    (Double.compare(falsePosRate, falsePosThreshold) < 0) ? true
                             : false;
             final RawExample e = exs.get(i).e;
             if (e.t.equals(posClass)) { // Positive example.
@@ -94,9 +136,7 @@ public class LERAD {
         }
         final double detect = ((double) tp) / (tp + fn);
         final double falsePos = ((double) fp) / (tn + fp);
-        System.out.println("detection rate is " + detect);
-        System.out.println("false alarm rate is " + falsePos);
-
+        return new DetectAndFalsePos(detect, falsePos);
     }
 
     public static Hypothesis learn (RawExampleList dataSet, RawAttrList attrs) {
@@ -166,7 +206,16 @@ public class LERAD {
             }
 
         }
-
+        if (NO_NEED_WILD_CARD) {
+            // Delete all wild card.
+            Iterator<Rule> iter = rl.iterator();
+            while (iter.hasNext()) {
+                final Rule r = iter.next();
+                if (r.isEmpty()) {
+                    iter.remove();
+                }
+            }
+        }
         return rl;
     }
 
