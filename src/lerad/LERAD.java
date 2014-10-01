@@ -35,8 +35,13 @@ public class LERAD {
 
     /* Learning related begin ******* */
     public RuleList learn (RawExampleList dataSet, RawAttrList attrs) {
+        double trainRate = 1 - valRate;
+        if (Double.compare((trainRate * dataSet.size()), 2) < 0) {
+            trainRate = 2.0 / dataSet.size();
+        }
+
         final RawExampleList[] tempSet =
-                TrainTestSplitter.split(dataSet, attrs, 1 - valRate);
+                TrainTestSplitter.split(dataSet, attrs, trainRate);
         final RawExampleList train = tempSet[0];
         final RawExampleList val = tempSet[1];
 
