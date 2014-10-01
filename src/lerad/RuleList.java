@@ -1,10 +1,9 @@
 package lerad;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import util.Dbg;
-import common.Hypothesis;
+
 import common.RawAttrList;
 
 /**
@@ -15,37 +14,26 @@ import common.RawAttrList;
  *         email: sunx2013@my.fit.edu
  * @date Sep 1, 2014 2:25:50 PM
  */
-public class RuleList extends LinkedList<Rule> implements Hypothesis {
+public class RuleList extends LinkedList<Rule>  {
     private static final long serialVersionUID = 1L;
 
-    public final String defaultPrediction;
+    public final String negClass; // Negative class.
+    public final String posClass;
 
-    private final RawAttrList attrs;
-
-    public RuleList(final String def, final RawAttrList attrs) {
-        this.defaultPrediction = def;
-        this.attrs = attrs;
-        assert attrs.t.valueList.contains(def);
-    }
-
-    @Override
-    public String predict (ArrayList<String> in) {
-        String ret = null;
-/*        for (Rule r : this) {
-            final String consequents = r.rulePredict(in, attrs);
-            if (consequents != null) { // Accepted by r.
-                ret = consequents;
-                break;
-            }
-        }*/
-
-        return (ret != null) ? ret : defaultPrediction;
+    public RuleList(final String negClass, final RawAttrList attrs) {
+        this.negClass = negClass;
+        assert attrs.t.valueList.size() == 2;
+        assert attrs.t.valueList.contains(negClass);
+        this.posClass =
+                (attrs.t.valueList.get(0).equals(negClass)) ? attrs.t.valueList
+                        .get(1) : attrs.t.valueList.get(0);
     }
 
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();
-        sb.append("Default: " + defaultPrediction + Dbg.NEW_LINE);
+        sb.append("Pos: " + posClass + Dbg.NEW_LINE);
+        sb.append("Neg: " + negClass + Dbg.NEW_LINE);
         for (Rule r : this) {
             sb.append(r.toString());
             sb.append(Dbg.NEW_LINE);

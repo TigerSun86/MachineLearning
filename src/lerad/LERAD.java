@@ -7,7 +7,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
-import common.Hypothesis;
+import util.Dbg;
+
 import common.RawAttrList;
 import common.RawExample;
 import common.RawExampleList;
@@ -25,123 +26,17 @@ public class LERAD {
     public static final String MODULE = "LER";
     public static final boolean DBG = true;
 
-    private static final int L = 1000;
-    private static final int M = 4;
-    private static final int S = 100;
-    private static final double TRAIN_VAL_RATE = 9.0 / 10;
+    public int L = 1000;
+    public int M = 4;
+    public int S = 100;
+    public double valRate = 1.0 / 10;
 
     private static final boolean NO_NEED_WILD_CARD = true;
 
-    private static class ExAndScore implements Comparable<ExAndScore> {
-        public final RawExample e;
-        public final double score;
-
-        public ExAndScore(RawExample e, double score) {
-            this.e = e;
-            this.score = score;
-        }
-
-        @Override
-        public int compareTo (ExAndScore o) {
-            return Double.compare(this.score, o.score);
-        }
-    }
-
-    public static void predict (RawExampleList dataSet, RawAttrList attrs,
-            RuleList rl) {
-        for (Rule r : rl) { // Count time from -1.
-            r.lastT = -1;
-        }
-        final ArrayList<ExAndScore> exs = new ArrayList<ExAndScore>();
-        for (int i = 0; i < dataSet.size(); i++) {
-            final RawExample e = dataSet.get(i);
-            double anomalyScore = 0;
-            for (Rule r : rl) {
-                anomalyScore += r.getTnr(e, attrs, i);
-            }
-            exs.add(new ExAndScore(e, anomalyScore));
-        }
-        // Sort descendingly by the anomalyScore.
-        Collections.sort(exs, Collections.reverseOrder());
-
-        final int numOfPos =
-                TrainTestSplitter.splitSetbyClass(dataSet, attrs)[0].size();
-        final int numOfNeg = (dataSet.size() - numOfPos);
-
-        final DetectAndFalsePos[] dafs = new DetectAndFalsePos[10];
-        double fprth = 0.1;
-        for (int i = 0; i < 10; i++) {
-            final DetectAndFalsePos daf =
-                    getDAF(exs, attrs, numOfPos, numOfNeg, fprth);
-            dafs[i] = daf;
-            System.out.println("detection rate is " + daf.detect);
-            System.out.println("false alarm rate is " + daf.falsePos);
-            fprth += 0.1;
-        }
-
-        final double[][] auc = new double[10][2];
-        for (int i = 0; i < 10; i++) {
-            auc[i] = new double[2];
-            auc[i][0] = dafs[i].falsePos;
-            if (i == 0) {
-                auc[i][1] = dafs[i].falsePos * dafs[i].detect / 2;
-            } else {
-                final double h = dafs[i].falsePos - dafs[i - 1].falsePos;
-                auc[i][1] =
-                        auc[i - 1][1]
-                                + ((dafs[i].detect + dafs[i - 1].detect) * h / 2);
-            }
-            System.out.printf("fp %.4f auc %.4f%n", auc[i][0], auc[i][1]);
-        }
-
-    }
-
-    private static class DetectAndFalsePos {
-        public final double detect;
-        public final double falsePos;
-
-        public DetectAndFalsePos(final double detect, final double falsePos) {
-            this.detect = detect;
-            this.falsePos = falsePos;
-        }
-    }
-
-    private static DetectAndFalsePos getDAF (ArrayList<ExAndScore> exs,
-            RawAttrList attrs, int numOfPos, int numOfNeg,
-            double falsePosThreshold) {
-        int tp = 0;
-        int tn = 0;
-        int fp = 0;
-        int fn = 0;
-        final String posClass = attrs.t.valueList.get(0);
-        for (int i = 0; i < exs.size(); i++) {
-            final double falsePosRate = ((double) fp) / numOfNeg;
-            final boolean isPosPrediction =
-                    (Double.compare(falsePosRate, falsePosThreshold) < 0) ? true
-                            : false;
-            final RawExample e = exs.get(i).e;
-            if (e.t.equals(posClass)) { // Positive example.
-                if (isPosPrediction) { // Positive prediction.
-                    tp++;
-                } else { // Negative prediction.
-                    fn++;
-                }
-            } else { // Negative example.
-                if (isPosPrediction) { // Positive prediction.
-                    fp++;
-                } else { // Negative prediction.
-                    tn++;
-                }
-            }
-        }
-        final double detect = ((double) tp) / (tp + fn);
-        final double falsePos = ((double) fp) / (tn + fp);
-        return new DetectAndFalsePos(detect, falsePos);
-    }
-
-    public static Hypothesis learn (RawExampleList dataSet, RawAttrList attrs) {
+    /* Learning related begin ******* */
+    public RuleList learn (RawExampleList dataSet, RawAttrList attrs) {
         final RawExampleList[] tempSet =
-                TrainTestSplitter.split(dataSet, attrs, TRAIN_VAL_RATE);
+                TrainTestSplitter.split(dataSet, attrs, 1 - valRate);
         final RawExampleList train = tempSet[0];
         final RawExampleList val = tempSet[1];
 
@@ -149,12 +44,18 @@ public class LERAD {
                 (S >= train.size()) ? 1.0 : (((double) S) / train.size());
         final RawExampleList sTrain =
                 TrainTestSplitter.split(train, attrs, sRate)[0];
-        final RuleList rl = generateRule(sTrain, attrs, L);
+        final RuleList rl = generateRule(sTrain, attrs);
+        Dbg.print(DBG, MODULE, "After generate:" + Dbg.NEW_LINE + rl.toString());
         coverageTest(rl, sTrain, attrs);
+        Dbg.print(DBG, MODULE,
+                "After coverageTest:" + Dbg.NEW_LINE + rl.toString());
         // training pass 2
         updateConsequentsOfRuleList(rl, train, attrs);
+        Dbg.print(DBG, MODULE,
+                "After training pass 2:" + Dbg.NEW_LINE + rl.toString());
         validation(rl, val, attrs);
-
+        Dbg.print(DBG, MODULE,
+                "After validation:" + Dbg.NEW_LINE + rl.toString());
         for (Rule r : rl) { // Update all n/r rate.
             r.updateNRRate(dataSet, attrs);
         }
@@ -162,13 +63,12 @@ public class LERAD {
         return rl;
     }
 
-    private static RuleList generateRule (RawExampleList sTrain,
-            RawAttrList attrs, final int l) {
+    private RuleList generateRule (RawExampleList sTrain, RawAttrList attrs) {
         assert sTrain.size() >= 2;
         final Random random = new Random();
-        final RuleList rl = new RuleList(null, attrs);
+        final RuleList rl = new RuleList(sTrain.get(0).t, attrs);
 
-        for (int ltimes = 0; ltimes < l; ltimes++) {
+        for (int ltimes = 0; ltimes < L; ltimes++) {
             final int index1 = random.nextInt(sTrain.size());
             int index2 = index1;
             while (index2 == index1) {
@@ -270,6 +170,8 @@ public class LERAD {
             final Rule r = iter.next();
             for (RawExample e : val) {
                 if (r.isViolation(e, attrs)) {
+                    Dbg.print(DBG, MODULE, "Validation: remove " + r.toString()
+                            + " for example: " + e.toString());
                     iter.remove();
                     break;
                 }
@@ -277,4 +179,182 @@ public class LERAD {
         }
     }
 
+    /* Learning related end ******* */
+
+    /* Prediction related begin ******* */
+    private static class ExAndScore implements Comparable<ExAndScore> {
+        public final RawExample e;
+        public final double score;
+        public final ArrayList<Double[]> scoreDetail;
+        public String result = null;
+
+        public ExAndScore(RawExample e, double score,
+                ArrayList<Double[]> scoreDetail) {
+            this.e = e;
+            this.score = score;
+            this.scoreDetail = scoreDetail;
+        }
+
+        @Override
+        public int compareTo (ExAndScore o) {
+            return Double.compare(this.score, o.score);
+        }
+
+        @Override
+        public String toString () {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(e.toString() + " ");
+            if (result != null) {
+                sb.append(result + " ");
+            }
+            sb.append(String.format("%.2f ", score));
+            for (Double[] d : scoreDetail) {
+                sb.append(String.format("R%.0f %.0f*%.2f ", d[0], d[1], d[2]));
+            }
+            return sb.toString();
+        }
+    }
+
+    private static String getExStrForDbg (final ArrayList<ExAndScore> exs) {
+        final StringBuilder sb = new StringBuilder();
+        for (ExAndScore e : exs) {
+            sb.append(e);
+            sb.append(Dbg.NEW_LINE);
+        }
+        return sb.toString();
+    }
+
+    public static double[][] getAUCby1PercentFp (RawExampleList dataSet,
+            RawAttrList attrs, RuleList rl, double falsePosThreshold,
+            boolean multiTest) {
+        for (Rule r : rl) { // Count time from -1.
+            r.lastT = -1;
+        }
+        final ArrayList<ExAndScore> exs = new ArrayList<ExAndScore>();
+        for (int i = 0; i < dataSet.size(); i++) {
+            final RawExample e = dataSet.get(i);
+            double anomalyScore = 0;
+            final ArrayList<Double[]> scoreDetail = new ArrayList<Double[]>();
+            for (int j = 0; j < rl.size(); j++) {
+                final Rule r = rl.get(j);
+                final double[] score = r.getTnr(e, attrs, i);
+                if (Double.compare(score[0], 0) > 0) {
+                    anomalyScore += score[0];
+                    scoreDetail.add(new Double[] { (double) j,
+                            (double) score[1], r.nrRate });
+                }
+            }
+            exs.add(new ExAndScore(e, anomalyScore, scoreDetail));
+        }
+        // Sort descendingly by the anomalyScore.
+        Collections.sort(exs, Collections.reverseOrder());
+
+        int numOfPos = -1;
+        for (RawExampleList eArray : TrainTestSplitter.splitSetbyClass(dataSet,
+                attrs)) {
+            if (rl.posClass.equals(eArray.get(0).t)) {
+                numOfPos = eArray.size();
+                break;
+            }
+        }
+        assert numOfPos != -1;
+        final int numOfNeg = (dataSet.size() - numOfPos);
+
+        if (multiTest) {// Return fp and detect.
+            return multiFpResult(exs, attrs, numOfNeg, rl.posClass);
+        } else { // Return fp and auc.
+            final DetectAndFalsePos daf =
+                    getDAF(exs, attrs, numOfNeg, falsePosThreshold, rl.posClass);
+            final double auc = daf.falsePos * daf.detect / 2;
+
+            Dbg.print(DBG, MODULE, "Result of examples:" + Dbg.NEW_LINE
+                    + getExStrForDbg(exs));
+            Dbg.print(DBG, MODULE, "detection rate is " + daf.detect);
+            Dbg.print(DBG, MODULE, "false alarm rate is " + daf.falsePos);
+            Dbg.print(DBG, MODULE, "AUC is " + auc);
+            return new double[][] { { daf.falsePos, auc } };
+        }
+    }
+
+    private static final double[] FP_RATES = new double[] { 0.01, 0.1, 0.2,
+            0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 };
+
+    private static double[][] multiFpResult (ArrayList<ExAndScore> exs,
+            RawAttrList attrs, int numOfNeg, String posClass) {
+        Dbg.print(DBG, MODULE, "Result of examples:" + Dbg.NEW_LINE
+                + getExStrForDbg(exs));
+        final double[][] auc = new double[FP_RATES.length][2];
+        final double[][] fads = new double[FP_RATES.length][2];
+        DetectAndFalsePos lastDaf = null;
+        for (int i = 0; i < FP_RATES.length; i++) {
+            final double fprth = FP_RATES[i];
+            final DetectAndFalsePos daf =
+                    getDAF(exs, attrs, numOfNeg, fprth, posClass);
+            fads[i][0] = daf.falsePos;
+            fads[i][1] = daf.detect;
+            auc[i] = new double[2];
+            auc[i][0] = daf.falsePos;
+            if (i == 0) {
+                auc[i][1] = daf.falsePos * daf.detect / 2;
+            } else {
+                final double h = daf.falsePos - lastDaf.falsePos;
+                auc[i][1] =
+                        auc[i - 1][1] + ((daf.detect + lastDaf.detect) * h / 2);
+            }
+
+            lastDaf = daf;
+            Dbg.print(DBG, MODULE, String.format(
+                    "fp %.4f detection %.4f auc %.4f", daf.falsePos,
+                    daf.detect, auc[i][1]));
+        }
+
+        return fads;
+    }
+
+    private static class DetectAndFalsePos {
+        public final double detect;
+        public final double falsePos;
+
+        public DetectAndFalsePos(final double detect, final double falsePos) {
+            this.detect = detect;
+            this.falsePos = falsePos;
+        }
+    }
+
+    private static DetectAndFalsePos getDAF (ArrayList<ExAndScore> exs,
+            RawAttrList attrs, int numOfNeg, double falsePosThreshold,
+            String posClass) {
+        int tp = 0;
+        int tn = 0;
+        int fp = 0;
+        int fn = 0;
+        for (int i = 0; i < exs.size(); i++) {
+            final double falsePosRate = ((double) fp) / numOfNeg;
+            final boolean isPosPrediction =
+                    (Double.compare(falsePosRate, falsePosThreshold) < 0) ? true
+                            : false;
+            final ExAndScore eas = exs.get(i);
+            if (eas.e.t.equals(posClass)) { // Positive example.
+                if (isPosPrediction) { // Positive prediction.
+                    eas.result = "tp";
+                    tp++;
+                } else { // Negative prediction.
+                    eas.result = "fn";
+                    fn++;
+                }
+            } else { // Negative example.
+                if (isPosPrediction) { // Positive prediction.
+                    eas.result = "fp";
+                    fp++;
+                } else { // Negative prediction.
+                    eas.result = "tn";
+                    tn++;
+                }
+            }
+        }
+        final double detect = ((double) tp) / (tp + fn);
+        final double falsePos = ((double) fp) / (tn + fp);
+        return new DetectAndFalsePos(detect, falsePos);
+    }
+    /* Prediction related end ******* */
 }

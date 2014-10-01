@@ -1,6 +1,5 @@
 package lerad;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -82,26 +81,6 @@ public class Rule extends LinkedList<RuleCondition> implements Comparable<Rule> 
         }
     }
 
-    /**
-     * @return Prediction of rule, if all conditions are satisfied; null,
-     *         otherwise.
-     * */
-    public RuleCondition rulePredict (ArrayList<String> in, RawAttrList attrs) {
-        RuleCondition ret = null;
-        for (RuleCondition c : this) {
-            final String name = c.name;
-            final int index = attrs.indexOf(name);
-            assert index != -1;
-            final String value = in.get(index);
-            if (!c.isSatisfied(value)) {
-                ret = null; // return null;
-                break;
-            }
-        }
-
-        return ret;
-    }
-
     @Override
     public String toString () {
         final StringBuilder sb = new StringBuilder();
@@ -142,13 +121,13 @@ public class Rule extends LinkedList<RuleCondition> implements Comparable<Rule> 
         return Double.compare(this.nrRate, o.nrRate);
     }
 
-    public double getTnr (RawExample e, RawAttrList attrs, double curT) {
+    public double[] getTnr (RawExample e, RawAttrList attrs, double curT) {
         if (isViolation(e, attrs)) {
             final double t = curT - lastT;
             lastT = t;
-            return t * nrRate;
+            return new double[] { t * nrRate, t };
         } else {
-            return 0;
+            return new double[] { 0, 0 };
         }
     }
 }
