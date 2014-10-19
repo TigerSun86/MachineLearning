@@ -60,6 +60,7 @@ public class TfidfVector {
             Dbg.print(DBG, MODULE, "Article: " + dbgstr + "...");
 
             // Calculate and store tfidf.
+            double norm = 0;
             for (int i = 0; i < wordToIdx.size(); i++) {
                 if (vec.get(i) != 0) {
                     final Integer df = idxToDf.get(i);
@@ -71,10 +72,19 @@ public class TfidfVector {
                     final double tf = vec.get(i);
                     final double tfidf = tf * idf;
                     vec.set(i, tfidf);
+                    norm += tfidf * tfidf;
                     Dbg.print(DBG, MODULE, String.format(
                             "%s, tf %.0f, df %d, tfidf %.2f", idxToWord.get(i),
                             tf, df, tfidf));
 
+                }
+            }
+
+            // Normalize vector.
+            norm = Math.sqrt(norm);
+            for (int i = 0; i < wordToIdx.size(); i++) {
+                if (vec.get(i) != 0) {
+                    vec.set(i, vec.get(i) / norm);
                 }
             }
 
