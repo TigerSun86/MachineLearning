@@ -55,7 +55,7 @@ public class TfidfVector {
             for (int i = 0; i < Math.min(3, art.size()); i++) {
                 dbgstr += art.get(i) + " ";
             }
-            Dbg.print(DBG, MODULE, "Article: " + dbgstr + "...");
+            Dbg.print(DBG, MODULE, "Article " + art.id + ": " + dbgstr + "...");
 
             // Calculate and store tfidf.
             for (int i = 0; i < wordToIdx.size(); i++) {

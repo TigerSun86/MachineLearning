@@ -7,11 +7,11 @@ public class Vector extends ArrayList<Double> {
     public String id = null;
 
     /**
-     * Create a vector with length of vecLength.
+     * Create a vector with size.
      * */
-    public Vector(int vecLength) {
+    public Vector(int size) {
         super();
-        for (int i = 0; i < vecLength; i++) {
+        for (int i = 0; i < size; i++) {
             this.add(0.0);
         }
     }
@@ -42,13 +42,17 @@ public class Vector extends ArrayList<Double> {
         }
     }
 
-    public void normalize() {
+    public double vecLength() {
         double norm = 0.0;
         for (int i = 0; i < this.size(); i++) {
             norm += this.get(i) * this.get(i);
         }
         norm = Math.sqrt(norm);
-        this.dividedBy(norm);
+        return norm;
+    }
+
+    public void normalize() {
+        this.dividedBy(this.vecLength());
     }
 
     @Override

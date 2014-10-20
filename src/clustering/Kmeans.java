@@ -6,7 +6,7 @@ import java.util.List;
 import util.MyMath;
 
 public class Kmeans {
-    public static List<List<Integer>> cluster(List<Vector> vecs, int k) {
+    public static List<CentralCluster> cluster(List<Vector> vecs, int k) {
         assert vecs.size() >= k;
         // Initial random centroids.
         final int[] cenIdx = MyMath.mOutofN(k, vecs.size());
@@ -18,7 +18,7 @@ public class Kmeans {
         return cluster(vecs, centroids);
     }
 
-    public static List<List<Integer>> cluster(List<Vector> vecs,
+    public static List<CentralCluster> cluster(List<Vector> vecs,
             List<Vector> centroidsIn) {
         // Make a copy of centroidsIn.
         final List<Vector> centroids = new ArrayList<Vector>();
@@ -26,18 +26,15 @@ public class Kmeans {
             centroids.add(centroidsIn.get(i));
         }
 
-        final int vecLength = vecs.get(0).size();
-        List<List<Integer>> retClusters = null;
+        final int vecSize = vecs.get(0).size();
+        List<CentralCluster> retClusters = null;
         boolean needMoreIter = true;
         while (needMoreIter) {
-            final List<Vector> newCens = new ArrayList<Vector>();
+            final List<CentralCluster> clusters = new ArrayList<CentralCluster>();
             for (int i = 0; i < centroids.size(); i++) {
-                newCens.add(new Vector(vecLength));
-            }
-
-            final List<List<Integer>> clusters = new ArrayList<List<Integer>>();
-            for (int i = 0; i < centroids.size(); i++) {
-                clusters.add(new ArrayList<Integer>());
+                final CentralCluster c = new CentralCluster();
+                c.center = new Vector(vecSize); // To calculate new center.
+                clusters.add(c);
             }
 
             // Assign all vectors to closest centroid.
@@ -53,16 +50,16 @@ public class Kmeans {
                     }
                 }
                 assert minCen != -1;
-                clusters.get(minCen).add(i);
-                newCens.get(minCen).accumulate(vec);
+                clusters.get(minCen).add(vec);
+                clusters.get(minCen).center.accumulate(vec);
             }
 
-            // Check whether centroids changed.
+            // Calculate new center, and check whether center changed.
             needMoreIter = false;
-            for (int i = 0; i < newCens.size(); i++) {
-                final Vector newCen = newCens.get(i);
+            for (int i = 0; i < clusters.size(); i++) {
+                final Vector newCen = clusters.get(i).center;
                 final int numOfVecsInTheCluster = clusters.get(i).size();
-                if (numOfVecsInTheCluster != 0) {
+                if (numOfVecsInTheCluster != 0) { // Calculate and store new cen
                     newCen.dividedBy(numOfVecsInTheCluster);
                 }
                 // Centroid changed.
