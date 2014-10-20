@@ -11,7 +11,7 @@ public class TfidfVector {
     public static final String MODULE = "TFIDF";
     public static final boolean DBG = true;
 
-    public static List<List<Double>> articlesToVectors(List<Article> arts) {
+    public static List<Vector> articlesToVectors(List<Article> arts) {
         // Count document frequence.
         final HashMap<String, Integer> wordToIdx = new HashMap<String, Integer>();
         final ArrayList<String> idxToWord = new ArrayList<String>();
@@ -40,12 +40,11 @@ public class TfidfVector {
 
         // Build vectors for all articles. Vector size (number of total words)
         // is map.size().
-        List<List<Double>> vectors = new ArrayList<List<Double>>();
+        List<Vector> vectors = new ArrayList<Vector>();
         for (Article art : arts) {
-            final List<Double> vec = new ArrayList<Double>();
-            for (int i = 0; i < wordToIdx.size(); i++) {
-                vec.add(0.0); // Initialize all elements to 0.
-            }
+            // Initialize all elements to 0.
+            final Vector vec = new Vector(wordToIdx.size());
+
             // Count term frequency.
             for (String word : art) {
                 final int index = wordToIdx.get(word);
@@ -56,11 +55,9 @@ public class TfidfVector {
             for (int i = 0; i < Math.min(3, art.size()); i++) {
                 dbgstr += art.get(i) + " ";
             }
-
             Dbg.print(DBG, MODULE, "Article: " + dbgstr + "...");
 
             // Calculate and store tfidf.
-            double norm = 0;
             for (int i = 0; i < wordToIdx.size(); i++) {
                 if (vec.get(i) != 0) {
                     final Integer df = idxToDf.get(i);
@@ -72,21 +69,14 @@ public class TfidfVector {
                     final double tf = vec.get(i);
                     final double tfidf = tf * idf;
                     vec.set(i, tfidf);
-                    norm += tfidf * tfidf;
                     Dbg.print(DBG, MODULE, String.format(
                             "%s, tf %.0f, df %d, tfidf %.2f", idxToWord.get(i),
                             tf, df, tfidf));
 
                 }
             }
-
             // Normalize vector.
-            norm = Math.sqrt(norm);
-            for (int i = 0; i < wordToIdx.size(); i++) {
-                if (vec.get(i) != 0) {
-                    vec.set(i, vec.get(i) / norm);
-                }
-            }
+            vec.normalize();
 
             vectors.add(vec);
         }

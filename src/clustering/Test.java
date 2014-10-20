@@ -19,8 +19,10 @@ public class Test {
                 arts.add(b);
             }
         }
-        List<List<Double>>ret2 =TfidfVector.articlesToVectors(arts);
-        
-        
+        List<Vector>ret2 =TfidfVector.articlesToVectors(arts);
+        List<List<Integer>> c = Kmeans.cluster(ret2, 6);
+        for (List<Integer> c2: c){
+            System.out.println(c2);
+        }
     }
 }
