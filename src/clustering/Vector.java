@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class Vector extends ArrayList<Double> {
     private static final long serialVersionUID = 1L;
+    public String id = null;
 
     /**
      * Create a vector with length of vecLength.

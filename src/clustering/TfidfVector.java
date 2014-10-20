@@ -44,7 +44,7 @@ public class TfidfVector {
         for (Article art : arts) {
             // Initialize all elements to 0.
             final Vector vec = new Vector(wordToIdx.size());
-
+            vec.id = art.id;
             // Count term frequency.
             for (String word : art) {
                 final int index = wordToIdx.get(word);

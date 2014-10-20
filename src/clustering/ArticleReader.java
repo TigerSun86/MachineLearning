@@ -8,9 +8,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ArticleReader {
     private static final String EXT = ".txt";
+    private static final String DOC_ID_REGEXP = "^--([0-9A-Za-z]+)--.*";
 
     public static List<List<Article>> read(final String topicFile) {
         BufferedReader br = null;
@@ -66,8 +69,7 @@ public class ArticleReader {
         }
         return ret;
     }
-    private static final String ARTICLE_SEPARATOR = "^(--[0-9A-Za-z]+--).*";
-    
+
     private static List<Article> readFile(final String fn) {
         BufferedReader br = null;
         try {
@@ -84,7 +86,7 @@ public class ArticleReader {
         final List<Article> arts = new ArrayList<Article>();
         try {
             boolean haveMore = true;
-            Article art = new Article();
+            Article art = new Article("UnknownID");
             while (haveMore) {
                 final String line = br.readLine();
                 if (line == null) { // End of file.
@@ -92,12 +94,12 @@ public class ArticleReader {
                         arts.add(art); // Store last article.
                     }
                     haveMore = false;
-                } else if (line.matches(ARTICLE_SEPARATOR)) {
+                } else if (getDocId(line) != null) {
                     // New article.
                     if (!art.isEmpty()) {
                         arts.add(art); // Store last article.
                     }
-                    art = new Article();
+                    art = new Article(getDocId(line));
                 } else {
                     List<String> strs = processTxt(line);
                     if (!strs.isEmpty()) {
@@ -120,25 +122,35 @@ public class ArticleReader {
         return arts;
     }
 
-    private static final HashSet<String> STOPWORDS = new HashSet<String> ();
+    private static final HashSet<String> STOPWORDS = new HashSet<String>();
     static {
         STOPWORDS.add("m");
         STOPWORDS.add("re");
         STOPWORDS.add("s");
     }
-    
+
     private static List<String> processTxt(String line) {
         final String[] words = line.split("[\\p{Blank} | \\p{Punct}]");
         final List<String> ret = new ArrayList<String>();
         for (String word : words) {
             if (!word.isEmpty() && !word.equals("s")) {
                 final String w = word.toLowerCase();
-                if (!STOPWORDS.contains(w)){
+                if (!STOPWORDS.contains(w)) {
                     // To prevent "John's" become "John" and "s".
                     ret.add(w);
                 }
             }
         }
         return ret;
+    }
+
+    private static String getDocId(String str) {
+        Pattern pattern = Pattern.compile(DOC_ID_REGEXP);
+        Matcher matcher = pattern.matcher(str);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
     }
 }
