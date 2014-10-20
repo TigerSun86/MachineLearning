@@ -1,10 +1,12 @@
 package clustering;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Vector extends ArrayList<Double> {
     private static final long serialVersionUID = 1L;
     public String id = null;
+    public List<String> idxToWord = null;
 
     /**
      * Create a vector with size.

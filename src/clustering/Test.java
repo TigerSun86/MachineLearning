@@ -12,7 +12,7 @@ public class Test {
     public static void main(String[] args){
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
-        List<List<Article>> ret = ArticleReader.read(TRAIN);
+        List<List<Article>> ret = ArticleReader.read(TOY);
         List<Article> arts = new ArrayList<Article>();
         for(List<Article>a: ret){
             for(Article b: a){
@@ -20,12 +20,11 @@ public class Test {
             }
         }
         List<Vector>ret2 =TfidfVector.articlesToVectors(arts);
-        List<CentralCluster> c = BisectingKmeans.cluster(ret2, 6, BisectingKmeans.WayToPick.LARGEST,10);
+         List<CentralCluster> c = BisectingKmeans.cluster(ret2, 3, BisectingKmeans.WayToPick.LARGEST,10);
+        //List<CentralCluster> c = Kmeans.cluster(ret2, 6);
         for (CentralCluster c2: c){
-            for (Vector i : c2){
-                System.out.print(i.id+" ");
-            }
-            System.out.println();
+
+            System.out.println(c2);
         }
     }
 }
