@@ -30,6 +30,20 @@ public class Vector extends ArrayList<Double> {
         }
     }
 
+    public double cosine(Vector vec) {
+        if (this.size() != vec.size()) {
+            return Double.NaN;
+        } else {
+            double product = 0.0;
+            for (int i = 0; i < this.size(); i++) {
+                product += (this.get(i) * vec.get(i));
+            }
+            product /= this.vecLength();
+            product /= vec.vecLength();
+            return product;
+        }
+    }
+
     public void accumulate(Vector vec) {
         assert this.size() == vec.size();
         for (int i = 0; i < this.size(); i++) {
@@ -55,6 +69,10 @@ public class Vector extends ArrayList<Double> {
 
     public void normalize() {
         this.dividedBy(this.vecLength());
+    }
+
+    public String getClassName() {
+        return Character.toString(id.charAt(0));
     }
 
     @Override

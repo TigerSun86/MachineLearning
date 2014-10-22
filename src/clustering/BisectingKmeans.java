@@ -8,31 +8,30 @@ public class BisectingKmeans {
         LARGEST, LEASTSIM
     }
 
-    public static List<CentralCluster> cluster(List<Vector> vecs, int k,
-            int iter) {
+    public static ClusterList cluster(List<Vector> vecs, int k, int iter) {
         return cluster(vecs, k, WayToPick.LARGEST, iter);
     }
 
-    public static List<CentralCluster> cluster(List<Vector> vecs, int k,
-            WayToPick way, int iter) {
+    public static ClusterList cluster(List<Vector> vecs, int k, WayToPick way,
+            int iter) {
         assert vecs.size() >= k;
         // All as one cluster.
-        final CentralCluster cluster = new CentralCluster();
+        final Cluster cluster = new Cluster();
         cluster.addAll(vecs);
-        final LinkedList<CentralCluster> clusters = new LinkedList<CentralCluster>();
+        final LinkedList<Cluster> clusters = new LinkedList<Cluster>();
         clusters.add(cluster);
 
         while (clusters.size() < k) {
             final int cIdx = pickCluster(clusters, way);
-            final CentralCluster cToSplit = clusters.get(cIdx);
+            final Cluster cToSplit = clusters.get(cIdx);
 
             double maxSim = Double.NEGATIVE_INFINITY;
-            List<CentralCluster> bestC = null;
+            List<Cluster> bestC = null;
             for (int i = 0; i < iter; i++) {
-                List<CentralCluster> c = Kmeans.cluster(cToSplit, 2);
+                List<Cluster> c = Kmeans.cluster(cToSplit, 2);
                 double simSum = 0.0;
                 for (int j = 0; j < c.size(); j++) {
-                    simSum += c.get(j).similarity();
+                    simSum += c.get(j).internalSim();
                 }
                 if (Double.compare(maxSim, simSum) < 0) {
                     maxSim = simSum;
@@ -43,12 +42,12 @@ public class BisectingKmeans {
             clusters.remove(cIdx);
             clusters.addAll(bestC);
         }
-
-        return clusters;
+        final ClusterList retcs = new ClusterList();
+        retcs.addAll(clusters);
+        return retcs;
     }
 
-    private static int pickCluster(LinkedList<CentralCluster> clusters,
-            WayToPick way) {
+    private static int pickCluster(LinkedList<Cluster> clusters, WayToPick way) {
         if (way == WayToPick.LARGEST) {
             int idx = -1;
             int max = Integer.MIN_VALUE;
@@ -65,7 +64,7 @@ public class BisectingKmeans {
             int idx = -1;
             double min = Double.POSITIVE_INFINITY;
             for (int i = 0; i < clusters.size(); i++) {
-                final double sim = clusters.get(i).similarity();
+                final double sim = clusters.get(i).internalSim();
                 if (Double.compare(min, sim) > 0) {
                     min = sim;
                     idx = i;
