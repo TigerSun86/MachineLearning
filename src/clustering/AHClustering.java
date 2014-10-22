@@ -3,9 +3,21 @@ package clustering;
 import java.util.LinkedList;
 import java.util.List;
 
-public class AHClustering {
+public class AHClustering implements ClusterAlg {
     public enum Mode {
         IST, CST, UPGMA
+    }
+
+    public Mode m;
+
+    public AHClustering(Mode m) {
+        this.m = m;
+    }
+
+    @Override
+    public ClusterList cluster(List<Vector> vecs, int k) {
+        ClusterTree c = AHClustering.cluster(vecs, m);
+        return c.getKCluster(k);
     }
 
     public static ClusterTree cluster(List<Vector> vecs, Mode m) {
@@ -25,7 +37,7 @@ public class AHClustering {
             matrix.add(row);
         }
         for (int i = 0; i < matrix.size(); i++) {
-            //System.out.println(i + " " + matrix.get(i));
+            // System.out.println(i + " " + matrix.get(i));
         }
         while (listCT.size() > 1) {
             // Find the highest similarity pair.
@@ -48,7 +60,7 @@ public class AHClustering {
             // Merge cluster a and b.
             mergeTwoRow(matrix, listCT, a, b, m);
             for (int i = 0; i < matrix.size(); i++) {
-                //System.out.println(i + " " + matrix.get(i));
+                // System.out.println(i + " " + matrix.get(i));
             }
         }
 

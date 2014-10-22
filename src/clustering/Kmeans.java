@@ -5,8 +5,17 @@ import java.util.List;
 
 import util.MyMath;
 
-public class Kmeans {
-    public static ClusterList cluster(List<Vector> vecs, int k) {
+public class Kmeans implements ClusterAlg {
+
+    public Kmeans() {
+    }
+
+    @Override
+    public ClusterList cluster(List<Vector> vecs, int k) {
+        return cluster2(vecs, k);
+    }
+
+    public static ClusterList cluster2(List<Vector> vecs, int k) {
         assert vecs.size() >= k;
         // Initial random centroids.
         final int[] cenIdx = MyMath.mOutofN(k, vecs.size());

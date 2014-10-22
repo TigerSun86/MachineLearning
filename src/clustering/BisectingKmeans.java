@@ -3,9 +3,22 @@ package clustering;
 import java.util.LinkedList;
 import java.util.List;
 
-public class BisectingKmeans {
+public class BisectingKmeans implements ClusterAlg {
     public enum WayToPick {
         LARGEST, LEASTSIM
+    }
+
+    public WayToPick way;
+    public int iter;
+
+    public BisectingKmeans(WayToPick way, int iter) {
+        this.iter = iter;
+        this.way = way;
+    }
+
+    @Override
+    public ClusterList cluster(List<Vector> vecs, int k) {
+        return cluster(vecs, k, this.way, this.iter);
     }
 
     public static ClusterList cluster(List<Vector> vecs, int k, int iter) {
@@ -28,7 +41,7 @@ public class BisectingKmeans {
             double maxSim = Double.NEGATIVE_INFINITY;
             List<Cluster> bestC = null;
             for (int i = 0; i < iter; i++) {
-                List<Cluster> c = Kmeans.cluster(cToSplit, 2);
+                List<Cluster> c = Kmeans.cluster2(cToSplit, 2);
                 double simSum = 0.0;
                 for (int j = 0; j < c.size(); j++) {
                     simSum += c.get(j).internalSim();
