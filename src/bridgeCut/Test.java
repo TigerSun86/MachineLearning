@@ -18,7 +18,7 @@ public class Test {
     public static void main (String[] args) {
         final Graph g = readFile(TOY2);
         System.out.println(g);
-        Graph.allShortestPath(g);
+        new ShortestPaths(g);
     }
 
     private static Graph readFile (String fileName) {

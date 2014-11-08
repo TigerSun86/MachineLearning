@@ -12,6 +12,8 @@ import java.util.Map.Entry;
  * @date Nov 6, 2014 7:03:12 PM
  */
 public class Node {
+    // Name should not contain space, because shortest path is using space to
+    // split nodes.
     public String name;
     private HashMap<String, Double> edges;
 

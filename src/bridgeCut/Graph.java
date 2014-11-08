@@ -40,116 +40,51 @@ public class Graph extends HashMap<String, Node> {
         return clusterList;
     }
 
-    public static void allShortestPath (Graph g) {
-        // FloydWarshallWithPathReconstruction .
-        // http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-
-        final String[] nodeNames = g.keySet().toArray(new String[0]);
-        final double[][] dist = new double[nodeNames.length][];
-        final PossibleNext[][] next = new PossibleNext[nodeNames.length][];
-        for (int i = 0; i < dist.length; i++) {
-            dist[i] = new double[nodeNames.length];
-            next[i] = new PossibleNext[nodeNames.length];
-            for (int j = 0; j < dist[i].length; j++) {
-                // Dist = 0, if i == j;
-                // Dist = Double.POSITIVE_INFINIT, if no edge between i, j.
-                final String ni = nodeNames[i];
-                final String nj = nodeNames[j];
-                final Node nodeI = g.get(ni);
-                final double d = nodeI.getDistanceTo(nj);
-                dist[i][j] = d;
-                if (nodeI.hasEdge(nj)) {
-                    next[i][j] = new PossibleNext(j);
-                } else { // No edge between i, j.
-                    next[i][j] = null;
-                }
-            }
+    public double betweenness () {
+        final ShortestPaths sps = new ShortestPaths(this);
+        final HashMap<String, Double> betweenness =
+                new HashMap<String, Double>();
+        for (String n : this.keySet()) { // Initialize betweenness to 0.
+            betweenness.put(n, 0.0);
         }
+        for (String n1 : this.keySet()) {
+            for (String n2 : this.keySet()) {
+                if (!n1.equals(n2)) {
+                    final List<Path> ps = sps.get(n1, n2);
+                    if (ps != null) {
+                        // Count the times of occurring of all internal nodes in
+                        // paths between n1 and n2.
+                        final HashMap<String, Double> counter =
+                                new HashMap<String, Double>();
+                        for (Path p : ps) {
+                            for (int i = 1; i <= p.size() - 2; i++) {
+                                // Count for all nodes internal the path.
+                                final String nInternal = p.get(i);
+                                Double count = counter.get(nInternal);
+                                if (count == null) {
+                                    count = 0.0;
+                                }
+                                counter.put(nInternal, count + 1.0);
+                            }
+                        } // for (Path p : ps) {
 
-        for (int k = 0; k < dist.length; k++) {
-            for (int i = 0; i < dist.length; i++) {
-                for (int j = 0; j < dist.length; j++) {
-                    if (!Double.isInfinite(dist[i][k])
-                            && !Double.isInfinite(dist[k][j]) && i != j
-                            && j != k && k != i) {
-                        if (Double.compare(dist[i][k] + dist[k][j], dist[i][j]) < 0) {
-                            // Shorter path.
-                            dist[i][j] = dist[i][k] + dist[k][j];
-                            // Delete all old nexts, add all new nexts.
-                            next[i][j] = new PossibleNext(next[i][k]);
-                        } else if (Double.compare(dist[i][k] + dist[k][j],
-                                dist[i][j]) == 0) {
-                            // Same distance, add all additional nexts.
-                            next[i][j].addAll(next[i][k]);
+                        // Update the betweenness of all internal nodes in
+                        // paths between n1 and n2.
+                        for (java.util.Map.Entry<String, Double> e : counter
+                                .entrySet()) {
+                            String n = e.getKey();
+                            Double count = e.getValue();
+                            // Times n occurred over # of shortest paths between
+                            // n1 and n2.
+                            Double bNew = count / ps.size();
+                            Double bOld = betweenness.get(n);
+                            betweenness.put(n, bOld + bNew);
                         }
-                    } // if (!Double.isInfinite(dist[i][k])
-                } // for (int j = 0; j < dist.length; j++) {
-            } // for (int i = 0; i < dist.length; i++) {
-        } // for (int k = 0; k < dist.length; k++) {
-
-        for (int i = 0; i < dist.length; i++) {
-            for (int j = 0; j < dist.length; j++) {
-                System.out.println(nodeNames[i]+" ---- "+nodeNames[j]);
-                final ArrayList<String> pathesOUT = path(i, j, next, nodeNames);
-                if (pathesOUT != null) {
-                    for (String s : pathesOUT) {
-                        System.out.println(s);
                     }
-                }else {
-                    System.out.println("No path");
                 }
+
             }
         }
-    }
-
-    private static ArrayList<String> path (int u, int v,
-            final PossibleNext[][] next, String[] nodeNames) {
-        if (next[u][v] == null) {
-            return null; // No path.
-        }
-        final ArrayList<String> pathesOUT = new ArrayList<String>();
-        pathCon(u, v, next, nodeNames, nodeNames[u], pathesOUT);
-        return pathesOUT;
-    }
-
-    private static void pathCon (int u, int v, PossibleNext[][] next,
-            String[] nodeNames, String path, ArrayList<String> pathesOUT) {
-        if (u == v) { // Leaf.
-            pathesOUT.add(path);
-        } else {
-            for (Integer i : next[u][v]) {
-                pathCon(i, v, next, nodeNames, path + " " + nodeNames[i],
-                        pathesOUT);
-            }
-        }
-    }
-
-    private static class Path extends ArrayList<String> {
-        private static final long serialVersionUID = 1L;
-
-        public Path(String s) {
-            super();
-            this.add(s);
-        }
-
-        public Path(Path p, String s) {
-            super();
-            this.addAll(p);
-            this.add(s);
-        }
-    }
-
-    private static class PossibleNext extends ArrayList<Integer> {
-        private static final long serialVersionUID = 1L;
-
-        public PossibleNext(int i) {
-            super();
-            this.add(i);
-        }
-
-        public PossibleNext(PossibleNext o) {
-            super();
-            this.addAll(o);
-        }
+        return 0;
     }
 }
