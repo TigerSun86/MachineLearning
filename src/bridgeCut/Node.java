@@ -15,30 +15,30 @@ public class Node {
     // Name should not contain space, because shortest path is using space to
     // split nodes.
     public String name;
-    private HashMap<String, Double> edges;
+    private HashMap<String, Double> neighbors;
 
     public Node(String name) {
         this.name = name;
-        this.edges = new HashMap<String, Double>();
+        this.neighbors = new HashMap<String, Double>();
     }
 
-    public void addEdge (String n, double weight) {
-        this.edges.put(n, weight);
+    public void addNeighbor (String n, double weight) {
+        this.neighbors.put(n, weight);
     }
 
-    public void addEdge (String n) {
-        addEdge(n, 1);
+    public void addNeighbor (String n) {
+        addNeighbor(n, 1);
     }
 
     public boolean hasEdge (String n) {
-        return edges.get(n) != null;
+        return neighbors.get(n) != null;
     }
 
     public double getDistanceTo (String name2) {
         if (this.name.equals(name2)) {
             return 0;
-        } else if (edges.get(name2) != null) {
-            return edges.get(name2);
+        } else if (neighbors.get(name2) != null) {
+            return neighbors.get(name2);
         } else {
             return Double.POSITIVE_INFINITY;
         }
@@ -50,7 +50,7 @@ public class Node {
         sb.append(name);
         sb.append(" ");
         sb.append("[");
-        for (Entry<String, Double> e : edges.entrySet()) {
+        for (Entry<String, Double> e : neighbors.entrySet()) {
             sb.append(e.toString() + ", ");
         }
         sb.append("]");

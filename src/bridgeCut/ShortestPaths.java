@@ -2,8 +2,9 @@ package bridgeCut;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import util.Dbg;
 
@@ -16,39 +17,44 @@ import util.Dbg;
  * @date Nov 8, 2014 4:21:40 PM
  */
 public class ShortestPaths {
-    private final HashMap<Pair, List<Path>> paths;
+    // Always calculate shortest path as directed path.
+    private final boolean isDirected;
+    private final HashMap<Pair, Set<Path>> paths;
 
     public ShortestPaths(Graph g) {
-        // Only used by allShortestPath
-        paths = new HashMap<Pair, List<Path>>();
+        this(g, false);
+    }
+
+    public ShortestPaths(Graph g, boolean isDirected) {
+        this.isDirected = isDirected;
+        paths = new HashMap<Pair, Set<Path>>();
         this.allShortestPath(g);
         System.out.println(this);
     }
 
     public void add (String n1, String n2, Path p) {
-        List<Path> ps = paths.get(new Pair(n1, n2));
+        Set<Path> ps = paths.get(new Pair(n1, n2, isDirected));
         if (ps == null) {
-            ps = new ArrayList<Path>();
-            paths.put(new Pair(n1, n2), ps);
+            ps = new HashSet<Path>();
+            paths.put(new Pair(n1, n2, isDirected), ps);
         }
         ps.add(p);
     }
 
-    public List<Path> get (String n1, String n2) {
-        return paths.get(new Pair(n1, n2));
+    public Set<Path> get (String n1, String n2) {
+        return paths.get(new Pair(n1, n2, isDirected));
     }
 
     @Override
     public String toString () {
         StringBuilder sb = new StringBuilder();
-        for (Entry<Pair, List<Path>> e : paths.entrySet()) {
+        for (Entry<Pair, Set<Path>> e : paths.entrySet()) {
             Pair pair = e.getKey();
-            sb.append(pair.n1 + " -> " + pair.n2 + Dbg.NEW_LINE);
+            sb.append(pair + Dbg.NEW_LINE);
             for (Path p : e.getValue()) {
                 sb.append(p + Dbg.NEW_LINE);
             }
         }
-
         return sb.toString();
     }
 
@@ -107,7 +113,8 @@ public class ShortestPaths {
                         pathConstruct(i, j, next, nodeNames);
                 if (pathsOUT != null) { // Has shortest path.
                     for (String oneP : pathsOUT) {
-                        this.add(nodeNames[i], nodeNames[j], new Path(oneP));
+                        this.add(nodeNames[i], nodeNames[j], new Path(oneP,
+                                this.isDirected));
                     }
                 }
             }
@@ -149,30 +156,4 @@ public class ShortestPaths {
             this.addAll(o);
         }
     }
-
-    private static class Pair {
-        public String n1;
-        public String n2;
-
-        public Pair(String n1, String n2) {
-            this.n1 = n1;
-            this.n2 = n2;
-        }
-
-        @Override
-        public int hashCode () {
-            return (3 + n1.hashCode()) * 7 + n2.hashCode();
-        }
-
-        @Override
-        public boolean equals (Object o) {
-            if (!(o instanceof Pair)) {
-                return false;
-            } else {
-                Pair o2 = (Pair) o;
-                return n1.equals(o2.n1) && n2.equals(o2.n2);
-            }
-        }
-    }
-
 }

@@ -18,7 +18,8 @@ public class Test {
     public static void main (String[] args) {
         final Graph g = readFile(TOY2);
         System.out.println(g);
-        new ShortestPaths(g);
+        //new ShortestPaths(g);
+        g.getB();
     }
 
     private static Graph readFile (String fileName) {
@@ -40,14 +41,14 @@ public class Test {
                 n1 = new Node(n1name);
                 g.put(n1name, n1);
             }
-            n1.addEdge(n2name);
+            n1.addNeighbor(n2name);
 
             Node n2 = g.get(n2name);
             if (n2 == null) {
                 n2 = new Node(n2name);
                 g.put(n2name, n2);
             }
-            n2.addEdge(n1name);
+            n2.addNeighbor(n1name);
         } // End of while (true) {
         in.close();
         return g;
