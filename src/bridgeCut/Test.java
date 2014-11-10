@@ -1,5 +1,6 @@
 package bridgeCut;
 
+import util.Dbg;
 import common.DataReader;
 
 /**
@@ -16,10 +17,14 @@ public class Test {
     private static final String TOY2 ="http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-friends.txt";
 
     public static void main (String[] args) {
+        Dbg.dbgSwitch = true;
+        Dbg.defaultSwitch = true;
         final Graph g = readFile(TOY2);
-        System.out.println(g);
+        System.out.println(g.bridgeCut(0.7,true,false));
         //new ShortestPaths(g);
-        g.getB();
+        //g.centralityOfEdges();
+        Dbg.dbgSwitch = false;
+        Dbg.defaultSwitch = false;
     }
 
     private static Graph readFile (String fileName) {

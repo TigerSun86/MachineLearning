@@ -56,6 +56,9 @@ public class Path extends ArrayList<String> {
             return false;
         } else {
             Path p = (Path) o;
+            if (this.isDirected != p.isDirected) {
+                return false;
+            }
             boolean eq = true;
             for (int i = 0; i < this.size(); i++) { // Order.
                 if (!this.get(i).equals(p.get(i))) {

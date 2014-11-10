@@ -17,6 +17,8 @@ import util.Dbg;
  * @date Nov 8, 2014 4:21:40 PM
  */
 public class ShortestPaths {
+    public static final String MODULE = "SPA";
+    public static final boolean DBG = false;
     // Always calculate shortest path as directed path.
     private final boolean isDirected;
     private final HashMap<Pair, Set<Path>> paths;
@@ -29,7 +31,7 @@ public class ShortestPaths {
         this.isDirected = isDirected;
         paths = new HashMap<Pair, Set<Path>>();
         this.allShortestPath(g);
-        System.out.println(this);
+        Dbg.print(DBG, MODULE, Dbg.NEW_LINE + this.toString());
     }
 
     public void add (String n1, String n2, Path p) {
@@ -77,7 +79,7 @@ public class ShortestPaths {
                 final Node nodeI = g.get(ni);
                 final double d = nodeI.getDistanceTo(nj);
                 dist[i][j] = d;
-                if (nodeI.hasEdge(nj)) {
+                if (nodeI.hasNeighbor(nj)) {
                     next[i][j] = new PossibleNext(j);
                 } else { // No edge between i, j.
                     next[i][j] = null;

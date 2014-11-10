@@ -2,6 +2,7 @@ package bridgeCut;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * FileName: Node.java
@@ -15,11 +16,19 @@ public class Node {
     // Name should not contain space, because shortest path is using space to
     // split nodes.
     public String name;
-    private HashMap<String, Double> neighbors;
+    private HashMap<String, Double> neighbors; // Name and weight.
 
     public Node(String name) {
         this.name = name;
         this.neighbors = new HashMap<String, Double>();
+    }
+
+    public Node(Node n) {
+        this.name = n.name;
+        this.neighbors = new HashMap<String, Double>();
+        for (Entry<String, Double> e : n.neighbors.entrySet()) {
+            this.neighbors.put(e.getKey(), e.getValue());
+        }
     }
 
     public void addNeighbor (String n, double weight) {
@@ -30,8 +39,20 @@ public class Node {
         addNeighbor(n, 1);
     }
 
-    public boolean hasEdge (String n) {
+    public boolean hasNeighbor (String n) {
         return neighbors.get(n) != null;
+    }
+
+    public HashMap<String, Double> getNeighbors () {
+        return this.neighbors;
+    }
+
+    public Set<String> getNeighborNames () {
+        return this.neighbors.keySet();
+    }
+
+    public int getDegree () {
+        return this.neighbors.size();
     }
 
     public double getDistanceTo (String name2) {
@@ -42,6 +63,10 @@ public class Node {
         } else {
             return Double.POSITIVE_INFINITY;
         }
+    }
+
+    public void removeNeighbor (String n) {
+        this.neighbors.remove(n);
     }
 
     @Override
@@ -56,4 +81,5 @@ public class Node {
         sb.append("]");
         return sb.toString();
     }
+
 }

@@ -40,6 +40,9 @@ public class Pair {
             return false;
         } else {
             Pair o2 = (Pair) o;
+            if (this.isDirected != o2.isDirected) {
+                return false;
+            }
             if (isDirected) {
                 return n1.equals(o2.n1) && n2.equals(o2.n2);
             } else {
