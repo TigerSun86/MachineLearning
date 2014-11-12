@@ -1,6 +1,9 @@
 package bridgeCut;
 
+import java.util.List;
+
 import util.Dbg;
+
 import common.DataReader;
 
 /**
@@ -14,15 +17,19 @@ import common.DataReader;
 public class Test {
     private static final String TOY1 =
             "http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-bowtie.txt";
-    private static final String TOY2 ="http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-friends.txt";
+    private static final String TOY2 =
+            "http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-friends.txt";
 
     public static void main (String[] args) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         final Graph g = readFile(TOY2);
-        System.out.println(g.bridgeCut(0.7,true,false));
-        //new ShortestPaths(g);
-        //g.centralityOfEdges();
+        List<Graph> glist = g.bridgeCut(0.0, true, true);
+        System.out.println(Graph.graphListToString(glist));
+        System.out.println(Evaluator.davisBouldinIndex(glist, g));
+        System.out.println(Evaluator.silhouetteCoefficient(glist, g));
+        // new ShortestPaths(g);
+        // g.centralityOfEdges();
         Dbg.dbgSwitch = false;
         Dbg.defaultSwitch = false;
     }

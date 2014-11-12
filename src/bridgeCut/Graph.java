@@ -37,12 +37,31 @@ public class Graph extends HashMap<String, Node> {
     public Set<String> getNodeNames () {
         return this.keySet();
     }
+    
+    public boolean isDirected(){
+        return this.isDirected;
+    }
 
     @Override
     public String toString () {
         StringBuilder sb = new StringBuilder();
         for (java.util.Map.Entry<String, Node> e : this.entrySet()) {
             sb.append(e.getValue() + Dbg.NEW_LINE);
+        }
+        return sb.toString();
+    }
+
+    public static String graphListToString (List<Graph> gs) {
+        // Print the graph with maximum size first.
+        final StringBuilder sb = new StringBuilder();
+        final Sorter<Graph> sorter = new Sorter<Graph>();
+        for (Graph g : gs) {
+            sorter.add(g, g.size());
+        }
+        final List<Graph> gSorted = sorter.sortDescend();
+        for (int i = 0; i < gSorted.size(); i++) {
+            sb.append("Graph " + i + Dbg.NEW_LINE);
+            sb.append(gSorted.get(i).toString());
         }
         return sb.toString();
     }
@@ -66,27 +85,33 @@ public class Graph extends HashMap<String, Node> {
 
         while (!g.isEmpty()) {
             final Object topCut = g.oneCut(isNode, isCentrality);
-            Dbg.print(DBG, MODULE, "Cut: " + topCut);
-            if (isNode) { // The cut node is a single cluster.
+
+            if (isNode) { // The cut node is a single cluster, add it.
                 final Node tempN = new Node((String) topCut);
                 final Graph temp = new Graph(g.isDirected);
                 temp.put(tempN.name, tempN);
                 clusterList.add(temp);
+                Dbg.print(DBG, MODULE, "Cut: " + topCut + " added");
+            } else { // Cut edge.
+                Dbg.print(DBG, MODULE, "Cut: " + topCut);
             }
-            final Set<Graph> isolatedGs = g.isolatedGraphs();
-            for (Graph ig : isolatedGs) {
-                Set<String> nodeNames = ig.getNodeNames();
+            
+            final Set<Set<String>> isolatedGs = g.isolatedGraphs();
+            for (Set<String> nodeNames : isolatedGs) {
                 if (!oldIsolatedGraphs.contains(nodeNames)) {
                     // New isolated graph.
-                    Dbg.print(DBG, MODULE, "New sub graph: " + nodeNames);
                     final double density = gBackup.density(nodeNames);
                     if (Double.compare(density, dThreshold) > 0) {
-                        clusterList.add(ig);
+                        // Add the sub graph with original edges in gBackup.
+                        clusterList.add(gBackup.subGraph(nodeNames));
                         for (String n : nodeNames) {
-                            g.cut(n); // Remove ig from g.
+                            g.cut(n); // Remove isolated graph from g.
                         }
+                        Dbg.print(DBG, MODULE, "New sub graph: " + nodeNames
+                                + " added");
                     } else { // The sub graph still is there.
                         oldIsolatedGraphs.add(nodeNames);
+                        Dbg.print(DBG, MODULE, "New sub graph: " + nodeNames);
                     }
                 } // if (!oldIsolatedGraphs.contains(nodeNames)) {
             } // for (Graph ig : isolatedGs) {
@@ -136,7 +161,7 @@ public class Graph extends HashMap<String, Node> {
         return sum;
     }
 
-    private Set<Graph> isolatedGraphs () {
+    private Set<Set<String>> isolatedGraphs () {
         final String[] nodeNames = this.getNodeNames().toArray(new String[0]);
         final HashMap<String, Integer> name2Idx =
                 new HashMap<String, Integer>();
@@ -150,7 +175,8 @@ public class Graph extends HashMap<String, Node> {
             total.or(subG);
             subGs = merge(subGs, subG);
         }
-        final Set<Graph> retG = new HashSet<Graph>();
+        // Convert bitsets to name sets
+        final Set<Set<String>> nameSets = new HashSet<Set<String>>();
         for (BitSet subG : subGs) {
             final Set<String> names = new HashSet<String>();
             for (int i = 0; i < nodeNames.length; i++) {
@@ -158,11 +184,9 @@ public class Graph extends HashMap<String, Node> {
                     names.add(nodeNames[i]);
                 }
             }
-            // Get a sub graph by node names.
-            final Graph g = this.subGraph(names);
-            retG.add(g);
+            nameSets.add(names);
         }
-        return retG;
+        return nameSets;
     }
 
     private Graph subGraph (Set<String> names) {
@@ -421,10 +445,8 @@ public class Graph extends HashMap<String, Node> {
     private List<String> bridgeCoefficientOfNodes () {
         final Sorter<String> sorter = new Sorter<String>();
         final HashMap<String, Double> bcs = new HashMap<String, Double>();
-        final HashMap<String, Integer> deltaMemo =
-                new HashMap<String, Integer>();
         for (String node : this.keySet()) {
-            final double bc = bcOfNode(node, deltaMemo);
+            final double bc = bcOfNode(node);
             bcs.put(node, bc);
             sorter.add(node, bc);
         }
@@ -449,13 +471,11 @@ public class Graph extends HashMap<String, Node> {
             } else { // Undirected graph, only visit lower triangle.
                 length = i;
             }
-            final HashMap<String, Integer> deltaMemo =
-                    new HashMap<String, Integer>();
             for (int j = 0; j < length; j++) {
                 final String n2 = nodeNames[j];
                 if (this.get(n1).hasNeighbor(n2)) {
                     final Pair pair = new Pair(n1, n2, isDirected);
-                    final double bc = bcOfEdge(pair, deltaMemo);
+                    final double bc = bcOfEdge(pair);
                     bcs.put(pair, bc);
                     sorter.add(pair, bc);
                 }
@@ -471,7 +491,7 @@ public class Graph extends HashMap<String, Node> {
         return list;
     }
 
-    private double bcOfNode (String node, HashMap<String, Integer> deltaMemo) {
+    private double bcOfNode (String node) {
         int degreeOfNode = this.get(node).getDegree();
         if (degreeOfNode == 0) {
             return 0;
@@ -479,25 +499,21 @@ public class Graph extends HashMap<String, Node> {
         double sum = 0;
         for (String neighbor : this.get(node).getNeighborNames()) {
             int degree = this.get(neighbor).getDegree();
-            if (degree > 1) { // If degree == 1, don't count it.
-                Integer delta = deltaMemo.get(neighbor);
-                if (delta == null) {
-                    delta = delta(neighbor);
-                    deltaMemo.put(neighbor, delta);
-                }
+            if (degree > 1) { // If degree == 1, don't count it (value = 0).
+                int delta = delta(node, neighbor);
                 sum += delta / (degree - 1.0);
             }
         }
         return sum / degreeOfNode;
     }
 
-    private double bcOfEdge (Pair edge, HashMap<String, Integer> deltaMemo) {
+    private double bcOfEdge (Pair edge) {
         final String i = edge.n1;
         final String j = edge.n2;
         final int degreeI = this.get(i).getDegree();
         final int degreeJ = this.get(j).getDegree();
-        final double bcI = bcOfNode(i, deltaMemo);
-        final double bcJ = bcOfNode(j, deltaMemo);
+        final double bcI = bcOfNode(i);
+        final double bcJ = bcOfNode(j);
 
         final Set<String> neisOfI = this.get(i).getNeighborNames();
         final Set<String> neisOfJ = this.get(j).getNeighborNames();
@@ -511,7 +527,118 @@ public class Graph extends HashMap<String, Node> {
         return sum;
     }
 
-    private int delta (String node) {
+    private int delta (String src, String nei) {
+        // Neighborhood of src and src itself.
+        final HashSet<String> neighborhood = new HashSet<String>();
+        neighborhood.addAll(this.get(src).getNeighborNames());
+        neighborhood.add(src);
+        int sum = 0;
+        for (String neiOfNei : this.get(nei).getNeighborNames()) {
+            if (!neighborhood.contains(neiOfNei)) {
+                // The edge doesn't come back to the neighborhood subgraph.
+                sum++;
+            }
+        }
+        return sum;
+    }
+
+    /* BridgeCoefficient end ** */
+
+    /* BridgeCoefficient2 begin ** */
+    private List<String> bridgeCoefficientOfNodes2 () {
+        final Sorter<String> sorter = new Sorter<String>();
+        final HashMap<String, Double> bcs = new HashMap<String, Double>();
+        final HashMap<String, Integer> deltaMemo =
+                new HashMap<String, Integer>();
+        for (String node : this.keySet()) {
+            final double bc = bcOfNode2(node, deltaMemo);
+            bcs.put(node, bc);
+            sorter.add(node, bc);
+        }
+        List<String> list = sorter.sortDescend();
+
+        Dbg.print(DBG, MODULE, "Bridge coefficient of nodes");
+        for (String s : list) {
+            Dbg.print(DBG, MODULE, s + " " + bcs.get(s));
+        }
+        return list;
+    }
+
+    private List<Pair> bridgeCoefficientOfEdges2 () {
+        final Sorter<Pair> sorter = new Sorter<Pair>();
+        final HashMap<Pair, Double> bcs = new HashMap<Pair, Double>();
+        final String[] nodeNames = this.keySet().toArray(new String[0]);
+        for (int i = 0; i < nodeNames.length; i++) {
+            final String n1 = nodeNames[i];
+            final int length;
+            if (isDirected) {
+                length = nodeNames.length;
+            } else { // Undirected graph, only visit lower triangle.
+                length = i;
+            }
+            final HashMap<String, Integer> deltaMemo =
+                    new HashMap<String, Integer>();
+            for (int j = 0; j < length; j++) {
+                final String n2 = nodeNames[j];
+                if (this.get(n1).hasNeighbor(n2)) {
+                    final Pair pair = new Pair(n1, n2, isDirected);
+                    final double bc = bcOfEdge2(pair, deltaMemo);
+                    bcs.put(pair, bc);
+                    sorter.add(pair, bc);
+                }
+            }
+        }
+
+        List<Pair> list = sorter.sortDescend();
+
+        Dbg.print(DBG, MODULE, "Bridge coefficient of edges");
+        for (Object s : list) {
+            Dbg.print(DBG, MODULE, s + " " + bcs.get(s));
+        }
+        return list;
+    }
+
+    private double bcOfNode2 (String node, HashMap<String, Integer> deltaMemo) {
+        int degreeOfNode = this.get(node).getDegree();
+        if (degreeOfNode == 0) {
+            return 0;
+        }
+        double sum = 0;
+        for (String neighbor : this.get(node).getNeighborNames()) {
+            int degree = this.get(neighbor).getDegree();
+            if (degree > 1) { // If degree == 1, don't count it.
+                Integer delta = deltaMemo.get(neighbor);
+                if (delta == null) {
+                    delta = delta2(neighbor);
+                    deltaMemo.put(neighbor, delta);
+                }
+                sum += delta / (degree - 1.0);
+            }
+        }
+        return sum / degreeOfNode;
+    }
+
+    private double bcOfEdge2 (Pair edge, HashMap<String, Integer> deltaMemo) {
+        final String i = edge.n1;
+        final String j = edge.n2;
+        final int degreeI = this.get(i).getDegree();
+        final int degreeJ = this.get(j).getDegree();
+        final double bcI = bcOfNode2(i, deltaMemo);
+        final double bcJ = bcOfNode2(j, deltaMemo);
+
+        final Set<String> neisOfI = this.get(i).getNeighborNames();
+        final Set<String> neisOfJ = this.get(j).getNeighborNames();
+        final HashSet<String> allNeis = new HashSet<String>();
+        allNeis.addAll(neisOfI);
+        allNeis.addAll(neisOfJ);
+        final int commonNei = neisOfI.size() + neisOfJ.size() - allNeis.size();
+        double sum = degreeI * bcI + degreeJ * bcJ;
+        sum /= (degreeI + degreeJ);
+        sum /= (commonNei + 1);
+        return sum;
+    }
+
+    private int delta2 (String node) {
         // Neighborhood of node.
         final HashSet<String> neis = new HashSet<String>();
         neis.addAll(this.get(node).getNeighborNames());
@@ -527,5 +654,5 @@ public class Graph extends HashMap<String, Node> {
         }
         return sum;
     }
-    /* BridgeCoefficient end ** */
+    /* BridgeCoefficient2 end ** */
 }

@@ -16,41 +16,33 @@ import util.Dbg;
  *         email: sunx2013@my.fit.edu
  * @date Nov 8, 2014 4:21:40 PM
  */
-public class ShortestPaths {
+public class ShortestPaths extends HashMap<Pair, Set<Path>> {
+    private static final long serialVersionUID = 1L;
+
     public static final String MODULE = "SPA";
     public static final boolean DBG = false;
     // Always calculate shortest path as directed path.
     private final boolean isDirected;
-    private final HashMap<Pair, Set<Path>> paths;
 
     public ShortestPaths(Graph g) {
         this(g, false);
     }
 
     public ShortestPaths(Graph g, boolean isDirected) {
+        super();
         this.isDirected = isDirected;
-        paths = new HashMap<Pair, Set<Path>>();
         this.allShortestPath(g);
         Dbg.print(DBG, MODULE, Dbg.NEW_LINE + this.toString());
     }
 
-    public void add (String n1, String n2, Path p) {
-        Set<Path> ps = paths.get(new Pair(n1, n2, isDirected));
-        if (ps == null) {
-            ps = new HashSet<Path>();
-            paths.put(new Pair(n1, n2, isDirected), ps);
-        }
-        ps.add(p);
-    }
-
     public Set<Path> get (String n1, String n2) {
-        return paths.get(new Pair(n1, n2, isDirected));
+        return this.get(new Pair(n1, n2, isDirected));
     }
 
     @Override
     public String toString () {
         StringBuilder sb = new StringBuilder();
-        for (Entry<Pair, Set<Path>> e : paths.entrySet()) {
+        for (Entry<Pair, Set<Path>> e : this.entrySet()) {
             Pair pair = e.getKey();
             sb.append(pair + Dbg.NEW_LINE);
             for (Path p : e.getValue()) {
@@ -60,7 +52,7 @@ public class ShortestPaths {
         return sb.toString();
     }
 
-    public void allShortestPath (Graph g) {
+    private void allShortestPath (Graph g) {
         // Modified from FloydWarshallWithPathReconstruction .
         // http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
 
@@ -116,11 +108,20 @@ public class ShortestPaths {
                 if (pathsOUT != null) { // Has shortest path.
                     for (String oneP : pathsOUT) {
                         this.add(nodeNames[i], nodeNames[j], new Path(oneP,
-                                this.isDirected));
+                                this.isDirected, dist[i][j]));
                     }
                 }
             }
         }
+    }
+
+    private void add (String n1, String n2, Path p) {
+        Set<Path> ps = this.get(new Pair(n1, n2, isDirected));
+        if (ps == null) {
+            ps = new HashSet<Path>();
+            this.put(new Pair(n1, n2, isDirected), ps);
+        }
+        ps.add(p);
     }
 
     private static ArrayList<String> pathConstruct (int u, int v,

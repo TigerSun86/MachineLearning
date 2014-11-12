@@ -14,18 +14,25 @@ import java.util.Collections;
 public class Path extends ArrayList<String> {
     private static final long serialVersionUID = 1L;
     private final boolean isDirected;
+    private final double length;
 
     public Path(String p) {
-        super();
-        this.isDirected = false;
-        Collections.addAll(this, p.split(" "));
-
+        this(p, 1);
     }
 
-    public Path(String p, boolean isDirected) {
+    public Path(String p, double length) {
+        this(p, false, length);
+    }
+
+    public Path(String p, boolean isDirected, double length) {
         super();
         this.isDirected = isDirected;
+        this.length = length;
         Collections.addAll(this, p.split(" "));
+    }
+
+    public double getLength () {
+        return this.length;
     }
 
     @Override
