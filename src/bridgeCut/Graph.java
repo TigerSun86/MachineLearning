@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -25,7 +26,7 @@ public class Graph extends HashMap<String, Node> {
     public static final boolean DBG = true;
 
     private final boolean isDirected;
-
+    
     public Graph(boolean isDirected) {
         this.isDirected = isDirected;
     }
@@ -37,8 +38,8 @@ public class Graph extends HashMap<String, Node> {
     public Set<String> getNodeNames () {
         return this.keySet();
     }
-    
-    public boolean isDirected(){
+
+    public boolean isDirected () {
         return this.isDirected;
     }
 
@@ -73,7 +74,7 @@ public class Graph extends HashMap<String, Node> {
 
     public static List<Graph> bridgeCut (Graph gBackup, double dThreshold,
             boolean isNode, boolean isCentrality) {
-        final Graph g = new Graph();
+        final Graph g = new Graph(gBackup.isDirected);
         for (java.util.Map.Entry<String, Node> e : gBackup.entrySet()) {
             g.put(e.getKey(), new Node(e.getValue()));
         }
@@ -83,6 +84,7 @@ public class Graph extends HashMap<String, Node> {
                 new HashSet<Set<String>>();
         oldIsolatedGraphs.add(gBackup.getNodeNames());
 
+        int count = 0;
         while (!g.isEmpty()) {
             final Object topCut = g.oneCut(isNode, isCentrality);
 
@@ -95,8 +97,9 @@ public class Graph extends HashMap<String, Node> {
             } else { // Cut edge.
                 Dbg.print(DBG, MODULE, "Cut: " + topCut);
             }
-            
+
             final Set<Set<String>> isolatedGs = g.isolatedGraphs();
+
             for (Set<String> nodeNames : isolatedGs) {
                 if (!oldIsolatedGraphs.contains(nodeNames)) {
                     // New isolated graph.
@@ -115,11 +118,77 @@ public class Graph extends HashMap<String, Node> {
                     }
                 } // if (!oldIsolatedGraphs.contains(nodeNames)) {
             } // for (Graph ig : isolatedGs) {
+            count++;
+            Dbg.print(DBG, MODULE, "# of iterations: " + count
+                    + ", remain nodes:" + g.size());
         } // while (!g.isEmpty()) {
 
         return clusterList;
     }
 
+    public static HashMap<Integer, Integer> singletonTest (Graph gBackup, double dThreshold,
+            boolean isNode, boolean isCentrality, int maxIter) {
+        final Graph g = new Graph(gBackup.isDirected);
+        for (java.util.Map.Entry<String, Node> e : gBackup.entrySet()) {
+            g.put(e.getKey(), new Node(e.getValue()));
+        }
+        final List<Graph> clusterList = new ArrayList<Graph>();
+
+        final HashSet<Set<String>> oldIsolatedGraphs =
+                new HashSet<Set<String>>();
+        oldIsolatedGraphs.add(gBackup.getNodeNames());
+
+        final HashMap<Integer, Integer> ret = new HashMap<Integer, Integer>();
+        int count = 0;
+        while (!g.isEmpty() && count < maxIter) {
+            final Object topCut = g.oneCut(isNode, isCentrality);
+
+            if (isNode) { // The cut node is a single cluster, add it.
+                final Node tempN = new Node((String) topCut);
+                final Graph temp = new Graph(g.isDirected);
+                temp.put(tempN.name, tempN);
+                clusterList.add(temp);
+                Dbg.print(DBG, MODULE, "Cut: " + topCut + " added");
+            } else { // Cut edge.
+                Dbg.print(DBG, MODULE, "Cut: " + topCut);
+            }
+
+            final Set<Set<String>> isolatedGs = g.isolatedGraphs();
+
+            for (Set<String> nodeNames : isolatedGs) {
+                if (!oldIsolatedGraphs.contains(nodeNames)) {
+                    // New isolated graph.
+                    final double density = gBackup.density(nodeNames);
+                    if (Double.compare(density, dThreshold) > 0) {
+                        // Add the sub graph with original edges in gBackup.
+                        clusterList.add(gBackup.subGraph(nodeNames));
+                        for (String n : nodeNames) {
+                            g.cut(n); // Remove isolated graph from g.
+                        }
+                        Dbg.print(DBG, MODULE, "New sub graph: " + nodeNames
+                                + " added");
+                    } else { // The sub graph still is there.
+                        oldIsolatedGraphs.add(nodeNames);
+                        Dbg.print(DBG, MODULE, "New sub graph: " + nodeNames);
+                    }
+                } // if (!oldIsolatedGraphs.contains(nodeNames)) {
+            } // for (Graph ig : isolatedGs) {
+            count++;
+            Dbg.print(DBG, MODULE, "# of iterations: " + count
+                    + ", remain nodes:" + g.size());
+            int sin = 0;
+            Iterator<Graph> iter = clusterList.iterator();
+            while (iter.hasNext()) {
+                if (iter.next().size() == 1) {
+                    sin++;
+                }
+            }
+            ret.put(count, sin);
+        } // while (!g.isEmpty()) {
+
+        return ret;
+    }
+    
     private Object oneCut (boolean isNode, boolean isCentrality) {
         if (isNode) { // Cut node.
             final List<String> nodes;

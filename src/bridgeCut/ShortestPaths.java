@@ -1,6 +1,7 @@
 package bridgeCut;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -93,13 +94,17 @@ public class ShortestPaths extends HashMap<Pair, Set<Path>> {
                         } else if (Double.compare(dist[i][k] + dist[k][j],
                                 dist[i][j]) == 0) {
                             // Same distance, add all additional nexts.
-                            next[i][j].addAll(next[i][k]);
+                            // next[i][j].addAll(next[i][k]);
+                            // Don't have duplicated points.
+                            final HashSet<Integer> tempSet = new HashSet<Integer>();
+                            tempSet.addAll(next[i][j]);
+                            tempSet.addAll(next[i][k]);
+                            next[i][j] = new PossibleNext(tempSet);
                         }
                     } // if (!Double.isInfinite(dist[i][k])
                 } // for (int j = 0; j < dist.length; j++) {
             } // for (int i = 0; i < dist.length; i++) {
         } // for (int k = 0; k < dist.length; k++) {
-
         // Path reconstruction.
         for (int i = 0; i < dist.length; i++) {
             for (int j = 0; j < dist.length; j++) {
@@ -154,9 +159,9 @@ public class ShortestPaths extends HashMap<Pair, Set<Path>> {
             this.add(i);
         }
 
-        public PossibleNext(PossibleNext o) {
+        public PossibleNext(Collection<Integer> c) {
             super();
-            this.addAll(o);
+            this.addAll(c);
         }
     }
 }
