@@ -8,7 +8,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Sep 23, 2014 10:41:26 PM 
  */
-public class LERAD_ids implements DataSet {
+public class LERAD_ids extends DataSet {
     @Override
     public String getName () {
         return "LERAD_ids";
@@ -32,5 +32,11 @@ public class LERAD_ids implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/LERAD_ids-attack.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

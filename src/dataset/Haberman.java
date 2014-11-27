@@ -9,7 +9,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Jun 27, 2014 9:51:36 PM 
  */
-public class Haberman implements DataSet {
+public class Haberman extends DataSet {
     @Override
     public String getName () {
         return "Haberman";
@@ -33,5 +33,11 @@ public class Haberman implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/haberman.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Haberman/haberman";
+
     }
 }

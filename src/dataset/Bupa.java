@@ -9,7 +9,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Apr 24, 2014 5:29:53 AM
  */
-public class Bupa implements DataSet {
+public class Bupa extends DataSet {
     @Override
     public String getName () {
         return "Bupa";
@@ -33,5 +33,10 @@ public class Bupa implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/bupa.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Bupa/bupa";
     }
 }

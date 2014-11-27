@@ -8,7 +8,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Sep 10, 2014 12:14:13 AM
  */
-public class Ids_mixed implements DataSet {
+public class Ids_mixed extends DataSet {
     @Override
     public String getName () {
         return "Ids-mixed";
@@ -32,5 +32,11 @@ public class Ids_mixed implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/ids-mixed.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

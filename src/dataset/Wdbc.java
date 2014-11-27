@@ -9,7 +9,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Apr 21, 2014 3:03:14 AM 
  */
-public class Wdbc implements DataSet {
+public class Wdbc extends DataSet {
     @Override
     public String getName () {
         return "Wdbc";
@@ -33,5 +33,10 @@ public class Wdbc implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/wdbc.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Wdbc/wdbc";
     }
 }

@@ -10,7 +10,7 @@ package dataset;
  *         email: TigerSun86@gmail.com
  * @date Mar 9, 2014 8:15:11 AM
  */
-public class Iris implements DataSet {
+public class Iris extends DataSet {
     @Override
     public String getName () {
         return "Iris";
@@ -34,5 +34,10 @@ public class Iris implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/iris.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Iris/iris";
     }
 }

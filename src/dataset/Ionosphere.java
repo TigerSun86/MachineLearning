@@ -9,7 +9,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Apr 24, 2014 5:12:16 AM 
  */
-public class Ionosphere implements DataSet {
+public class Ionosphere extends DataSet {
     @Override
     public String getName () {
         return "Ionosphere";
@@ -33,5 +33,10 @@ public class Ionosphere implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/ionosphere.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Ionosphere/ionosphere";
     }
 }

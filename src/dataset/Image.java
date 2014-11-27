@@ -8,7 +8,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Apr 19, 2014 10:07:25 PM
  */
-public class Image implements DataSet {
+public class Image extends DataSet {
     @Override
     public String getName () {
         return "Image Segmentation";
@@ -32,5 +32,11 @@ public class Image implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/segmentation.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        return "file://localhost/C:/WorkSpace/MachineLearning/10fold/Image/image";
+
     }
 }

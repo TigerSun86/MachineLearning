@@ -8,7 +8,7 @@ package dataset;
  *         email: sunx2013@my.fit.edu
  * @date Sep 10, 2014 12:12:07 AM 
  */
-public class Restaurant implements DataSet {
+public class Restaurant extends DataSet {
     @Override
     public String getName () {
         return "Restaurant";
@@ -32,5 +32,11 @@ public class Restaurant implements DataSet {
     @Override
     public String getDataFileUrl () {
         return "http://my.fit.edu/~sunx2013/MachineLearning/restaurant.txt";
+    }
+
+    @Override
+    protected String getKFoldBaseString () {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
