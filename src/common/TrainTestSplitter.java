@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.Random;
 
 import util.MyMath;
+import dataset.DataSet;
+import dataset.Iris;
 
 /**
  * FileName: TrainTestSplitter.java
@@ -29,7 +31,9 @@ public class TrainTestSplitter {
 
     public static void main (String[] args) {
         // final String fName = deleteCommaAndPutClassBack(FILE);
-        generateTrainTest(FILE, ATTR);
+        // generateTrainTest(FILE, ATTR);
+        final DataSet set = new Iris();
+        generateKFoldTrainTest(set.getDataFileUrl(), set.getAttrFileUrl(), 10);
     }
 
     private static String
@@ -121,7 +125,8 @@ public class TrainTestSplitter {
         return newName;
     }
 
-    private static void generateTrainTest (final String fileName, final String attrFile) {
+    private static void generateTrainTest (final String fileName,
+            final String attrFile) {
         final RawAttrList rawAttr = new RawAttrList(attrFile);
         final RawExampleList exs = new RawExampleList(fileName);
         Collections.shuffle(exs); // Shuffle examples.
@@ -142,6 +147,41 @@ public class TrainTestSplitter {
         System.out.println(trainName);
         writeExamples(test, testName);
         System.out.println(testName);
+    }
+
+    private static void generateKFoldTrainTest (final String fileName,
+            final String attrFile, final int k) {
+        final RawAttrList rawAttr = new RawAttrList(attrFile);
+        final RawExampleList exs = new RawExampleList(fileName);
+        Collections.shuffle(exs); // Shuffle examples.
+
+        final RawExampleList[] folds =
+                TrainTestSplitter.splitSetIntoKFold(exs, rawAttr, k);
+
+        final String name =
+                fileName.substring(fileName.lastIndexOf('/') + 1,
+                        fileName.lastIndexOf('.'));
+
+        final String resourcePath =
+                Thread.currentThread().getContextClassLoader().getResource("")
+                        .toString();
+        for (int test = 0; test < k; test++) {
+            final RawExampleList testSet = folds[test];
+            final RawExampleList trainSet = new RawExampleList();
+            for (int other = 0; other < k; other++) {
+                if (other != test) { // All other set is train set.
+                    trainSet.addAll(folds[other]);
+                }
+            }
+
+            final String trainName =
+                    resourcePath + name + "-train-" + test + ".txt";
+            final String testName = resourcePath + name + "-test-" + test + ".txt";
+            writeExamples(trainSet, trainName);
+            System.out.println(trainName + " " + trainSet.size());
+            writeExamples(testSet, testName);
+            System.out.println(testName + " " + testSet.size());
+        }
     }
 
     private static void writeExamples (final RawExampleList exs,
@@ -195,8 +235,70 @@ public class TrainTestSplitter {
         return kept;
     }
 
-    public static RawExampleList[] splitSetInto3Fold (
-            final RawExampleList exs, final RawAttrList attrs) {
+    /**
+     * public static RawExampleList[] splitSetIntoKFold (RawExampleList exs,
+     * RawAttrList attrs, int k) {
+     * 
+     * Splits given RawExampleList into k lists randomly.
+     * 
+     * This method guarantees returning k lists with same class ratio, and
+     * won't change the original order of examples.
+     * 
+     * @return: An array with k ExampleSets.
+     */
+    public static RawExampleList[] splitSetIntoKFold (RawExampleList exs,
+            RawAttrList attrs, int k) {
+        final ArrayList<String> classList = attrs.t.valueList;
+
+        // Count number of instances for each class.
+        final int[] numForEachClass = new int[classList.size()];
+        for (RawExample e : exs) {
+            final int classI = classList.indexOf(e.t);
+            numForEachClass[classI]++;
+        }
+
+        // Calculate each fold should keep how many number of examples for each
+        // class.
+        final int[][] numOfExNeeded = new int[classList.size()][k];
+        for (int cla = 0; cla < classList.size(); cla++) {
+            numOfExNeeded[cla] = new int[k];
+            int exRemain = numForEachClass[cla];
+            for (int ki = 0; ki < k; ki++) {
+                // Try to make each fold have same number of examples in each
+                // class, If don't use exRemain / (k - ki), last fold might have
+                // much more/less examples than all other folds.
+                numOfExNeeded[cla][ki] =
+                        (int) Math.round(((double) exRemain) / (k - ki));
+                exRemain -= numOfExNeeded[cla][ki];
+            }
+            assert exRemain == 0;
+        }
+        // Result for return.
+        final RawExampleList[] exArray = new RawExampleList[k];
+        for (int i = 0; i < k; i++) {
+            exArray[i] = new RawExampleList();
+        }
+
+        // Assign each example randomly to each fold.
+        final Random ran = new Random();
+        for (RawExample e : exs) {
+            final int classIndexOfe = classList.indexOf(e.t);
+            boolean isRunning = true;
+            while (isRunning) {
+                final int kBelong = ran.nextInt(k);
+                if (numOfExNeeded[classIndexOfe][kBelong] > 0) {
+                    // If kBelong still need example for class classIndexOfe.
+                    exArray[kBelong].add(e);
+                    numOfExNeeded[classIndexOfe][kBelong]--;
+                    isRunning = false;
+                } // else kBelong is full, try another kBelong.
+            }
+        }
+        return exArray;
+    }
+
+    public static RawExampleList[] splitSetInto3Fold (final RawExampleList exs,
+            final RawAttrList attrs) {
         final RawExampleList[] set1 = split(exs, attrs, 1.0 / 3);
         final RawExampleList[] set2 = split(set1[1], attrs, 0.5);
         final RawExampleList[] exArray = new RawExampleList[3];
@@ -207,7 +309,7 @@ public class TrainTestSplitter {
     }
 
     /**
-     * public static RawExampleList[] splitSetWithConsistentClassRatio
+     * public static RawExampleList[] split
      * (RawExampleList exs, RawAttrList attrs, double ratio)
      * 
      * Splits given RawExampleList into 2 lists by given ratio in percentage.
