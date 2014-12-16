@@ -3,7 +3,6 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 
 import util.Dbg;
-
 import common.Hypothesis;
 import common.RawAttrList;
 
@@ -188,4 +187,26 @@ public class NeuralNetwork implements Hypothesis {
         }
         return sb.toString();
     }
+    
+    /* Multi ANN project begin */
+    
+    public static class PredictAndConfidence {
+        public String predict;
+        public double confidence;
+        public PredictAndConfidence(String predict, double confidence) {
+            super();
+            this.predict = predict;
+            this.confidence = confidence;
+        }
+    }
+    public PredictAndConfidence predictWithConf (final ArrayList<String> values) {
+        // Convert raw attribute to ANN version.
+        final ArrayList<Double> annExX = FloatConverter.valuesToDouble(values, attrs);
+        // Get predict of ANN.
+        final ArrayList<Double> output = getV(annExX);
+        // Convert ANN output to raw output.
+        final PredictAndConfidence target = FloatConverter.targetBackStringWithConf(output, attrs);
+        return target;
+    }
+    /* Multi ANN project end */
 }

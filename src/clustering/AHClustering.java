@@ -3,24 +3,34 @@ package clustering;
 import java.util.LinkedList;
 import java.util.List;
 
+import common.RawAttrList;
+
 public class AHClustering implements ClusterAlg {
     public enum Mode {
         IST, CST, UPGMA
     }
 
     public Mode m;
+    public int k;
+    public RawAttrList attrs;
 
-    public AHClustering(Mode m) {
+    public AHClustering(Mode m, int k, RawAttrList attrs) {
         this.m = m;
+        this.k = k;
     }
 
     @Override
-    public ClusterList cluster(List<Vector> vecs, int k) {
+    public void setK (int k) {
+        this.k = k;
+    }
+    
+    @Override
+    public ClusterList cluster (List<Vector> vecs) {
         ClusterTree c = AHClustering.cluster(vecs, m);
-        return c.getKCluster(k);
+        return c.getKCluster(this.k);
     }
 
-    public static ClusterTree cluster(List<Vector> vecs, Mode m) {
+    public static ClusterTree cluster (List<Vector> vecs, Mode m) {
         final List<ClusterTree> listCT = new LinkedList<ClusterTree>();
         for (Vector v : vecs) { // Initialize.
             listCT.add(new ClusterTree(v));
@@ -91,7 +101,7 @@ public class AHClustering implements ClusterAlg {
      * @param listCT
      * @param matrix
      * */
-    public static void mergeTwoRow(List<List<Double>> matrix,
+    public static void mergeTwoRow (List<List<Double>> matrix,
             List<ClusterTree> listCT, int a, int b, Mode m) {
         // 1. Merge rows Ra and Rb to Ra (a<b).
         final ClusterTree cla = listCT.get(a);
@@ -127,7 +137,7 @@ public class AHClustering implements ClusterAlg {
         listCT.remove(b);
     }
 
-    private static double getSim(ClusterTree c1, ClusterTree c2, Mode m) {
+    private static double getSim (ClusterTree c1, ClusterTree c2, Mode m) {
         if (m == Mode.IST) {
             return getSimIST(c1, c2);
         } else if (m == Mode.CST) {
@@ -137,7 +147,7 @@ public class AHClustering implements ClusterAlg {
         }
     }
 
-    private static double getSimIST(ClusterTree c1, ClusterTree c2) {
+    private static double getSimIST (ClusterTree c1, ClusterTree c2) {
         final double sim1 = istSim(c1);
         final double sim2 = istSim(c2);
         final Cluster total = new Cluster();
@@ -149,7 +159,7 @@ public class AHClustering implements ClusterAlg {
         return sim;
     }
 
-    private static double istSim(Cluster c) {
+    private static double istSim (Cluster c) {
         double sim = 0.0;
         final Vector cen = c.getCenter();
         for (Vector v : c) {
@@ -158,13 +168,13 @@ public class AHClustering implements ClusterAlg {
         return sim;
     }
 
-    private static double getSimCST(ClusterTree c1, ClusterTree c2) {
+    private static double getSimCST (ClusterTree c1, ClusterTree c2) {
         final Vector cen1 = c1.getCenter();
         final Vector cen2 = c2.getCenter();
         return cen1.cosine(cen2);
     }
 
-    private static double getSimUPGMA(ClusterTree c1, ClusterTree c2) {
+    private static double getSimUPGMA (ClusterTree c1, ClusterTree c2) {
         double sim = 0.0;
         for (Vector v1 : c1) {
             for (Vector v2 : c2) {

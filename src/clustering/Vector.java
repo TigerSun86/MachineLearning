@@ -3,10 +3,15 @@ package clustering;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.RawAttrList;
+import common.RawExample;
+
 public class Vector extends ArrayList<Double> {
     private static final long serialVersionUID = 1L;
     public String id = null;
     public List<String> idxToWord = null;
+    public RawExample e = null;
+    public RawAttrList attrs = null;
 
     /**
      * Create a vector with size.
@@ -18,7 +23,22 @@ public class Vector extends ArrayList<Double> {
         }
     }
 
-    public double distanceTo(Vector vec) {
+    /**
+     * For MultiAnn
+     * */
+    public Vector(final RawExample e, final RawAttrList attrs) {
+        this(e.xList.size());
+        for (int i = 0; i < e.xList.size(); i++) {
+            final double value = Double.parseDouble(e.xList.get(i));
+            this.set(i, value);
+        }
+        this.id = null;
+        this.idxToWord = null;
+        this.e = e;
+        this.attrs = attrs;
+    }
+
+    public double distanceTo (Vector vec) {
         if (this.size() != vec.size()) {
             return Double.NaN;
         } else {
@@ -30,7 +50,7 @@ public class Vector extends ArrayList<Double> {
         }
     }
 
-    public double cosine(Vector vec) {
+    public double cosine (Vector vec) {
         if (this.size() != vec.size()) {
             return Double.NaN;
         } else {
@@ -44,21 +64,21 @@ public class Vector extends ArrayList<Double> {
         }
     }
 
-    public void accumulate(Vector vec) {
+    public void accumulate (Vector vec) {
         assert this.size() == vec.size();
         for (int i = 0; i < this.size(); i++) {
             this.set(i, this.get(i) + vec.get(i));
         }
     }
 
-    public void dividedBy(double v) {
+    public void dividedBy (double v) {
         assert v != 0;
         for (int i = 0; i < this.size(); i++) {
             this.set(i, this.get(i) / v);
         }
     }
 
-    public double vecLength() {
+    public double vecLength () {
         double norm = 0.0;
         for (int i = 0; i < this.size(); i++) {
             norm += this.get(i) * this.get(i);
@@ -67,16 +87,16 @@ public class Vector extends ArrayList<Double> {
         return norm;
     }
 
-    public void normalize() {
+    public void normalize () {
         this.dividedBy(this.vecLength());
     }
 
-    public String getClassName() {
+    public String getClassName () {
         return Character.toString(id.charAt(0));
     }
 
     @Override
-    public boolean equals(Object vec) {
+    public boolean equals (Object vec) {
         if (!(vec instanceof Vector)) {
             return false;
         }
@@ -90,7 +110,7 @@ public class Vector extends ArrayList<Double> {
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode () {
         double hash = 3.0;
         for (int i = 0; i < this.size(); i++) {
             hash = 101 * hash + this.get(i);

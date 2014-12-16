@@ -3,31 +3,41 @@ package clustering;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.RawAttrList;
 import util.MyMath;
 
 public class Kmeans implements ClusterAlg {
+    public int k;
+    public RawAttrList attrs;
 
-    public Kmeans() {
+    public Kmeans(int k, RawAttrList attrs) {
+        this.k = k;
+        this.attrs = attrs;
     }
 
     @Override
-    public ClusterList cluster(List<Vector> vecs, int k) {
-        return cluster2(vecs, k);
+    public void setK (int k) {
+        this.k = k;
     }
 
-    public static ClusterList cluster2(List<Vector> vecs, int k) {
-        assert vecs.size() >= k;
+    @Override
+    public ClusterList cluster (List<Vector> vecs) {
+        return cluster2(vecs, this.k);
+    }
+
+    public static ClusterList cluster2 (List<Vector> vecs, int k) {
+        final int realK = Math.min(k, vecs.size());
         // Initial random centroids.
-        final int[] cenIdx = MyMath.mOutofN(k, vecs.size());
+        final int[] cenIdx = MyMath.mOutofN(realK, vecs.size());
         final List<Vector> centroids = new ArrayList<Vector>();
-        for (int i = 0; i < k; i++) {
+        for (int i = 0; i < realK; i++) {
             centroids.add(vecs.get(cenIdx[i]));
         }
 
         return cluster(vecs, centroids);
     }
 
-    public static ClusterList cluster(List<Vector> vecs,
+    public static ClusterList cluster (List<Vector> vecs,
             List<Vector> centroidsIn) {
         // Make a copy of centroidsIn.
         final List<Vector> centroids = new ArrayList<Vector>();

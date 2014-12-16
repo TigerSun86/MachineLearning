@@ -3,6 +3,8 @@ package artificialNeuralNetworks.ANN;
 import java.util.ArrayList;
 import java.util.List;
 
+import artificialNeuralNetworks.ANN.NeuralNetwork.PredictAndConfidence;
+
 import common.RawAttr;
 import common.RawAttrList;
 
@@ -136,4 +138,39 @@ public class FloatConverter {
             return rAttr.valueList.size();
         }
     }
+    
+    /* Multi ANN project begin */
+    public static PredictAndConfidence targetBackStringWithConf (final ArrayList<Double> values,
+            final RawAttrList attrs) {
+        if (attrs.t.isContinuous) {
+            return new PredictAndConfidence(String.valueOf(values.get(0)),values.get(0));
+        } else if (attrs.t.valueList.size() == 2) { // Have 2 possible values.
+            // If higher equal than 0.5 is the first value in attribute,
+            // otherwise is the second one.
+            assert values.size() == 1;
+            final double value = values.get(0);
+            // The confidence value should be between 0 and 1.
+            final double conf = Math.abs(value-MID_VALUE)*2;
+            if (Double.compare(value, MID_VALUE) >= 0) {
+                return new PredictAndConfidence(attrs.t.valueList.get(0), conf);
+            } else {
+                return new PredictAndConfidence(attrs.t.valueList.get(1), conf);
+            }
+        } else {
+            // Find the max value. The value in raw attribute corresponding to
+            // max Ann value is the new value.
+            assert values.size() == attrs.t.valueList.size();
+            double maxV = Double.NEGATIVE_INFINITY;
+            int maxVIndex = 0;
+            for (int vIndex = 0; vIndex < values.size(); vIndex++) {
+                final double value = values.get(vIndex);
+                if (Double.compare(maxV, value) < 0) {
+                    maxV = value;
+                    maxVIndex = vIndex;
+                }
+            } // End of for (int vIndex = 0;
+            return new PredictAndConfidence(attrs.t.valueList.get(maxVIndex),maxV);
+        }
+    }
+    /* Multi ANN project end*/
 }

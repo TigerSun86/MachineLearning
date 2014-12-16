@@ -11,7 +11,7 @@ package util;
 import java.util.HashSet;
 
 public class Dbg {
-    public static final String NEW_LINE = String.format("%n");
+    public static final String NEW_LINE = System.getProperty("line.separator");
     
     private static final String DBG_STR_SWITCH = "verbose";
     private static final String DBG_STR_ALL = "all";

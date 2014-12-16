@@ -3,6 +3,8 @@ package clustering;
 import java.util.LinkedList;
 import java.util.List;
 
+import common.RawAttrList;
+
 public class BisectingKmeans implements ClusterAlg {
     public enum WayToPick {
         LARGEST, LEASTSIM
@@ -10,15 +12,23 @@ public class BisectingKmeans implements ClusterAlg {
 
     public WayToPick way;
     public int iter;
+    public int k;
+    public RawAttrList attrs;
 
-    public BisectingKmeans(WayToPick way, int iter) {
+    public BisectingKmeans(WayToPick way, int iter ,int k, RawAttrList attrs) {
         this.iter = iter;
         this.way = way;
+        this.k = k;
     }
 
     @Override
-    public ClusterList cluster(List<Vector> vecs, int k) {
-        return cluster(vecs, k, this.way, this.iter);
+    public void setK (int k) {
+        this.k = k;
+    }
+    
+    @Override
+    public ClusterList cluster(List<Vector> vecs) {
+        return cluster(vecs, this.k, this.way, this.iter);
     }
 
     public static ClusterList cluster(List<Vector> vecs, int k, int iter) {
@@ -27,14 +37,14 @@ public class BisectingKmeans implements ClusterAlg {
 
     public static ClusterList cluster(List<Vector> vecs, int k, WayToPick way,
             int iter) {
-        assert vecs.size() >= k;
+        final int realK = Math.min(k, vecs.size());
         // All as one cluster.
         final Cluster cluster = new Cluster();
         cluster.addAll(vecs);
         final LinkedList<Cluster> clusters = new LinkedList<Cluster>();
         clusters.add(cluster);
 
-        while (clusters.size() < k) {
+        while (clusters.size() < realK) {
             final int cIdx = pickCluster(clusters, way);
             final Cluster cToSplit = clusters.get(cIdx);
 

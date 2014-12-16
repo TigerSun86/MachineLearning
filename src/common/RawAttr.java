@@ -27,6 +27,13 @@ public class RawAttr {
         this.valueList = new ArrayList<String>();
     }
 
+    public RawAttr(final RawAttr attr) {
+        this.name = attr.name;
+        this.isContinuous = attr.isContinuous;
+        this.valueList = new ArrayList<String>();
+        this.valueList.addAll(attr.valueList);
+    }
+    
     @Override
     public String toString () {
         final StringBuffer sb = new StringBuffer();

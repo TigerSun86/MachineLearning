@@ -58,6 +58,14 @@ public class RawAttrList {
         this.t = null;
     }
 
+    public RawAttrList(RawAttrList attrs) {
+        this.xList = new ArrayList<RawAttr>();
+        for (RawAttr x : attrs.xList) {
+            this.xList.add(new RawAttr(x));
+        }
+        this.t = new RawAttr(attrs.t);
+    }
+
     public int indexOf (final String name) {
         if (name == null) {
             for (int i = 0; i < xList.size(); i++) {

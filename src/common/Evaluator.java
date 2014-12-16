@@ -24,7 +24,9 @@ public class Evaluator {
             final String target = ex.t;
             if (target.equals(predict)) {
                 count++;
+                //System.out.println("true "+target);
             } else {
+                //System.out.println("false "+target);
                 //wrongExs.add(ex);
             }
             Dbg.print(DBG, MODULE,"Ex."+ (i+1)+

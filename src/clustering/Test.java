@@ -17,25 +17,31 @@ import common.RawExampleList;
 import dataset.Iris;
 
 public class Test {
-    private static final String TOY = "http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-topics.txt";
-    private static final String TRAIN = "http://cs.fit.edu/~pkc/classes/ml-internet/data/news/news-topics.txt";
+    private static final String TOY =
+            "http://cs.fit.edu/~pkc/classes/ml-internet/data/toy-topics.txt";
+    private static final String TRAIN =
+            "http://cs.fit.edu/~pkc/classes/ml-internet/data/news/news-topics.txt";
 
-    private static final ClusterAlg[] ALGS = new ClusterAlg[] { new Kmeans(),
-            new BisectingKmeans(WayToPick.LARGEST, 6),
-            new BisectingKmeans(WayToPick.LEASTSIM, 6),
-            new AHClustering(Mode.IST), new AHClustering(Mode.CST),
-            new AHClustering(Mode.UPGMA), new ASeedKmeans(Mode.UPGMA) };
-    private static final String[] ALGNAME = new String[] { "K-means",
-            "Bisecting K-means with largest cluster to split",
-            "Bisecting K-means with least overall similarity to split",
-            "Aggolermerative Hierarchical Clustering with IST",
-            "Aggolermerative Hierarchical Clustering with CST",
-            "Aggolermerative Hierarchical Clustering with UPGMA",
-            "Aggolermerative Hierarchical Clustering with UPGMA to seed K-means" };
+    private static final ClusterAlg[] ALGS = new ClusterAlg[] {
+            new Kmeans(2, null),
+            new BisectingKmeans(WayToPick.LARGEST, 6, 2, null),
+            new BisectingKmeans(WayToPick.LEASTSIM, 6, 2, null),
+            new AHClustering(Mode.IST, 2, null),
+            new AHClustering(Mode.CST, 2, null),
+            new AHClustering(Mode.UPGMA, 2, null),
+            new ASeedKmeans(Mode.UPGMA, 2, null) };
+    private static final String[] ALGNAME =
+            new String[] { "K-means",
+                    "Bisecting K-means with largest cluster to split",
+                    "Bisecting K-means with least overall similarity to split",
+                    "Aggolermerative Hierarchical Clustering with IST",
+                    "Aggolermerative Hierarchical Clustering with CST",
+                    "Aggolermerative Hierarchical Clustering with UPGMA",
+                    "Aggolermerative Hierarchical Clustering with UPGMA to seed K-means" };
 
     private static final int RE = 3;
 
-    public static void main(String[] args) {
+    public static void main (String[] args) {
         final Scanner sc = new Scanner(System.in);
         System.out.println("Please input the mode to test: ");
         System.out.println("0, simple test");
@@ -52,7 +58,7 @@ public class Test {
         sc.close();
     }
 
-    private static void simpleTest(final Scanner sc) {
+    private static void simpleTest (final Scanner sc) {
         Dbg.dbgSwitch = true;
         Dbg.defaultSwitch = true;
         System.out.println("Please input the index of algorithm: ");
@@ -82,8 +88,8 @@ public class Test {
 
         System.out.println("Please input the k: ");
         final int k = getInt(sc);
-
-        ClusterList cl = alg.cluster(vecs, k);
+        alg.setK(k);
+        ClusterList cl = alg.cluster(vecs);
 
         for (Cluster c : cl) {
             System.out.println(c);
@@ -96,7 +102,7 @@ public class Test {
         Dbg.defaultSwitch = false;
     }
 
-    private static void changeIter(final Scanner sc) {
+    private static void changeIter (final Scanner sc) {
         System.out
                 .println("Please input the index of data set: 0, toy. 1, news. 2, Iris");
         final int ds = getInt(sc);
@@ -124,10 +130,14 @@ public class Test {
         } else {
             way = BisectingKmeans.WayToPick.LEASTSIM;
         }
-        final LinkedHashMap<Double, Double> eLine = new LinkedHashMap<Double, Double>();
-        final LinkedHashMap<Double, Double> fLine = new LinkedHashMap<Double, Double>();
-        final LinkedHashMap<Double, Double> simLine = new LinkedHashMap<Double, Double>();
-        final LinkedHashMap<Double, Double> silLine = new LinkedHashMap<Double, Double>();
+        final LinkedHashMap<Double, Double> eLine =
+                new LinkedHashMap<Double, Double>();
+        final LinkedHashMap<Double, Double> fLine =
+                new LinkedHashMap<Double, Double>();
+        final LinkedHashMap<Double, Double> simLine =
+                new LinkedHashMap<Double, Double>();
+        final LinkedHashMap<Double, Double> silLine =
+                new LinkedHashMap<Double, Double>();
         for (int iter = 2; iter <= 10; iter += 2) {
             double e = 0;
             double f = 0;
@@ -149,7 +159,8 @@ public class Test {
             simLine.put((double) iter, sim);
             silLine.put((double) iter, sil);
         }
-        final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet = new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> dataSet =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         dataSet.put("Entropy", eLine);
         dataSet.put("FMeasure", fLine);
         dataSet.put("OverallSimilarity", simLine);
@@ -159,7 +170,7 @@ public class Test {
                 "# of iteration", "Performance");
     }
 
-    private static void changeK(final Scanner sc) {
+    private static void changeK (final Scanner sc) {
         System.out
                 .println("Please input the index of data set: 0, toy. 1, news. 2, Iris");
         final int ds = getInt(sc);
@@ -176,19 +187,23 @@ public class Test {
             dsname = "Iris";
         }
 
-        final ArrayList<LinkedHashMap<Double, Double>> eline = new ArrayList<LinkedHashMap<Double, Double>>();
+        final ArrayList<LinkedHashMap<Double, Double>> eline =
+                new ArrayList<LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             eline.add(new LinkedHashMap<Double, Double>());
         }
-        final ArrayList<LinkedHashMap<Double, Double>> fline = new ArrayList<LinkedHashMap<Double, Double>>();
+        final ArrayList<LinkedHashMap<Double, Double>> fline =
+                new ArrayList<LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             fline.add(new LinkedHashMap<Double, Double>());
         }
-        final ArrayList<LinkedHashMap<Double, Double>> simline = new ArrayList<LinkedHashMap<Double, Double>>();
+        final ArrayList<LinkedHashMap<Double, Double>> simline =
+                new ArrayList<LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             simline.add(new LinkedHashMap<Double, Double>());
         }
-        final ArrayList<LinkedHashMap<Double, Double>> silline = new ArrayList<LinkedHashMap<Double, Double>>();
+        final ArrayList<LinkedHashMap<Double, Double>> silline =
+                new ArrayList<LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             silline.add(new LinkedHashMap<Double, Double>());
         }
@@ -200,7 +215,8 @@ public class Test {
                 double sim = 0;
                 double sil = 0;
                 for (int j = 0; j < RE; j++) {
-                    ClusterList cl = alg.cluster(vecs, k);
+                    alg.setK(k);
+                    ClusterList cl = alg.cluster(vecs);
                     e += cl.entropy();
                     f += cl.fMeasure();
                     sim += cl.overallSimilarity();
@@ -217,19 +233,23 @@ public class Test {
             }
 
         }
-        final LinkedHashMap<String, LinkedHashMap<Double, Double>> edata = new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> edata =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             edata.put(ALGNAME[i], eline.get(i));
         }
-        final LinkedHashMap<String, LinkedHashMap<Double, Double>> fdata = new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> fdata =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             fdata.put(ALGNAME[i], fline.get(i));
         }
-        final LinkedHashMap<String, LinkedHashMap<Double, Double>> simdata = new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> simdata =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             simdata.put(ALGNAME[i], simline.get(i));
         }
-        final LinkedHashMap<String, LinkedHashMap<Double, Double>> sildata = new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
+        final LinkedHashMap<String, LinkedHashMap<Double, Double>> sildata =
+                new LinkedHashMap<String, LinkedHashMap<Double, Double>>();
         for (int i = 0; i < ALGS.length; i++) {
             sildata.put(ALGNAME[i], silline.get(i));
         }
@@ -245,7 +265,7 @@ public class Test {
                 "SilhouetteCoefficient");
     }
 
-    private static List<Vector> getVecs(String file) {
+    private static List<Vector> getVecs (String file) {
         List<List<Article>> ret = ArticleReader.read(file);
         List<Article> arts = new ArrayList<Article>();
         for (List<Article> a : ret) {
@@ -257,10 +277,11 @@ public class Test {
         return ret2;
     }
 
-    private static List<Vector> getIrisVecs() {
-        final RawAttrList rawAttr = new RawAttrList(new Iris().getAttrFileUrl());
-        final RawExampleList rawTrain = new RawExampleList(
-                new Iris().getTrainFileUrl());
+    private static List<Vector> getIrisVecs () {
+        final RawAttrList rawAttr =
+                new RawAttrList(new Iris().getAttrFileUrl());
+        final RawExampleList rawTrain =
+                new RawExampleList(new Iris().getTrainFileUrl());
         List<String> idxToWord = new ArrayList<String>();
         for (int i = 0; i < rawAttr.xList.size(); i++) {
             idxToWord.add(rawAttr.xList.get(i).name);
@@ -294,7 +315,7 @@ public class Test {
         return vecs;
     }
 
-    private static int getInt(final Scanner s) {
+    private static int getInt (final Scanner s) {
         int ret = -1;
         while (ret < 0) {
             final String next = s.nextLine();

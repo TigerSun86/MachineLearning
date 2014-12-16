@@ -26,7 +26,7 @@ import common.TrainTestSplitter;
  */
 public class AnnLearner {
     public static final String MODULE = "ALN";
-    public static final boolean DBG = true;
+    public static final boolean DBG = false;
 
     private static final int MAX_ITER = 10000;
 
@@ -142,7 +142,7 @@ public class AnnLearner {
         }
 
         final double accur = evalTest(net);
-        System.out.println(net);
+        // System.out.println(net);
         AnnVisualizer.show(net);
         return new AccurAndIter(accur, iter);
     }
@@ -176,8 +176,7 @@ public class AnnLearner {
         final long trainStartTime = SysUtil.getCpuTime();
 
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3Fold(
-                        rawTrainWithNoise, rawAttr);
+                TrainTestSplitter.splitSetInto3Fold(rawTrainWithNoise, rawAttr);
 
         long editTime = 0;
         int sumIter = 0;
@@ -227,8 +226,7 @@ public class AnnLearner {
         final long editTime = (endTime - startTime);
 
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3Fold(
-                        reducedTrain, rawAttr);
+                TrainTestSplitter.splitSetInto3Fold(reducedTrain, rawAttr);
 
         int sumIter = 0;
         for (int val = 0; val < exArray.length; val++) {
@@ -255,10 +253,9 @@ public class AnnLearner {
                 trainTime);
     }
 
-    public AcSizeItTime[]  testENN () {
+    public AcSizeItTime[] testENN () {
         final RawExampleList[] exArray =
-                TrainTestSplitter.splitSetInto3Fold(
-                        rawTrainWithNoise, rawAttr);
+                TrainTestSplitter.splitSetInto3Fold(rawTrainWithNoise, rawAttr);
         int sumIter1 = 0;
         int sumIter2 = 0;
         for (int val = 0; val < exArray.length; val++) {
@@ -274,7 +271,7 @@ public class AnnLearner {
             RawExampleList reducedTrain1 = new ENN().reduce(trainSet, rawAttr);
             final AnnExList annTrain1 = new AnnExList(reducedTrain1, rawAttr);
             sumIter1 += validation2(annTrain1, annVal);
-            
+
             RawExampleList reducedTrain2 = new ENN2().reduce(trainSet, rawAttr);
             AnnExList annTrain2 = new AnnExList(reducedTrain2, rawAttr);
             sumIter2 += validation2(annTrain2, annVal);
@@ -286,20 +283,20 @@ public class AnnLearner {
         final RawExampleList reducedTrain2 =
                 new ENN2().reduce(rawTrainWithNoise, rawAttr);
         final AnnExList annTrain2 = new AnnExList(reducedTrain2, rawAttr);
-        
+
         final int meanIter1 = sumIter1 / exArray.length;
         final NeuralNetwork net1 = iter(annTrain1, meanIter1);
         final double accur1 = evalTest(net1);
-        
+
         final int meanIter2 = sumIter2 / exArray.length;
         final NeuralNetwork net2 = iter(annTrain2, meanIter2);
         final double accur2 = evalTest(net2);
-        
+
         AcSizeItTime[] ret = new AcSizeItTime[2];
-        ret[0] = new AcSizeItTime(accur1, reducedTrain1.size(), meanIter1, 0,
-                0);
-        ret[1] = new AcSizeItTime(accur2, reducedTrain2.size(), meanIter2, 0,
-                0);
+        ret[0] =
+                new AcSizeItTime(accur1, reducedTrain1.size(), meanIter1, 0, 0);
+        ret[1] =
+                new AcSizeItTime(accur2, reducedTrain2.size(), meanIter2, 0, 0);
         return ret;
     }
 
@@ -379,11 +376,13 @@ public class AnnLearner {
     }
 
     public NeuralNetwork kFoldLearning (final int k) {
-        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
-        final AnnExList[] exArray = annSet.splitIntoMultiSets(k);
-        if (exArray == null) {
-            return null;
+        final RawExampleList[] rawExs =
+                TrainTestSplitter.splitSetIntoKFold(rawTrainWithNoise, rawAttr, k);
+        final AnnExList[] exArray = new AnnExList[k];
+        for (int i = 0; i < k; i++) {
+            exArray[i] = new AnnExList(rawExs[i], rawAttr);
         }
+
         int sumIter = 0;
         for (int val = 0; val < exArray.length; val++) {
             final AnnExList valSet = exArray[val];
@@ -399,6 +398,7 @@ public class AnnLearner {
 
         final int meanIter = sumIter / exArray.length;
         Dbg.print(DBG, MODULE, "Mean of iter: " + meanIter);
+        final AnnExList annSet = new AnnExList(rawTrainWithNoise, rawAttr);
         final NeuralNetwork net = iter(annSet, meanIter);
         return net;
     }
@@ -461,8 +461,8 @@ public class AnnLearner {
             }
 
             if (net.hasConverged(lastNet)) {
-                Dbg.print(DBG, MODULE, "Network converged at iter " + iter);
-                break;
+                // Dbg.print(DBG, MODULE, "Network converged at iter " + iter);
+                // break;
             } else {
                 lastNet = new NeuralNetwork(net);
             }
@@ -477,6 +477,32 @@ public class AnnLearner {
         nai.net = bestNet;
         nai.iter = bestIter;
         return nai;
+    }
+
+    public NeuralNetwork convergeLearning () {
+        final AnnExList trainSet = new AnnExList(rawTrainWithNoise, rawAttr);
+
+        final NeuralNetwork net =
+                new NeuralNetwork(rawAttr, annAttr.xList.size(), nHidden,
+                        hiddenHasThres, annAttr.tList.size(), outHasThres,
+                        learnRate, momentumRate);
+        NeuralNetwork lastNet = new NeuralNetwork(net);
+        int iter = 0;
+        while (iter < MAX_ITER) {
+            iter(net, trainSet, BASIC_ITER);
+            iter += BASIC_ITER;
+
+            if (net.hasConverged(lastNet)) {
+                Dbg.print(DBG, MODULE, "Network converged at iter " + iter);
+                break;
+            } else {
+                lastNet = new NeuralNetwork(net);
+            }
+        }
+        if (iter == MAX_ITER) {
+            Dbg.print(DBG, MODULE, "Stop at iter: " + iter);
+        }
+        return net;
     }
 
     public LinkedHashMap<String, LinkedHashMap<Double, Double>>
